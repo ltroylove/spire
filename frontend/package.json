@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@exuanbo/file-icons-js": "^3.3.0",
+    "@sentry/tracing": "^7.120.4",
+    "@sentry/vue": "^7.120.4",
     "@types/jquery": "^3.5.9",
     "@types/leaflet": "^1.7.9",
     "ansi-to-html": "^0.7.2",

@@ -6,6 +6,7 @@ import (
 	"github.com/EQEmuTools/spire/boot"
 	"github.com/EQEmuTools/spire/internal/console"
 	"github.com/EQEmuTools/spire/internal/env"
+	spiresentry "github.com/EQEmuTools/spire/internal/sentry"
 	"github.com/EQEmuTools/spire/internal/updater"
 	"github.com/henvic/httpretty"
 	"log"
@@ -39,6 +40,12 @@ func main() {
 	if err := env.LoadEnvFileIfExists(); err != nil {
 		Fatal(err)
 	}
+
+	// initialize sentry (optional - only if SENTRY_DSN is set)
+	if err := spiresentry.Init(); err != nil {
+		log.Printf("Warning: Sentry initialization failed: %v", err)
+	}
+	defer spiresentry.Flush()
 
 	// boot app
 	app, err := boot.InitializeApplication()

@@ -1,6 +1,6 @@
 module github.com/EQEmuTools/spire
 
-go 1.23
+go 1.23.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
@@ -27,11 +27,11 @@ require (
 	github.com/influxdata/influxdb-client-go/v2 v2.11.0
 	github.com/joho/godotenv v1.4.0
 	github.com/k0kubun/pp/v3 v3.2.0
-	github.com/labstack/echo/v4 v4.9.0
-	github.com/labstack/gommon v0.4.0
+	github.com/labstack/echo/v4 v4.10.1
+	github.com/labstack/gommon v0.4.2
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mat/besticon v3.12.0+incompatible
-	github.com/mattn/go-isatty v0.0.19
+	github.com/mattn/go-isatty v0.0.20
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/muesli/termenv v0.13.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -40,18 +40,18 @@ require (
 	github.com/shirou/gopsutil/v3 v3.22.12
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/files v0.0.0-20220728132757-551d4a08d97a
 	github.com/swaggo/swag v1.8.6
-	github.com/valyala/fasttemplate v1.2.1
+	github.com/valyala/fasttemplate v1.2.2
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/ziutek/telnet v0.0.0-20180329124119-c3b780dc415b
-	golang.org/x/crypto v0.14.0
-	golang.org/x/net v0.17.0
+	golang.org/x/crypto v0.36.0
+	golang.org/x/net v0.38.0
 	golang.org/x/oauth2 v0.0.0-20221006150949-b44042a4b9c1
-	golang.org/x/sync v0.4.0
-	golang.org/x/sys v0.13.0
-	golang.org/x/text v0.13.0
+	golang.org/x/sync v0.12.0
+	golang.org/x/sys v0.31.0
+	golang.org/x/text v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.4.1
 	gorm.io/gorm v1.24.0
@@ -75,6 +75,8 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/friendsofgo/errors v0.9.2 // indirect
 	github.com/gammazero/deque v0.2.0 // indirect
+	github.com/getsentry/sentry-go v0.42.0 // indirect
+	github.com/getsentry/sentry-go/echo v0.42.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -128,10 +130,10 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
-	golang.org/x/mod v0.13.0 // indirect
-	golang.org/x/term v0.13.0 // indirect
-	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
-	golang.org/x/tools v0.14.0 // indirect
+	golang.org/x/mod v0.17.0 // indirect
+	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/time v0.3.0 // indirect
+	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect

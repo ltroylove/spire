@@ -3,6 +3,23 @@ import router       from './router'
 import App          from './App.vue'
 import store        from './store'
 import BootstrapVue from 'bootstrap-vue'
+import * as Sentry  from '@sentry/vue'
+import { BrowserTracing } from '@sentry/tracing'
+
+// Initialize Sentry (optional — only if DSN is configured)
+if (process.env.VUE_APP_SENTRY_DSN) {
+  Sentry.init({
+    Vue,
+    dsn: process.env.VUE_APP_SENTRY_DSN,
+    environment: process.env.VUE_APP_SENTRY_ENVIRONMENT || 'production',
+    integrations: [
+      new BrowserTracing({
+        routingInstrumentation: Sentry.vueRouterInstrumentation(router),
+      }),
+    ],
+    tracesSampleRate: parseFloat(process.env.VUE_APP_SENTRY_TRACES_SAMPLE_RATE || '0.2'),
+  })
+}
 
 // Bootstrap
 // import 'bootstrap/dist/css/bootstrap.css'

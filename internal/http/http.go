@@ -24,6 +24,8 @@ import (
 	spiremiddleware "github.com/EQEmuTools/spire/internal/http/middleware"
 	"github.com/EQEmuTools/spire/internal/http/routes"
 	"github.com/EQEmuTools/spire/internal/http/spa"
+	spiresentry "github.com/EQEmuTools/spire/internal/sentry"
+	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -69,6 +71,13 @@ func NewServer(
 // Serve runs a http server
 func (c *Server) Serve(port uint) error {
 	e := echo.New()
+
+	// Sentry error tracking middleware (only if DSN configured)
+	if spiresentry.IsEnabled() {
+		e.Use(sentryecho.New(sentryecho.Options{
+			Repanic: true,
+		}))
+	}
 
 	env.SetAppModeWebserver()
 
