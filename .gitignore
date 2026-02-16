@@ -46,3 +46,4 @@ eqemu-server-installer-windows-amd64.exe
 # Integration planning docs
 EQSAGE-SPIRE-INTEGRATION.md
 PROGRESS.md
+frontend/.env.production
