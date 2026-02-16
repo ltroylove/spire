@@ -705,12 +705,14 @@ export default {
       this.constantSelection = null
       this.search            = ""
 
-      if (this.languageSelection && this.languageSelection.length !== 0) {
-        LocalSettings.set(Setting.DEFAULT_LANGUAGE_PREFERENCE, this.languageSelection)
+      if (!this.languageSelection || this.languageSelection.length === 0) {
+        return
       }
 
+      LocalSettings.set(Setting.DEFAULT_LANGUAGE_PREFERENCE, this.languageSelection)
+
       // methods
-      if (this.api[this.languageSelection].methods) {
+      if (this.api[this.languageSelection] && this.api[this.languageSelection].methods) {
         let options  = []
         let types    = Object.keys(this.api[this.languageSelection].methods).sort().filter((item) => {
           return !item.includes("Deprecated") && !item.includes("EQDB")
@@ -729,7 +731,7 @@ export default {
       }
 
       // events
-      if (this.api[this.languageSelection].events) {
+      if (this.api[this.languageSelection] && this.api[this.languageSelection].events) {
         let events       = this.api[this.languageSelection].events
         let eventSize    = events.length
         let selectOption = '--- Events   (' + eventSize + ') ---'
@@ -749,7 +751,7 @@ export default {
       }
 
       // constants
-      if (this.api[this.languageSelection].constants) {
+      if (this.api[this.languageSelection] && this.api[this.languageSelection].constants) {
         let apiConstants = this.api[this.languageSelection].constants
         let options      = []
         let constants    = Object.keys(apiConstants).sort().filter((constant) => {
