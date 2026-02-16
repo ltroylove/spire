@@ -24,7 +24,7 @@
       <!--        </div>-->
       <!--      </div>-->
       <div v-for="le in loot.loottable_entries" class="mt-3">
-        <div class="mb-1">
+        <div class="mb-1" v-if="le.lootdrop">
           <span class="font-weight-bold mr-1">Loot Drop Table</span>
           <i class="fa fa-chevron-right mr-1"/>
           {{ le.lootdrop.id }}
@@ -35,11 +35,11 @@
             <span class="font-weight-bold">Probability</span> ({{ le.probability }}%)
             <span class="font-weight-bold">Multiplier</span> ({{ le.multiplier }}x)
             <span class="font-weight-bold">Drop Limit</span> ({{ le.droplimit }})
-            <span class="font-weight-bold">Total Items</span> ({{ le.lootdrop.lootdrop_entries.length }})
+            <span class="font-weight-bold">Total Items</span> ({{ le.lootdrop.lootdrop_entries ? le.lootdrop.lootdrop_entries.length : 0 }})
           </div>
         </div>
 
-        <table class="eq-table eq-highlight-rows mt-3">
+        <table class="eq-table eq-highlight-rows mt-3" v-if="le.lootdrop && le.lootdrop.lootdrop_entries">
           <tbody>
           <tr
             v-for="lde in le.lootdrop.lootdrop_entries"

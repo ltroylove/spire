@@ -141,7 +141,7 @@
     </div>
 
     <!-- Special Abilities -->
-    <div class="mt-3" v-if="npc.special_abilities.length > 0 && !noStats">
+    <div class="mt-3" v-if="npc.special_abilities && npc.special_abilities.length > 0 && !noStats">
       <div class="font-weight-bold mb-3">
         This NPC has the following special abilities ({{ parseSpecialAbilities(npc.special_abilities).length }})
       </div>
