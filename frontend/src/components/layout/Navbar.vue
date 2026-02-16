@@ -30,7 +30,7 @@
       <router-link class="ml-3 mt-3" to="/">
         <h1 class="text-center eq-header small-mobile">
           Spire
-          <span style="font-size: 12px; color: #e8c56d; opacity: 0.6; vertical-align: super; margin-left: 4px;">v2.3</span>
+          <span style="font-size: 12px; color: #e8c56d; opacity: 0.6; vertical-align: super; margin-left: 4px;">v2.4</span>
           <!--          <h3 class="text-center eq-header small-mobile d-inline" style="font-size: 40px">-->
           <!--            [Admin]-->
           <!--          </h3>-->
