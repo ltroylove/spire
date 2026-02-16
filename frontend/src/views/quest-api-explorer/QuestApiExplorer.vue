@@ -705,7 +705,7 @@ export default {
       this.constantSelection = null
       this.search            = ""
 
-      if (this.languageSelection.length !== 0) {
+      if (this.languageSelection && this.languageSelection.length !== 0) {
         LocalSettings.set(Setting.DEFAULT_LANGUAGE_PREFERENCE, this.languageSelection)
       }
 
