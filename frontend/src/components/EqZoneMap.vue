@@ -348,8 +348,7 @@
 
 <script>
 import {LIcon, LMap, LMarker, LPolyline, LPopup, LRectangle, LTileLayer, LTooltip} from 'vue2-leaflet';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-/* Skip MarkerCluster.Default.css — we use custom npc-cluster-icon styling */
+/* NPC markers use a plain L.layerGroup (no clustering) */
 import ContentArea                                                     from "./layout/ContentArea";
 import * as L                                                          from "leaflet";
 import axios                                                           from "axios";
@@ -1192,7 +1191,7 @@ export default {
         return false
       }
 
-      // Remove existing cluster layer
+      // Remove existing NPC layer
       if (this._npcClusterGroup) {
         map.removeLayer(this._npcClusterGroup)
         this._npcClusterGroup = null
@@ -1201,44 +1200,8 @@ export default {
 
       if (!this.npcMarkers || this.npcMarkers.length === 0) return false
 
-      // Import markercluster plugin - it attaches to global L
-      require('leaflet.markercluster')
-
       const self = this
-      const cluster = L.markerClusterGroup({
-        disableClusteringAtZoom: 1,
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true,
-        maxClusterRadius: 25,
-        animate: true,
-        animateAddingMarkers: false,
-        iconCreateFunction: function (c) {
-          const count = c.getChildCount()
-          // Find the most common race icon among children
-          const iconCounts = {}
-          const childMarkers = c.getAllChildMarkers()
-          let iconSizeForTop = [30, 100]
-          for (const cm of childMarkers) {
-            const cls = cm.options.icon.options.className || ''
-            // Strip 'fade-in ' prefix
-            const raceClass = cls.replace('fade-in ', '')
-            iconCounts[raceClass] = (iconCounts[raceClass] || 0) + 1
-          }
-          // Pick most frequent icon class
-          let topIcon = ''
-          let topCount = 0
-          for (const [cls, cnt] of Object.entries(iconCounts)) {
-            if (cnt > topCount) { topCount = cnt; topIcon = cls }
-          }
-          return L.divIcon({
-            html: '<div class="npc-cluster-badge">' + count + '</div>',
-            className: 'npc-cluster-icon ' + topIcon,
-            iconSize: [40, 40],
-            iconAnchor: [20, 20]
-          })
-        }
-      })
+      const npcLayer = L.layerGroup()
 
       // Deduplicate by coordinates — only one marker per unique location for accurate cluster counts
       const seenCoords = {}
@@ -1286,16 +1249,16 @@ export default {
           self.npcMarkerClick(markerData)
         })
 
-        cluster.addLayer(leafletMarker)
+        npcLayer.addLayer(leafletMarker)
         seenCoords[coordKey] = leafletMarker
         this._npcLeafletMarkers[npc.id] = leafletMarker
       }
 
-      this._npcClusterGroup = cluster
+      this._npcClusterGroup = npcLayer
       if (this.layers.npcs) {
-        map.addLayer(cluster)
+        map.addLayer(npcLayer)
       }
-      console.log("[EqZoneMap] Cluster layer added with", cluster.getLayers().length, "markers")
+      console.log("[EqZoneMap] NPC layer added with", npcLayer.getLayers().length, "markers")
       return true
     },
 
@@ -1555,26 +1518,8 @@ export default {
 }
 
 /* NPC Cluster styles — race icon with count badge */
-.npc-cluster-icon {
-  position: relative;
-  overflow: hidden !important;
-  cursor: pointer;
-  width: 40px !important;
-  height: 40px !important;
-}
 .npc-cluster-badge {
-  position: absolute;
-  top: -5px;
-  right: -10px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  background: rgba(20, 20, 20, 0.9);
-  border: 1.5px solid rgba(248, 150, 32, 0.8);
-  border-radius: 9px;
-  color: #f89620;
-  font-size: 11px;
-  font-weight: bold;
+  display: none; /* cluster removed — kept class to avoid console warnings */
   line-height: 18px;
   text-align: center;
   z-index: 10;
