@@ -464,6 +464,8 @@ export default {
             to: ROUTE.PLAYER_ANIMATION_VIEWER,
             icon: "ra ra-player-dodge mr-1",
           },
+          { title: "Emitter Viewer", to: ROUTE.EMITTER_VIEWER, icon: "ra ra-droplet-splash mr-1", isNew: true },
+          { title: "Spell Animations", to: ROUTE.SPELL_ANIMATION_VIEWER, icon: "ra ra-dragon mr-1", isNew: true },
         ]
       },
       spireApiNav: {
