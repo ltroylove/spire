@@ -36,6 +36,7 @@ func Init() error {
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              dsn,
 		Environment:      environment,
+		EnableTracing:    true,
 		TracesSampleRate: tracesSampleRate,
 		Debug:            debug,
 	})
