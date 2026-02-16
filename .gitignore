@@ -47,3 +47,4 @@ eqemu-server-installer-windows-amd64.exe
 EQSAGE-SPIRE-INTEGRATION.md
 PROGRESS.md
 frontend/.env.production
+.playwright-cli/
