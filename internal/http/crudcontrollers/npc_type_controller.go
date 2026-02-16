@@ -105,12 +105,10 @@ func (e *NpcTypeController) getNpcType(c echo.Context) error {
 	// grab first entry
 	err = query.First(&result).Error
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
-	}
-
-	// couldn't find entity
-	if result.ID == 0 {
-		return c.JSON(http.StatusNotFound, echo.Map{"error": "Cannot find entity"})
+		return c.JSON(
+			http.StatusNotFound,
+			echo.Map{"error": "Cannot find entity"},
+		)
 	}
 
 	return c.JSON(http.StatusOK, result)
