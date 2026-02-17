@@ -133,6 +133,11 @@ const router = new Router({
           meta: {title: "Spells Browser"},
         },
         {
+          path: ROUTE.AA_EDITOR,
+          component: () => import('./views/aa/AaEditor.vue'),
+          meta: {title: "AA Editor"},
+        },
+        {
           path: util.format(ROUTE.SPELL_EDIT, ":id"),
           component: () => import('./views/spells/SpellEditor.vue'),
           meta: {title: "Spell Edit"},
