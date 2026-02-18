@@ -507,7 +507,7 @@ export default {
 .aa-details-window {
   position: relative;
   height: 82vh;
-  overflow: hidden;
+  overflow: visible;
 }
 .aa-details-wrap {
   height: calc(82vh - 48px);
