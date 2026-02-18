@@ -50,7 +50,8 @@
       </div>
 
       <div class="col-8">
-        <eq-window :title="selectedTitle">
+        <eq-window :title="selectedTitle" class="aa-details-window">
+          <div ref="aaDetailsScroll" class="aa-details-wrap" @scroll="onAaDetailsScroll">
           <div v-if="!selected" class="text-muted p-3">Select an AA ability from the list or create a new one.</div>
 
           <div v-if="selected" class="minified-inputs">
@@ -148,6 +149,14 @@
           </div>
 
           <info-error-banner class="mt-3" :notification="notification" :error="error" @dismiss-error="error = ''" @dismiss-notification="notification = ''"/>
+          </div>
+          <transition name="fade">
+            <div v-if="showDetailsScrollHint" class="scroll-hint-overlay">
+              <div class="scroll-hint-arrow">
+                <i class="fa fa-chevron-down"></i>
+              </div>
+            </div>
+          </transition>
         </eq-window>
       </div>
     </div>
@@ -185,6 +194,7 @@ export default {
       selected: null,
       selectedOriginal: null,
       chainRanks: [],
+      deletedRanks: [],
       loading: false,
       search: "",
       enabledFilter: -1,
@@ -195,6 +205,7 @@ export default {
       notification: "",
       error: "",
       isNew: false,
+      showDetailsScrollHint: false,
     }
   },
   computed: {
@@ -203,7 +214,12 @@ export default {
       return `${this.isNew ? 'New' : 'Edit'} AA Ability (${this.selected.id || 'pending'})`
     },
   },
-  async mounted() { await this.refreshAll() },
+  async mounted() {
+    await this.refreshAll()
+    this.$nextTick(this.checkAaDetailsOverflow)
+    window.addEventListener("resize", this.checkAaDetailsOverflow)
+  },
+  beforeDestroy() { window.removeEventListener("resize", this.checkAaDetailsOverflow) },
   methods: {
     async refreshAll() {
       this.loading = true
@@ -222,6 +238,7 @@ export default {
         this.error = `Failed to load AA data: ${e}`
       } finally {
         this.loading = false
+        this.$nextTick(this.checkAaDetailsOverflow)
       }
     },
     applyFilters() {
@@ -238,6 +255,7 @@ export default {
       this.selected = JSON.parse(JSON.stringify(row))
       this.selectedOriginal = JSON.parse(JSON.stringify(row))
       this.dirty = false
+      this.deletedRanks = []
       this.notification = ""
       this.error = ""
       await this.loadChainByFirstRank()
@@ -250,6 +268,7 @@ export default {
       this.selectedOriginal = JSON.parse(JSON.stringify(this.selected))
       this.isNew = true
       this.chainRanks = []
+      this.deletedRanks = []
       this.dirty = true
       this.notification = "Initialized new AA ability draft"
     },
@@ -258,20 +277,25 @@ export default {
     },
     markDirty() {
       if (!this.selected || !this.selectedOriginal) return this.dirty = false
-      this.dirty = JSON.stringify(this.selected) !== JSON.stringify(this.selectedOriginal) || this.chainRanks.some(r => r._dirty || r._deleted)
+      this.dirty = JSON.stringify(this.selected) !== JSON.stringify(this.selectedOriginal) || this.chainRanks.some(r => r._dirty || r._deleted) || this.deletedRanks.length > 0
     },
     markRankDirty(rank) { rank._dirty = true; this.markDirty() },
     discardChanges() {
       if (!this.selectedOriginal) return
       this.selected = JSON.parse(JSON.stringify(this.selectedOriginal))
       this.chainRanks = []
+      this.deletedRanks = []
       this.dirty = false
       this.notification = "Changes discarded"
       this.loadChainByFirstRank()
     },
     async loadChainByFirstRank() {
       this.chainRanks = []
-      if (!this.selected || !Number(this.selected.first_rank_id || 0)) return
+      this.deletedRanks = []
+      if (!this.selected || !Number(this.selected.first_rank_id || 0)) {
+        this.$nextTick(this.checkAaDetailsOverflow)
+        return
+      }
       const idMap = new Map((this.allRanks || []).map(r => [Number(r.id), JSON.parse(JSON.stringify(r))]))
       const visited = new Set()
       let cursor = Number(this.selected.first_rank_id)
@@ -288,6 +312,7 @@ export default {
       if (this.chainRanks.length === 0) {
         this.notification = "No ranks found by first_rank_id. You can create one with Add Rank."
       }
+      this.$nextTick(this.checkAaDetailsOverflow)
     },
     async fetchRankEffects(rankId) {
       const builder = new SpireQueryBuilder().where('rank_id', '=', Number(rankId)).limit(1000)
@@ -315,6 +340,7 @@ export default {
       }
       this.chainRanks.push(newRank)
       this.markDirty()
+      this.$nextTick(this.checkAaDetailsOverflow)
     },
     removeRank(idx, rank) {
       if (!confirm(`Remove rank ${rank.id}?`)) return
@@ -327,14 +353,25 @@ export default {
         this.chainRanks.splice(idx, 1)
       } else {
         rank._deleted = true
+        this.deletedRanks.push({...rank})
         this.chainRanks.splice(idx, 1)
       }
       this.markDirty()
+      this.$nextTick(this.checkAaDetailsOverflow)
     },
-    addRankEffect(rank) { rank.effects.push({rank_id: rank.id, slot: rank.effects.length + 1, effect_id: 0, base_1: 0, base_2: 0, _isNew: true}); this.markRankDirty(rank) },
-    removeRankEffect(rank, idx) { rank.effects.splice(idx, 1); this.markRankDirty(rank) },
-    addRankPrereq(rank) { rank.prereqs.push({rank_id: rank.id, aa_id: 0, points: 0, _isNew: true}); this.markRankDirty(rank) },
-    removeRankPrereq(rank, idx) { rank.prereqs.splice(idx, 1); this.markRankDirty(rank) },
+    addRankEffect(rank) { rank.effects.push({rank_id: rank.id, slot: rank.effects.length + 1, effect_id: 0, base_1: 0, base_2: 0, _isNew: true}); this.markRankDirty(rank); this.$nextTick(this.checkAaDetailsOverflow) },
+    removeRankEffect(rank, idx) { rank.effects.splice(idx, 1); this.markRankDirty(rank); this.$nextTick(this.checkAaDetailsOverflow) },
+    addRankPrereq(rank) { rank.prereqs.push({rank_id: rank.id, aa_id: 0, points: 0, _isNew: true}); this.markRankDirty(rank); this.$nextTick(this.checkAaDetailsOverflow) },
+    removeRankPrereq(rank, idx) { rank.prereqs.splice(idx, 1); this.markRankDirty(rank); this.$nextTick(this.checkAaDetailsOverflow) },
+    checkAaDetailsOverflow() {
+      const el = this.$refs.aaDetailsScroll
+      if (!el) return
+      const shouldShow = el.scrollHeight > el.clientHeight && (el.scrollHeight - el.scrollTop - el.clientHeight) > 30
+      if (shouldShow !== this.showDetailsScrollHint) this.showDetailsScrollHint = shouldShow
+    },
+    onAaDetailsScroll() {
+      this.checkAaDetailsOverflow()
+    },
     validateBeforeSave() {
       if (!this.selected.name || !String(this.selected.name).trim()) return "Name is required"
       if (this.chainRanks.some(r => Number(r.id || 0) <= 0)) return "All rank IDs must be positive"
@@ -382,12 +419,25 @@ export default {
           await this.syncRankPrereqs(rank)
         }
 
+        for (const deletedRank of this.deletedRanks) {
+          const rankId = Number(deletedRank.id)
+          if (!rankId) continue
+          for (const oldFx of await this.fetchRankEffects(rankId)) {
+            await AaRankEffectClient.deleteAaRankEffect({id: rankId, query: {slot: Number(oldFx.slot)}})
+          }
+          for (const oldPr of await this.fetchRankPrereqs(rankId)) {
+            await AaRankPrereqClient.deleteAaRankPrereq({id: rankId, query: {aa_id: Number(oldPr.aa_id)}})
+          }
+          await AaRankClient.deleteAaRank({id: rankId})
+        }
+
         await this.refreshAll()
         const reselected = this.rows.find(r => Number(r.id) === Number(this.selected.id))
         if (reselected) {
           this.selected = JSON.parse(JSON.stringify(reselected))
           this.selectedOriginal = JSON.parse(JSON.stringify(reselected))
           await this.loadChainByFirstRank()
+          this.deletedRanks = []
           this.dirty = false
         }
         this.notification = `${this.notification} (chain, effects, prereqs saved)`
@@ -441,6 +491,7 @@ export default {
         this.selected = null
         this.selectedOriginal = null
         this.chainRanks = []
+        this.deletedRanks = []
         this.dirty = false
         await this.refreshAll()
       } catch (e) {
@@ -453,6 +504,47 @@ export default {
 
 <style scoped>
 .aa-list-wrap { max-height: 82vh; overflow: auto; }
+.aa-details-window {
+  position: relative;
+  height: 82vh;
+  overflow: hidden;
+}
+.aa-details-wrap {
+  height: calc(82vh - 48px);
+  max-height: calc(82vh - 48px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+.scroll-hint-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(transparent, rgba(15, 15, 25, 0.95));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  pointer-events: none;
+  z-index: 5;
+}
+.scroll-hint-arrow {
+  color: #e8c56d;
+  font-size: 18px;
+  animation: pulse-bounce 1.5s ease-in-out infinite;
+}
+@keyframes pulse-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(5px); opacity: 1; }
+}
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
 .min-search { min-width: 220px; }
 .aa-toolbar { background: rgba(14, 23, 38, 0.6); }
 .gap-2 { gap: 8px; }
