@@ -322,7 +322,7 @@
     <!-- Spell Selector Modal -->
     <b-modal ref="spellSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
       <eq-window title="Spell Selector">
-        <div class="p-2">
+        <div class="p-2 spell-selector-wrap">
           <spell-selector @input="onSpellSelected"/>
         </div>
       </eq-window>
@@ -1026,6 +1026,9 @@ export default {
   font-size: 12px;
   padding: 2px 6px;
 }
+
+/* Spell selector modal */
+.spell-selector-wrap { max-height: 80vh; overflow-y: auto; overflow-x: hidden; }
 
 /* Effect selector modal */
 .effect-selector-table-wrap { max-height: 55vh; overflow-y: auto; }
