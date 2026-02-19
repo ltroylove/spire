@@ -134,6 +134,7 @@ const router = new Router({
         },
         {
           path: ROUTE.AA_EDITOR,
+          alias: ['/aa/editor', '/aa-editor'],
           component: () => import('./views/aa/AaEditor.vue'),
           meta: {title: "AA Editor"},
         },

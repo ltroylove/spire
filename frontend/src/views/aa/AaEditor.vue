@@ -40,7 +40,7 @@
               <tr v-for="row in filteredRows" :key="row.id" :class="selected && selected.id === row.id ? 'pulsate-highlight-white' : ''" @click="selectRow(row)">
                 <td style="text-align:center">{{ row.id }}</td>
                 <td>{{ row.name || '(unnamed)' }}</td>
-                <td style="text-align:center">{{ row.type }}</td>
+                <td style="text-align:center">{{ aaTypeLabel(row.type) }}</td>
                 <td style="text-align:center"><span :class="row.enabled ? 'text-success' : 'text-muted'">{{ row.enabled ? 'Yes' : 'No' }}</span></td>
               </tr>
               </tbody>
@@ -63,15 +63,37 @@
 
             <div class="row mt-3">
               <div class="col-3">Category<b-form-input v-model.number="selected.category" @input="markDirty"/></div>
-              <div class="col-3">Type<b-form-input v-model.number="selected.type" @input="markDirty"/></div>
+              <div class="col-3">Type<b-form-select v-model.number="selected.type" :options="aaTypeOptions" @change="markDirty"/></div>
               <div class="col-3">Charges<b-form-input v-model.number="selected.charges" @input="markDirty"/></div>
               <div class="col-3">Status<b-form-input v-model.number="selected.status" @input="markDirty"/></div>
             </div>
 
             <div class="row mt-3">
-              <div class="col-4">Classes<b-form-input v-model.number="selected.classes" @input="markDirty"/></div>
-              <div class="col-4">Races<b-form-input v-model.number="selected.races" @input="markDirty"/></div>
-              <div class="col-4">Deities<b-form-input v-model.number="selected.deities" @input="markDirty"/></div>
+              <div class="col-4">
+                Classes
+                <div class="d-flex gap-2 align-items-center">
+                  <b-form-input v-model.number="selected.classes" @input="markDirty"/>
+                  <b-button size="sm" variant="outline-info" @click="openClassSelector">Select</b-button>
+                </div>
+              </div>
+              <div class="col-4">
+                Races
+                <div class="d-flex gap-2 align-items-center">
+                  <b-form-input v-model.number="selected.races" @input="markDirty"/>
+                  <b-button size="sm" variant="outline-info" @click="openRaceSelector">Select</b-button>
+                </div>
+              </div>
+              <div class="col-4">
+                Deities
+                <div class="d-flex gap-2 align-items-center">
+                  <b-form-input v-model.number="selected.deities" @input="markDirty"/>
+                  <b-button size="sm" variant="outline-info" @click="openDeitySelector">Select</b-button>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mt-3">
+              <div class="col-3">Drakkin Heritage<b-form-input v-model.number="selected.drakkin_heritage" @input="markDirty"/></div>
             </div>
 
             <div class="row mt-3">
@@ -102,12 +124,29 @@
                   </div>
                 </div>
                 <div class="row mt-2">
-                  <div class="col-2">Spell<b-form-input v-model.number="rank.spell" @input="markRankDirty(rank)"/></div>
-                  <div class="col-2">Spell Type<b-form-input v-model.number="rank.spell_type" @input="markRankDirty(rank)"/></div>
-                  <div class="col-2">Expansion<b-form-input v-model.number="rank.expansion" @input="markRankDirty(rank)"/></div>
+                  <div class="col-2">
+                    Spell
+                    <div class="d-flex gap-2 align-items-center">
+                      <b-form-input v-model.number="rank.spell" @input="markRankDirty(rank)"/>
+                      <b-button size="sm" variant="outline-info" @click="openSpellSelector(idx)">Select</b-button>
+                    </div>
+                  </div>
+                  <div class="col-2">Spell Type<b-form-select v-model.number="rank.spell_type" :options="spellTypeOptions" @change="markRankDirty(rank)"/></div>
+                  <div class="col-2">
+                    Expansion
+                    <div class="d-flex gap-2 align-items-center">
+                      <b-form-input v-model.number="rank.expansion" @input="markRankDirty(rank)"/>
+                      <b-button size="sm" variant="outline-info" @click="openExpansionSelector(idx)">Select</b-button>
+                    </div>
+                  </div>
                   <div class="col-2">Recast<b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/></div>
                   <div class="col-2">Title SID<b-form-input v-model.number="rank.title_sid" @input="markRankDirty(rank)"/></div>
                   <div class="col-2">Desc SID<b-form-input v-model.number="rank.desc_sid" @input="markRankDirty(rank)"/></div>
+                </div>
+
+                <div class="row mt-2">
+                  <div class="col-3">Lower Hotkey SID<b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)"/></div>
+                  <div class="col-3">Upper Hotkey SID<b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)"/></div>
                 </div>
 
                 <div class="mt-2 effects-box p-2">
@@ -118,7 +157,13 @@
                   <div v-if="!rank.effects || rank.effects.length === 0" class="text-muted small">No effects</div>
                   <div v-for="(fx, fxIdx) in rank.effects" :key="`${rank.id}-fx-${fxIdx}`" class="row mb-1">
                     <div class="col-2">Slot<b-form-input v-model.number="fx.slot" @input="markRankDirty(rank)"/></div>
-                    <div class="col-3">Effect ID<b-form-input v-model.number="fx.effect_id" @input="markRankDirty(rank)"/></div>
+                    <div class="col-3">
+                      Effect ID
+                      <div class="d-flex gap-2 align-items-center">
+                        <b-form-input v-model.number="fx.effect_id" @input="markRankDirty(rank)"/>
+                        <b-button size="sm" variant="outline-info" @click="openEffectSelector(rank, fx)">Select</b-button>
+                      </div>
+                    </div>
                     <div class="col-3">Base 1<b-form-input v-model.number="fx.base_1" @input="markRankDirty(rank)"/></div>
                     <div class="col-3">Base 2<b-form-input v-model.number="fx.base_2" @input="markRankDirty(rank)"/></div>
                     <div class="col-1 d-flex align-items-end"><b-button size="sm" variant="outline-danger" @click="removeRankEffect(rank, fxIdx)"><i class="fa fa-times"/></b-button></div>
@@ -160,6 +205,62 @@
         </eq-window>
       </div>
     </div>
+
+    <b-modal ref="classSelectorModal" size="xl" hide-footer hide-header body-class="p-2" content-class="bg-transparent border-0">
+      <eq-window title="Class Selector">
+        <class-bitmask-calculator :mask="selected ? selected.classes : 0" @input="onClassSelected" :show-text-top="false" :show-text-side="true" :imageSize="38" :centered-buttons="true"/>
+      </eq-window>
+    </b-modal>
+
+    <b-modal ref="raceSelectorModal" size="xl" hide-footer hide-header body-class="p-2" content-class="bg-transparent border-0">
+      <eq-window title="Race Selector">
+        <race-bitmask-calculator :mask="selected ? selected.races : 0" @input="onRaceSelected" :show-text-top="false" :imageSize="37" :centered-buttons="true"/>
+      </eq-window>
+    </b-modal>
+
+    <b-modal ref="deitySelectorModal" size="xl" hide-footer hide-header body-class="p-2" content-class="bg-transparent border-0">
+      <eq-window title="Deity Selector">
+        <deity-bitmask-calculator :mask="selected ? selected.deities : 0" @input="onDeitySelected" :show-names="false" :imageSize="37" :centered-buttons="true"/>
+      </eq-window>
+    </b-modal>
+
+    <b-modal ref="expansionSelectorModal" size="lg" hide-footer hide-header body-class="p-2" content-class="bg-transparent border-0">
+      <eq-window title="Expansion Selector">
+        <content-expansion-selector :value="selectedExpansionValue" @input="onExpansionSelected"/>
+      </eq-window>
+    </b-modal>
+
+    <b-modal ref="spellSelectorModal" size="xl" hide-footer hide-header body-class="p-2" content-class="bg-transparent border-0">
+      <eq-window title="Spell Selector" class="p-2">
+        <spell-selector @input="onSpellSelected"/>
+      </eq-window>
+    </b-modal>
+
+    <b-modal ref="effectSelectorModal" size="xl" hide-footer hide-header body-class="p-2" content-class="bg-transparent border-0">
+      <eq-window title="AA Effect ID Selector" class="p-2">
+        <div class="mb-2">
+          <b-form-input v-model="effectSearch" placeholder="Search effect id or description"/>
+        </div>
+        <div class="effect-selector-table-wrap">
+          <table class="eq-table eq-highlight-rows bordered w-100">
+            <thead>
+            <tr>
+              <th style="width: 90px; text-align: center;">ID</th>
+              <th>Effect</th>
+              <th style="width: 90px;"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="effect in filteredEffects" :key="effect.id">
+              <td style="text-align: center;">{{ effect.id }}</td>
+              <td>{{ effect.name }}</td>
+              <td><b-button size="sm" variant="outline-warning" @click="selectEffectId(effect.id)">Use</b-button></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </eq-window>
+    </b-modal>
   </content-area>
 </template>
 
@@ -168,12 +269,18 @@ import ContentArea from "@/components/layout/ContentArea";
 import EqWindow from "@/components/eq-ui/EQWindow";
 import InfoErrorBanner from "@/components/InfoErrorBanner";
 import LoaderComponent from "@/components/LoaderComponent";
+import ClassBitmaskCalculator from "@/components/tools/ClassBitmaskCalculator.vue";
+import RaceBitmaskCalculator from "@/components/tools/RaceBitmaskCalculator.vue";
+import DeityBitmaskCalculator from "@/components/tools/DeityCalculator.vue";
+import ContentExpansionSelector from "@/components/selectors/ContentExpansionSelector.vue";
+import SpellSelector from "@/components/selectors/SpellSelector.vue";
 import {SpireApi} from "@/app/api/spire-api";
 import {SpireQueryBuilder} from "@/app/api/spire-query-builder";
 import {AaAbilityApi} from "@/app/api/api/aa-ability-api";
 import {AaRankApi} from "@/app/api/api/aa-rank-api";
 import {AaRankEffectApi} from "@/app/api/api/aa-rank-effect-api";
 import {AaRankPrereqApi} from "@/app/api/api/aa-rank-prereq-api";
+import {DB_SPA, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
 
 const AaAbilityClient = new AaAbilityApi(...SpireApi.cfg())
 const AaRankClient = new AaRankApi(...SpireApi.cfg())
@@ -185,7 +292,17 @@ const DEFAULT_RANK = (id = 0) => ({ id, cost: 0, desc_sid: 0, expansion: 0, leve
 
 export default {
   name: "AaEditor",
-  components: {ContentArea, EqWindow, InfoErrorBanner, AppLoader: LoaderComponent},
+  components: {
+    ContentArea,
+    EqWindow,
+    InfoErrorBanner,
+    AppLoader: LoaderComponent,
+    ClassBitmaskCalculator,
+    RaceBitmaskCalculator,
+    DeityBitmaskCalculator,
+    ContentExpansionSelector,
+    SpellSelector,
+  },
   data() {
     return {
       rows: [],
@@ -201,6 +318,26 @@ export default {
       typeFilter: -1,
       enabledOptions: [{value: -1, text: "All"}, {value: 1, text: "Enabled"}, {value: 0, text: "Disabled"}],
       typeOptions: [{value: -1, text: "All"}],
+      aaTypeOptions: [
+        {value: 0, text: "Not Applicable"},
+        {value: 1, text: "General"},
+        {value: 2, text: "Archetype"},
+        {value: 3, text: "Class"},
+        {value: 4, text: "PoP Advanced"},
+        {value: 5, text: "PoP Abilities"},
+        {value: 6, text: "Gates of Discord"},
+        {value: 7, text: "Omens of War"},
+        {value: 8, text: "Veteran"},
+        {value: 9, text: "Dragons of Norrath"},
+        {value: 10, text: "Depths of Darkhollow"},
+      ],
+      spellTypeOptions: [{value: 0, text: "None"}],
+      effectEntries: [],
+      effectSearch: "",
+      selectedExpansionRankIndex: null,
+      selectedExpansionValue: 0,
+      selectedSpellRankIndex: null,
+      selectedEffectTarget: null,
       dirty: false,
       notification: "",
       error: "",
@@ -213,8 +350,20 @@ export default {
       if (!this.selected) return "AA Ability Details"
       return `${this.isNew ? 'New' : 'Edit'} AA Ability (${this.selected.id || 'pending'})`
     },
+    filteredEffects() {
+      const q = String(this.effectSearch || "").toLowerCase().trim()
+      return this.effectEntries
+        .filter(e => !q || String(e.id).includes(q) || String(e.name).toLowerCase().includes(q))
+        .slice(0, 500)
+    },
   },
   async mounted() {
+    this.spellTypeOptions = Object.entries(DB_SPELL_TYPES)
+      .map(([value, text]) => ({value: Number(value), text: `${value}) ${text}`}))
+      .sort((a, b) => a.value - b.value)
+    this.effectEntries = Object.entries(DB_SPA)
+      .map(([id, name]) => ({id: Number(id), name: String(name)}))
+      .sort((a, b) => a.id - b.id)
     await this.refreshAll()
     this.$nextTick(this.checkAaDetailsOverflow)
     window.addEventListener("resize", this.checkAaDetailsOverflow)
@@ -232,7 +381,7 @@ export default {
         ])
         this.rows = abilitiesResponse.data || []
         this.allRanks = (ranksResponse.data || []).sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
-        this.typeOptions = [{value: -1, text: "All"}].concat([...new Set(this.rows.map(r => Number(r.type || 0)))].sort((a, b) => a - b).map(v => ({value: v, text: String(v)})))
+        this.typeOptions = [{value: -1, text: "All"}].concat([...new Set(this.rows.map(r => Number(r.type || 0)))].sort((a, b) => a - b).map(v => ({value: v, text: this.aaTypeLabel(v)})))
         this.applyFilters()
       } catch (e) {
         this.error = `Failed to load AA data: ${e}`
@@ -241,6 +390,10 @@ export default {
         this.$nextTick(this.checkAaDetailsOverflow)
       }
     },
+    aaTypeLabel(typeValue) {
+      const match = this.aaTypeOptions.find(o => Number(o.value) === Number(typeValue))
+      return match ? match.text : String(typeValue)
+    },
     applyFilters() {
       const q = this.search.toLowerCase().trim()
       this.filteredRows = this.rows
@@ -248,6 +401,65 @@ export default {
         .filter(r => this.typeFilter === -1 || Number(r.type || 0) === this.typeFilter)
         .filter(r => !q || String(r.id).includes(q) || String(r.name || "").toLowerCase().includes(q))
         .sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
+    },
+    openClassSelector() { this.$refs.classSelectorModal.show() },
+    openRaceSelector() { this.$refs.raceSelectorModal.show() },
+    openDeitySelector() { this.$refs.deitySelectorModal.show() },
+    onClassSelected(mask) {
+      if (!this.selected) return
+      this.selected.classes = Number(mask || 0)
+      this.markDirty()
+    },
+    onRaceSelected(mask) {
+      if (!this.selected) return
+      this.selected.races = Number(mask || 0)
+      this.markDirty()
+    },
+    onDeitySelected(mask) {
+      if (!this.selected) return
+      this.selected.deities = Number(mask || 0)
+      this.markDirty()
+    },
+    openExpansionSelector(rankIndex) {
+      const rank = this.chainRanks[rankIndex]
+      if (!rank) return
+      this.selectedExpansionRankIndex = rankIndex
+      this.selectedExpansionValue = Number(rank.expansion || 0)
+      this.$refs.expansionSelectorModal.show()
+    },
+    onExpansionSelected(expansion) {
+      if (this.selectedExpansionRankIndex === null) return
+      const rank = this.chainRanks[this.selectedExpansionRankIndex]
+      if (!rank) return
+      rank.expansion = Number(expansion || 0)
+      this.markRankDirty(rank)
+      this.$refs.expansionSelectorModal.hide()
+      this.selectedExpansionRankIndex = null
+    },
+    openSpellSelector(rankIndex) {
+      this.selectedSpellRankIndex = rankIndex
+      this.$refs.spellSelectorModal.show()
+    },
+    onSpellSelected(event) {
+      if (this.selectedSpellRankIndex === null) return
+      const rank = this.chainRanks[this.selectedSpellRankIndex]
+      if (!rank) return
+      rank.spell = Number(event.spellId || 0)
+      this.markRankDirty(rank)
+      this.$refs.spellSelectorModal.hide()
+      this.selectedSpellRankIndex = null
+    },
+    openEffectSelector(rank, fx) {
+      this.selectedEffectTarget = {rank, fx}
+      this.effectSearch = ""
+      this.$refs.effectSelectorModal.show()
+    },
+    selectEffectId(effectId) {
+      if (!this.selectedEffectTarget) return
+      this.selectedEffectTarget.fx.effect_id = Number(effectId || 0)
+      this.markRankDirty(this.selectedEffectTarget.rank)
+      this.$refs.effectSelectorModal.hide()
+      this.selectedEffectTarget = null
     },
     async selectRow(row) {
       if (this.dirty && !confirm("Discard unsaved changes?")) return
@@ -551,4 +763,5 @@ export default {
 .aa-subpanel { background: rgba(11, 18, 31, 0.75); border: 1px solid rgba(83, 146, 255, 0.25); border-radius: 6px; }
 .rank-row { border: 1px solid rgba(174, 189, 213, 0.2); border-radius: 6px; background: rgba(18, 31, 53, 0.35); }
 .effects-box { border: 1px dashed rgba(174, 189, 213, 0.35); border-radius: 4px; }
+.effect-selector-table-wrap { max-height: 60vh; overflow-y: auto; }
 </style>
