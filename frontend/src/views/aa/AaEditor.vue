@@ -33,6 +33,27 @@
                 <small class="text-muted" v-if="filteredRows.length">{{ filteredRows.length }}</small>
               </div>
             </div>
+
+            <!-- Bitmask filters -->
+            <div class="mt-2 pt-2" style="border-top: 1px solid rgba(174,189,213,0.15)">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted">Class Filter</small>
+                <b-button v-if="classFilter" size="sm" variant="link" class="p-0" style="font-size: 11px; color: #8a9bb0" @click="classFilter = 0; applyFilters()">Clear</b-button>
+              </div>
+              <class-bitmask-calculator :mask="classFilter" :show-text-top="true" :centered-buttons="true" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
+
+              <div class="d-flex justify-content-between align-items-center mt-2 mb-1">
+                <small class="text-muted">Race Filter</small>
+                <b-button v-if="raceFilter" size="sm" variant="link" class="p-0" style="font-size: 11px; color: #8a9bb0" @click="raceFilter = 0; applyFilters()">Clear</b-button>
+              </div>
+              <race-bitmask-calculator :mask="raceFilter" :show-text-top="true" :centered-buttons="true" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
+
+              <div class="d-flex justify-content-between align-items-center mt-2 mb-1">
+                <small class="text-muted">Deity Filter</small>
+                <b-button v-if="deityFilter" size="sm" variant="link" class="p-0" style="font-size: 11px; color: #8a9bb0" @click="deityFilter = 0; applyFilters()">Clear</b-button>
+              </div>
+              <deity-bitmask-calculator :mask="deityFilter" :show-names="true" :centered-buttons="true" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
+            </div>
           </div>
 
           <div class="aa-list-wrap">
@@ -100,7 +121,13 @@
                     </div>
 
                     <div class="row mt-3">
-                      <div class="col-2">First Rank ID<b-form-input v-model.number="selected.first_rank_id" :class="{ 'pending-edit': isFieldEdited('first_rank_id') }" @input="trackFieldEdit('first_rank_id', originalValues.first_rank_id, selected.first_rank_id); onFirstRankIdChanged()"/></div>
+                      <div class="col-2">
+                        First Rank ID
+                        <div class="d-flex gap-1 align-items-center">
+                          <b-form-input v-model.number="selected.first_rank_id" :class="{ 'pending-edit': isFieldEdited('first_rank_id') }" @input="trackFieldEdit('first_rank_id', originalValues.first_rank_id, selected.first_rank_id); onFirstRankIdChanged()" style="flex: 1"/>
+                          <b-button size="sm" variant="outline-info" @click="findFirstRankId" title="Find First Rank ID"><i class="fa fa-search"/></b-button>
+                        </div>
+                      </div>
                       <div class="col-2">Charges<b-form-input v-model.number="selected.charges" :class="{ 'pending-edit': isFieldEdited('charges') }" @input="trackFieldEdit('charges', originalValues.charges, selected.charges); markDirty()"/></div>
                       <div class="col-2">Status<b-form-input v-model.number="selected.status" :class="{ 'pending-edit': isFieldEdited('status') }" @input="trackFieldEdit('status', originalValues.status, selected.status); markDirty()"/></div>
                       <div class="col-2">Drakkin Heritage<b-form-input v-model.number="selected.drakkin_heritage" :class="{ 'pending-edit': isFieldEdited('drakkin_heritage') }" @input="trackFieldEdit('drakkin_heritage', originalValues.drakkin_heritage, selected.drakkin_heritage); markDirty()"/></div>
@@ -488,6 +515,9 @@ export default {
       search: "",
       enabledFilter: -1,
       typeFilter: -1,
+      classFilter: 0,
+      raceFilter: 0,
+      deityFilter: 0,
       tabSelected: "Basic",
       enabledOptions: [{value: -1, text: "All"}, {value: 1, text: "Enabled"}, {value: 0, text: "Disabled"}],
       typeOptions: [{value: -1, text: "All"}],
@@ -640,6 +670,9 @@ export default {
         .filter(r => this.enabledFilter === -1 || Number(r.enabled || 0) === this.enabledFilter)
         .filter(r => this.typeFilter === -1 || Number(r.type || 0) === this.typeFilter)
         .filter(r => !q || String(r.id).includes(q) || String(r.name || "").toLowerCase().includes(q))
+        .filter(r => !this.classFilter || Number(r.classes || 0) === 0 || (Number(r.classes || 0) & this.classFilter) !== 0)
+        .filter(r => !this.raceFilter || Number(r.races || 0) === 0 || (Number(r.races || 0) & this.raceFilter) !== 0)
+        .filter(r => !this.deityFilter || Number(r.deities || 0) === 0 || (Number(r.deities || 0) & this.deityFilter) !== 0)
         .sort((a, b) => this.sortBy === 'name'
           ? String(a.name || '').localeCompare(String(b.name || ''))
           : Number(a.id || 0) - Number(b.id || 0))
@@ -792,6 +825,36 @@ export default {
     },
     onFirstRankIdChanged() {
       this.markDirty()
+    },
+    findFirstRankId() {
+      // Collect first_rank_ids already claimed by other abilities
+      const usedFirstRankIds = new Set(
+        this.rows
+          .filter(r => Number(r.id) !== Number(this.selected.id))
+          .map(r => Number(r.first_rank_id || 0))
+          .filter(id => id > 0)
+      )
+      // Candidates: ranks with prev_id=0 not already owned by another ability
+      const candidates = this.allRanks.filter(r =>
+        Number(r.prev_id || 0) === 0 && !usedFirstRankIds.has(Number(r.id))
+      )
+      const toast = (msg, variant) => this.$bvToast.toast(msg, {
+        title: 'First Rank Lookup',
+        variant,
+        solid: true,
+        toaster: 'b-toaster-bottom-right',
+      })
+      if (candidates.length === 0) {
+        toast('No unclaimed first rank found.', 'danger')
+      } else if (candidates.length === 1) {
+        const foundId = candidates[0].id
+        this.selected.first_rank_id = foundId
+        this.trackFieldEdit('first_rank_id', this.originalValues.first_rank_id, foundId)
+        this.markDirty()
+        toast(`Found first rank ID: ${foundId}`, 'success')
+      } else {
+        toast(`${candidates.length} unclaimed first ranks found — please enter ID manually.`, 'warning')
+      }
     },
     markDirty() {
       if (!this.selected || !this.selectedOriginal) return this.dirty = false
