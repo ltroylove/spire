@@ -15,16 +15,16 @@
               :title="deity.name"
               @click="selectDeity(deityId)"
               :style="(isDeitySelected(deityId) ? 'border-radius: 3px;' : 'border-radius: 3px; opacity: .6')"
-              :class="'hover-highlight-inner item-' + deity.icon + ' ' + (isDeitySelected(deityId) ? 'highlight-selected-inner' : '')"
+              :class="'hover-highlight-inner item-' + deity.icon + (iconSmall ? '-sm' : '') + ' ' + (isDeitySelected(deityId) ? 'highlight-selected-inner' : '')"
             />
           </div>
         </div>
       </div>
 
-      <!-- Select All / None -->
+      <!-- Select All / None - inline (original behaviour) -->
       <div
         class="d-inline-block"
-        v-if="displayAllNone"
+        v-if="displayAllNone && !allNoneBelow"
         :style="'line-height: 25px; bottom: ' + (centeredButtons ? -10 : 15) + 'px; position: relative;'"
       >
         <div
@@ -35,6 +35,27 @@
         </div>
         <div
           :class="'text-center mt-2 btn-xs eq-button-fancy ' + (parseInt(mask) === 0 ? 'eq-button-fancy-highlighted' : '')"
+          @click="selectNone()"
+        >
+          None
+        </div>
+      </div>
+
+      <!-- Select All / None - below icons -->
+      <div
+        v-if="displayAllNone && allNoneBelow"
+        style="display: block; width: 100%; text-align: right; margin-top: 6px;"
+      >
+        <div
+          class="d-inline-block mr-1"
+          :class="'btn-xs eq-button-fancy ' + (parseInt(mask) >= 131071 ? 'eq-button-fancy-highlighted' : '')"
+          @click="selectAll()"
+        >
+          All
+        </div>
+        <div
+          class="d-inline-block"
+          :class="'btn-xs eq-button-fancy ' + (parseInt(mask) === 0 ? 'eq-button-fancy-highlighted' : '')"
           @click="selectNone()"
         >
           None
@@ -75,6 +96,16 @@ export default {
       type: Boolean,
       required: false,
       default: true
+    },
+    iconSmall: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    allNoneBelow: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
   },
   watch: {
