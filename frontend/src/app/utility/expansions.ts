@@ -6,6 +6,7 @@ import {EXPANSION_NAMES}       from "@/app/constants/eq-expansions";
 // eq-asset-preview asset pack. Files are served from /assets/expansion-icons/.
 const EXPANSION_ICON_LOCAL_OVERRIDES: Record<number, string> = {
   3: '/assets/expansion-icons/luclinicon.gif', // upstream asset has wrong image
+  8: '/assets/expansion-icons/omensicon.gif',  // missing from upstream asset cache
 }
 
 export default class Expansions {
