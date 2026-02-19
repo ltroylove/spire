@@ -34,25 +34,34 @@
               </div>
             </div>
 
-            <!-- Bitmask filters -->
+            <!-- Bitmask filters - compact single row -->
             <div class="mt-2 pt-2" style="border-top: 1px solid rgba(174,189,213,0.15)">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <small class="text-muted">Class Filter</small>
-                <b-button v-if="classFilter" size="sm" variant="link" class="p-0" style="font-size: 11px; color: #8a9bb0" @click="classFilter = 0; applyFilters()">Clear</b-button>
+              <div class="d-flex align-items-center">
+                <div class="filter-compact-wrap flex-grow-1">
+                  <div class="filter-compact-row">
+                    <span class="filter-compact-label">CLS</span>
+                    <div class="filter-compact-icons">
+                      <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" :icon-small="true" @input="classFilter = Number($event || 0); applyFilters()"/>
+                    </div>
+                  </div>
+                  <div class="filter-compact-row">
+                    <span class="filter-compact-label">RCE</span>
+                    <div class="filter-compact-icons">
+                      <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" :icon-small="true" @input="raceFilter = Number($event || 0); applyFilters()"/>
+                    </div>
+                  </div>
+                  <div class="filter-compact-row">
+                    <span class="filter-compact-label">DEI</span>
+                    <div class="filter-compact-icons">
+                      <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" :icon-small="true" @input="deityFilter = Number($event || 0); applyFilters()"/>
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex flex-column ml-2 filter-all-none-btns">
+                  <b-button size="sm" variant="outline-secondary" class="mb-1" @click="setAllFilters">All</b-button>
+                  <b-button size="sm" variant="outline-secondary" @click="clearAllFilters">None</b-button>
+                </div>
               </div>
-              <class-bitmask-calculator :mask="classFilter" :show-text-top="true" :centered-buttons="true" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
-
-              <div class="d-flex justify-content-between align-items-center mt-2 mb-1">
-                <small class="text-muted">Race Filter</small>
-                <b-button v-if="raceFilter" size="sm" variant="link" class="p-0" style="font-size: 11px; color: #8a9bb0" @click="raceFilter = 0; applyFilters()">Clear</b-button>
-              </div>
-              <race-bitmask-calculator :mask="raceFilter" :show-text-top="true" :centered-buttons="true" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
-
-              <div class="d-flex justify-content-between align-items-center mt-2 mb-1">
-                <small class="text-muted">Deity Filter</small>
-                <b-button v-if="deityFilter" size="sm" variant="link" class="p-0" style="font-size: 11px; color: #8a9bb0" @click="deityFilter = 0; applyFilters()">Clear</b-button>
-              </div>
-              <deity-bitmask-calculator :mask="deityFilter" :show-names="true" :centered-buttons="true" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
             </div>
           </div>
 
@@ -166,6 +175,7 @@
                         :mask="selected.classes"
                         :show-text-top="true"
                         :centered-buttons="true"
+                        :all-none-below="true"
                         @input="selected.classes = Number($event || 0); markDirty()"
                       />
                     </div>
@@ -180,6 +190,7 @@
                         :mask="selected.races"
                         :show-text-top="true"
                         :centered-buttons="true"
+                        :all-none-below="true"
                         @input="selected.races = Number($event || 0); markDirty()"
                       />
                     </div>
@@ -194,6 +205,7 @@
                         :mask="selected.deities"
                         :show-names="true"
                         :centered-buttons="true"
+                        :all-none-below="true"
                         @input="selected.deities = Number($event || 0); markDirty()"
                       />
                     </div>
@@ -678,6 +690,19 @@ export default {
           : Number(a.id || 0) - Number(b.id || 0))
     },
 
+    setAllFilters() {
+      this.classFilter = 65535
+      this.raceFilter = 65535
+      this.deityFilter = 131071
+      this.applyFilters()
+    },
+    clearAllFilters() {
+      this.classFilter = 0
+      this.raceFilter = 0
+      this.deityFilter = 0
+      this.applyFilters()
+    },
+
     // ---- Rank collapse toggle ----
     toggleAllRanks() {
       const expand = !this.allRanksExpanded
@@ -834,8 +859,11 @@ export default {
           .map(r => Number(r.first_rank_id || 0))
           .filter(id => id > 0)
       )
+      // Include locally-created (unsaved) chain ranks in the search pool
+      const localNewRanks = this.chainRanks.filter(r => r._isNew)
+      const rankPool = [...this.allRanks, ...localNewRanks]
       // Candidates: ranks with prev_id=0 not already owned by another ability
-      const candidates = this.allRanks.filter(r =>
+      const candidates = rankPool.filter(r =>
         Number(r.prev_id || 0) === 0 && !usedFirstRankIds.has(Number(r.id))
       )
       const toast = (msg, variant) => this.$bvToast.toast(msg, {
@@ -845,7 +873,16 @@ export default {
         toaster: 'b-toaster-bottom-right',
       })
       if (candidates.length === 0) {
-        toast('No unclaimed first rank found.', 'danger')
+        // Fall back to the first rank in the currently-loaded chain (handles data-inconsistency cases)
+        if (this.chainRanks.length > 0) {
+          const foundId = Number(this.chainRanks[0].id)
+          this.selected.first_rank_id = foundId
+          this.trackFieldEdit('first_rank_id', this.originalValues.first_rank_id, foundId)
+          this.markDirty()
+          toast(`Found first rank ID: ${foundId}`, 'success')
+        } else {
+          toast('No unclaimed first rank found.', 'danger')
+        }
       } else if (candidates.length === 1) {
         const foundId = candidates[0].id
         this.selected.first_rank_id = foundId
@@ -1306,6 +1343,14 @@ export default {
   background: rgba(255, 165, 0, 0.15);
   border-radius: 4px;
 }
+
+/* Compact bitmask filter row */
+.filter-compact-wrap { min-width: 0; overflow: hidden; }
+.filter-compact-row { display: flex; align-items: center; margin-bottom: 2px; overflow: hidden; }
+.filter-compact-label { font-size: 9px; color: #8a9bb0; width: 22px; flex-shrink: 0; line-height: 1; text-transform: uppercase; letter-spacing: 0.3px; }
+.filter-compact-icons { overflow: hidden; flex: 1; min-width: 0; }
+.filter-all-none-btns { flex-shrink: 0; }
+.filter-all-none-btns .btn { font-size: 11px; padding: 2px 8px; line-height: 1.4; }
 
 /* Save button glow when dirty */
 .save-btn-glow {
