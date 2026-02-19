@@ -1355,7 +1355,8 @@ export default {
 .filter-compact-row { display: flex; align-items: stretch; margin-bottom: 2px; overflow: hidden; }
 .filter-compact-label { font-size: 9px; color: #8a9bb0; width: 22px; flex-shrink: 0; line-height: 1; text-transform: uppercase; letter-spacing: 0.3px; display: flex; align-items: center; }
 .filter-compact-icons { overflow: hidden; flex: 1; min-width: 0; display: flex; align-items: center; }
-.filter-compact-icons .row { margin-left: 0; margin-right: 0; }
+.filter-compact-icons .row { margin: 0; width: 100%; flex-wrap: nowrap; overflow: hidden; }
+.filter-compact-icons .row > div { flex-shrink: 0; overflow: hidden; }
 .filter-row-btns { display: flex; flex-direction: column; flex-shrink: 0; gap: 1px; margin-left: 3px; }
 .filter-row-btns .btn { font-size: 9px; padding: 0 6px; line-height: 1; flex: 1; }
 
