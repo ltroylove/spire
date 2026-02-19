@@ -282,7 +282,12 @@
                             </thead>
                             <tbody>
                             <tr v-for="(pr, prIdx) in rank.prereqs" :key="`${rank.id}-pr-${prIdx}`">
-                              <td><b-form-input size="sm" v-model.number="pr.aa_id" @input="markRankDirty(rank)"/></td>
+                              <td>
+                                <div class="d-flex gap-1 align-items-center">
+                                  <b-form-input size="sm" v-model.number="pr.aa_id" @input="markRankDirty(rank)" style="flex: 1"/>
+                                  <b-button size="sm" variant="outline-info" @click="openAaSelector(rank, pr)" title="Select AA"><i class="fa fa-search"/></b-button>
+                                </div>
+                              </td>
                               <td><small class="text-muted">{{ aaName(pr.aa_id) }}</small></td>
                               <td><b-form-input size="sm" v-model.number="pr.points" @input="markRankDirty(rank)"/></td>
                               <td><b-button size="sm" variant="outline-danger" @click="removeRankPrereq(rank, prIdx)" title="Remove prereq"><i class="fa fa-times"/></b-button></td>
@@ -355,6 +360,41 @@
           </div>
           <div class="d-flex justify-content-end mt-2">
             <b-button size="sm" variant="outline-secondary" @click="$refs.effectSelectorModal.hide()">Cancel</b-button>
+          </div>
+        </div>
+      </eq-window>
+    </b-modal>
+
+    <!-- AA Selector Modal -->
+    <b-modal ref="aaSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
+      <eq-window title="AA Ability Selector">
+        <div class="p-3">
+          <div class="d-flex gap-2 mb-2">
+            <b-form-input v-model="aaSearch" placeholder="Search by AA name or id..." autofocus class="flex-grow-1"/>
+            <b-form-select v-model.number="aaSearchType" :options="aaTypeOptionsWithAll" style="width: 180px;"/>
+          </div>
+          <div class="aa-selector-table-wrap">
+            <table class="eq-table eq-highlight-rows bordered w-100">
+              <thead class="eq-table-floating-header">
+              <tr>
+                <th style="width: 80px; text-align: center;">ID</th>
+                <th>Name</th>
+                <th style="width: 100px; text-align: center;">Type</th>
+                <th style="width: 80px;"></th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr v-for="aa in filteredAaForSelector" :key="aa.id" @dblclick="selectAaId(aa.id)">
+                <td style="text-align: center;">{{ aa.id }}</td>
+                <td>{{ aa.name || '(unnamed)' }}</td>
+                <td style="text-align: center;"><small>{{ aaTypeLabel(aa.type) }}</small></td>
+                <td style="text-align: center;"><b-button size="sm" variant="outline-warning" @click="selectAaId(aa.id)">Use</b-button></td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-end mt-2">
+            <b-button size="sm" variant="outline-secondary" @click="$refs.aaSelectorModal.hide()">Cancel</b-button>
           </div>
         </div>
       </eq-window>
@@ -445,6 +485,9 @@ export default {
       selectedExpansionValue: 0,
       selectedSpellRankIndex: null,
       selectedEffectTarget: null,
+      aaSearch: "",
+      aaSearchType: -1,
+      selectedAaTarget: null,
       dirty: false,
       notification: "",
       error: "",
@@ -466,6 +509,17 @@ export default {
     },
     totalRankCost() {
       return this.chainRanks.reduce((sum, r) => sum + Number(r.cost || 0), 0)
+    },
+    aaTypeOptionsWithAll() {
+      return [{value: -1, text: "All Types"}].concat(this.aaTypeOptions)
+    },
+    filteredAaForSelector() {
+      const q = String(this.aaSearch || "").toLowerCase().trim()
+      return this.rows
+        .filter(r => this.aaSearchType === -1 || Number(r.type || 0) === this.aaSearchType)
+        .filter(r => !q || String(r.id).includes(q) || String(r.name || "").toLowerCase().includes(q))
+        .sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
+        .slice(0, 500)
     },
   },
   async mounted() {
@@ -590,6 +644,21 @@ export default {
       this.markRankDirty(this.selectedEffectTarget.rank)
       this.$refs.effectSelectorModal.hide()
       this.selectedEffectTarget = null
+    },
+
+    // ---- AA selector ----
+    openAaSelector(rank, prereq) {
+      this.selectedAaTarget = {rank, prereq}
+      this.aaSearch = ""
+      this.aaSearchType = -1
+      this.$refs.aaSelectorModal.show()
+    },
+    selectAaId(aaId) {
+      if (!this.selectedAaTarget) return
+      this.selectedAaTarget.prereq.aa_id = Number(aaId || 0)
+      this.markRankDirty(this.selectedAaTarget.rank)
+      this.$refs.aaSelectorModal.hide()
+      this.selectedAaTarget = null
     },
 
     // ---- Selection / CRUD ----
@@ -1040,4 +1109,7 @@ export default {
 
 /* Effect selector modal */
 .effect-selector-table-wrap { max-height: 55vh; overflow-y: auto; }
+
+/* AA selector modal */
+.aa-selector-table-wrap { max-height: 55vh; overflow-y: auto; }
 </style>
