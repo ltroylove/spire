@@ -1,8 +1,8 @@
 <template>
   <div class="row" v-if="mask >= 0">
     <div
-      class="ml-1 mr-3 d-inline-block"
-      :style="(centeredButtons ? 'width: 100%; margin: 0;' : '')"
+      class="ml-1 mr-3 d-inline-block text-center"
+      :style="(centeredButtons ? 'width: 100%' : '')"
     >
       <div v-for="(gClass, classId) in classes" class="d-inline-block">
         <div class="text-center p-0 mr-1 col-lg-12 col-sm-12">
