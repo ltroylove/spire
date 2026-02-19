@@ -184,6 +184,7 @@
                         </span>
                       </div>
                       <div class="btn-group">
+                        <b-button v-if="chainRanks.length" size="sm" variant="outline-secondary" @click="toggleAllRanks"><i class="fa mr-1" :class="allRanksExpanded ? 'fa-compress' : 'fa-expand'"/>{{ allRanksExpanded ? 'Collapse All' : 'Expand All' }}</b-button>
                         <b-button size="sm" variant="outline-info" @click="loadChainByFirstRank"><i class="fa fa-refresh mr-1"/>Reload Chain</b-button>
                         <b-button size="sm" variant="outline-success" @click="appendRank"><i class="fa fa-plus mr-1"/>Add Rank</b-button>
                       </div>
@@ -196,18 +197,25 @@
 
                     <div v-for="(rank, idx) in chainRanks" :key="rank.id || idx" class="rank-card mb-3" :class="{ 'rank-card-new': rank._isNew }">
                       <!-- Rank header -->
-                      <div class="rank-card-header d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                          <span class="rank-badge">Rank {{ idx + 1 }}</span>
-                          <span class="text-muted small">ID: {{ rank.id }}</span>
-                          <span v-if="rank._isNew" class="badge-new">NEW</span>
-                          <span v-if="rank._dirty && !rank._isNew" class="badge-modified">MODIFIED</span>
+                      <div class="rank-card-header d-flex align-items-center justify-content-between rank-card-header-clickable" @click.self="rank._expanded = !rank._expanded; $forceUpdate()">
+                        <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 0;" @click="rank._expanded = !rank._expanded; $forceUpdate()">
+                          <i class="fa mr-1" :class="rank._expanded ? 'fa-chevron-down' : 'fa-chevron-right'" style="width:12px; opacity:.6; flex-shrink:0;"/>
+                          <span class="rank-badge" style="flex-shrink:0;">Rank {{ idx + 1 }}</span>
+                          <span class="text-muted small" style="flex-shrink:0;">ID: {{ rank.id }}</span>
+                          <span v-if="rank._isNew" class="badge-new" style="flex-shrink:0;">NEW</span>
+                          <span v-if="rank._dirty && !rank._isNew" class="badge-modified" style="flex-shrink:0;">MODIFIED</span>
+                          <span v-if="!rank._expanded" class="rank-collapsed-summary ml-2">
+                            <span v-if="rank.cost" class="mr-3"><span class="summary-label">Cost</span> {{ rank.cost }}</span>
+                            <span v-if="rank.spell" class="mr-3"><span class="summary-label">Spell</span> {{ rank.spell }}</span>
+                            <span v-if="rank.effects && rank.effects.length" class="mr-3"><span class="summary-label">Effects</span> {{ rank.effects.length }}</span>
+                            <span v-if="rank.prereqs && rank.prereqs.length"><span class="summary-label">Prereqs</span> {{ rank.prereqs.length }}</span>
+                          </span>
                         </div>
-                        <b-button size="sm" variant="outline-danger" @click="removeRank(idx, rank)" title="Remove this rank"><i class="fa fa-trash"/></b-button>
+                        <b-button size="sm" variant="outline-danger" @click.stop="removeRank(idx, rank)" title="Remove this rank" style="flex-shrink:0;"><i class="fa fa-trash"/></b-button>
                       </div>
 
                       <!-- Rank body -->
-                      <div class="rank-card-body">
+                      <div v-if="rank._expanded" class="rank-card-body">
                         <div class="row">
                           <div class="col-2">Cost<b-form-input v-model.number="rank.cost" @input="markRankDirty(rank)"/></div>
                           <div class="col-2">Level Req<b-form-input v-model.number="rank.level_req" @input="markRankDirty(rank)"/></div>
@@ -448,7 +456,7 @@ const AaRankEffectClient = new AaRankEffectApi(...SpireApi.cfg())
 const AaRankPrereqClient = new AaRankPrereqApi(...SpireApi.cfg())
 
 const DEFAULT_ABILITY = () => ({ id: 0, name: "", first_rank_id: 0, category: 0, charges: 0, classes: 0, deities: 0, drakkin_heritage: 0, enabled: 1, grant_only: 0, auto_grant_enabled: 0, races: 0, reset_on_death: 0, status: 0, type: 0 })
-const DEFAULT_RANK = (id = 0) => ({ id, cost: 0, desc_sid: 0, expansion: 0, level_req: 0, lower_hotkey_sid: 0, next_id: 0, prev_id: 0, recast_time: 0, spell: 0, spell_type: 0, title_sid: 0, upper_hotkey_sid: 0, effects: [], prereqs: [], _dirty: true, _isNew: true })
+const DEFAULT_RANK = (id = 0) => ({ id, cost: 0, desc_sid: 0, expansion: 0, level_req: 0, lower_hotkey_sid: 0, next_id: 0, prev_id: 0, recast_time: 0, spell: 0, spell_type: 0, title_sid: 0, upper_hotkey_sid: 0, effects: [], prereqs: [], _dirty: true, _isNew: true, _expanded: true })
 
 export default {
   name: "AaEditor",
@@ -546,6 +554,9 @@ export default {
     aaTypeOptionsWithAll() {
       return [{value: -1, text: "All Types"}].concat(this.aaTypeOptions)
     },
+    allRanksExpanded() {
+      return this.chainRanks.length > 0 && this.chainRanks.every(r => r._expanded)
+    },
     filteredAaForSelector() {
       const q = String(this.aaSearch || "").toLowerCase().trim()
       return this.rows
@@ -632,6 +643,13 @@ export default {
         .sort((a, b) => this.sortBy === 'name'
           ? String(a.name || '').localeCompare(String(b.name || ''))
           : Number(a.id || 0) - Number(b.id || 0))
+    },
+
+    // ---- Rank collapse toggle ----
+    toggleAllRanks() {
+      const expand = !this.allRanksExpanded
+      this.chainRanks.forEach(r => { r._expanded = expand })
+      this.$forceUpdate()
     },
 
     // ---- Pending changes / field tracking ----
@@ -809,6 +827,7 @@ export default {
         rank.effects = await this.fetchRankEffects(cursor)
         rank.prereqs = await this.fetchRankPrereqs(cursor)
         rank.spell_type = Number(rank.spell_type || 0)
+        rank._expanded = false
         rank._dirty = false
         rank._isNew = false
         this.chainRanks.push(rank)
@@ -1148,6 +1167,31 @@ export default {
 }
 .rank-card-body {
   padding: 10px;
+}
+
+/* Clickable rank header */
+.rank-card-header-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+.rank-card-header-clickable:hover {
+  background: rgba(20, 33, 56, 0.8);
+}
+
+/* Collapsed rank summary */
+.rank-collapsed-summary {
+  font-size: 12px;
+  color: #8a9bb0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-collapsed-summary .summary-label {
+  color: #5a6a7a;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-right: 2px;
 }
 
 /* Rank sub-sections (effects, prereqs) */
