@@ -113,54 +113,44 @@
                   <div class="p-2">
                     <!-- Classes -->
                     <div class="aa-restriction-section mb-3">
-                      <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div>
-                          <strong>Classes</strong>
-                          <span class="text-muted ml-2">Bitmask: {{ selected.classes }}</span>
-                        </div>
-                        <b-button size="sm" variant="outline-info" @click="openClassSelector"><i class="fa fa-pencil mr-1"/>Edit</b-button>
+                      <div class="mb-2">
+                        <strong>Classes</strong>
+                        <span class="text-muted ml-2">Bitmask: {{ selected.classes }}</span>
                       </div>
-                      <div class="aa-restriction-display">
-                        <span v-if="selected.classes === 0" class="text-muted">None (all classes)</span>
-                        <span v-else-if="selected.classes >= 65535" class="text-success">All Classes</span>
-                        <span v-else class="aa-tag-list">
-                          <span v-for="cls in resolveClasses(selected.classes)" :key="cls" class="aa-tag">{{ cls }}</span>
-                        </span>
-                      </div>
+                      <class-bitmask-calculator
+                        :mask="selected.classes"
+                        :show-text-top="true"
+                        :centered-buttons="true"
+                        @input="selected.classes = Number($event || 0); markDirty()"
+                      />
                     </div>
 
                     <!-- Races -->
                     <div class="aa-restriction-section mb-3">
-                      <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div>
-                          <strong>Races</strong>
-                          <span class="text-muted ml-2">Bitmask: {{ selected.races }}</span>
-                        </div>
-                        <b-button size="sm" variant="outline-info" @click="openRaceSelector"><i class="fa fa-pencil mr-1"/>Edit</b-button>
+                      <div class="mb-2">
+                        <strong>Races</strong>
+                        <span class="text-muted ml-2">Bitmask: {{ selected.races }}</span>
                       </div>
-                      <div class="aa-restriction-display">
-                        <span v-if="selected.races === 0" class="text-muted">None (all races)</span>
-                        <span v-else class="aa-tag-list">
-                          <span v-for="r in resolveRaces(selected.races)" :key="r" class="aa-tag">{{ r }}</span>
-                        </span>
-                      </div>
+                      <race-bitmask-calculator
+                        :mask="selected.races"
+                        :show-text-top="true"
+                        :centered-buttons="true"
+                        @input="selected.races = Number($event || 0); markDirty()"
+                      />
                     </div>
 
                     <!-- Deities -->
                     <div class="aa-restriction-section">
-                      <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div>
-                          <strong>Deities</strong>
-                          <span class="text-muted ml-2">Bitmask: {{ selected.deities }}</span>
-                        </div>
-                        <b-button size="sm" variant="outline-info" @click="openDeitySelector"><i class="fa fa-pencil mr-1"/>Edit</b-button>
+                      <div class="mb-2">
+                        <strong>Deities</strong>
+                        <span class="text-muted ml-2">Bitmask: {{ selected.deities }}</span>
                       </div>
-                      <div class="aa-restriction-display">
-                        <span v-if="selected.deities === 0" class="text-muted">None (all deities)</span>
-                        <span v-else class="aa-tag-list">
-                          <span v-for="d in resolveDeities(selected.deities)" :key="d" class="aa-tag">{{ d }}</span>
-                        </span>
-                      </div>
+                      <deity-bitmask-calculator
+                        :mask="selected.deities"
+                        :show-names="true"
+                        :centered-buttons="true"
+                        @input="selected.deities = Number($event || 0); markDirty()"
+                      />
                     </div>
                   </div>
                 </eq-tab>
@@ -320,45 +310,6 @@
       </div>
     </div>
 
-    <!-- Class Selector Modal -->
-    <b-modal ref="classSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
-      <eq-window title="Class Selector">
-        <div class="p-3">
-          <class-bitmask-calculator :mask="classSelectorMask" @input="onClassMaskChanged" :show-text-top="true" :centered-buttons="true"/>
-          <div class="d-flex justify-content-end mt-3 gap-2">
-            <b-button size="sm" variant="outline-secondary" @click="$refs.classSelectorModal.hide()">Cancel</b-button>
-            <b-button size="sm" variant="outline-warning" @click="applyClassSelection"><i class="fa fa-check mr-1"/>Apply</b-button>
-          </div>
-        </div>
-      </eq-window>
-    </b-modal>
-
-    <!-- Race Selector Modal -->
-    <b-modal ref="raceSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
-      <eq-window title="Race Selector">
-        <div class="p-3">
-          <race-bitmask-calculator :mask="raceSelectorMask" @input="onRaceMaskChanged" :show-text-top="true" :centered-buttons="true"/>
-          <div class="d-flex justify-content-end mt-3 gap-2">
-            <b-button size="sm" variant="outline-secondary" @click="$refs.raceSelectorModal.hide()">Cancel</b-button>
-            <b-button size="sm" variant="outline-warning" @click="applyRaceSelection"><i class="fa fa-check mr-1"/>Apply</b-button>
-          </div>
-        </div>
-      </eq-window>
-    </b-modal>
-
-    <!-- Deity Selector Modal -->
-    <b-modal ref="deitySelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
-      <eq-window title="Deity Selector">
-        <div class="p-3">
-          <deity-bitmask-calculator :mask="deitySelectorMask" @input="onDeityMaskChanged" :show-names="true" :centered-buttons="true"/>
-          <div class="d-flex justify-content-end mt-3 gap-2">
-            <b-button size="sm" variant="outline-secondary" @click="$refs.deitySelectorModal.hide()">Cancel</b-button>
-            <b-button size="sm" variant="outline-warning" @click="applyDeitySelection"><i class="fa fa-check mr-1"/>Apply</b-button>
-          </div>
-        </div>
-      </eq-window>
-    </b-modal>
-
     <!-- Expansion Selector Modal -->
     <b-modal ref="expansionSelectorModal" size="lg" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
       <eq-window title="Expansion Selector">
@@ -431,9 +382,6 @@ import {AaRankApi} from "@/app/api/api/aa-rank-api";
 import {AaRankEffectApi} from "@/app/api/api/aa-rank-effect-api";
 import {AaRankPrereqApi} from "@/app/api/api/aa-rank-prereq-api";
 import {DB_SPA, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
-import {DB_PLAYER_CLASSES_ALL} from "@/app/constants/eq-classes-constants";
-import {DB_PLAYER_RACES} from "@/app/constants/eq-races-constants";
-import {DB_DIETIES_FULL} from "@/app/constants/eq-deities-constants";
 import {EXPANSION_NAMES} from "@/app/constants/eq-expansions";
 
 const AaAbilityClient = new AaAbilityApi(...SpireApi.cfg())
@@ -497,13 +445,6 @@ export default {
       selectedExpansionValue: 0,
       selectedSpellRankIndex: null,
       selectedEffectTarget: null,
-      // Bitmask selector staging values
-      classSelectorMask: 0,
-      raceSelectorMask: 0,
-      deitySelectorMask: 0,
-      pendingClassMask: 0,
-      pendingRaceMask: 0,
-      pendingDeityMask: 0,
       dirty: false,
       notification: "",
       error: "",
@@ -586,35 +527,6 @@ export default {
       if (id === -1) return 'All'
       return EXPANSION_NAMES[id] || `Expansion ${id}`
     },
-    resolveClasses(mask) {
-      const result = []
-      const m = Number(mask || 0)
-      if (!m) return result
-      for (const [, cls] of Object.entries(DB_PLAYER_CLASSES_ALL)) {
-        if (m & cls.mask) result.push(cls.short)
-      }
-      return result
-    },
-    resolveRaces(mask) {
-      const result = []
-      const m = Number(mask || 0)
-      if (!m) return result
-      for (const [, race] of Object.entries(DB_PLAYER_RACES)) {
-        if (race.mask && (m & Number(race.mask))) result.push(race.short)
-      }
-      if (result.length === 0) result.push(`Mask: ${m}`)
-      return result
-    },
-    resolveDeities(mask) {
-      const result = []
-      const m = Number(mask || 0)
-      if (!m) return result
-      for (const [, deity] of Object.entries(DB_DIETIES_FULL)) {
-        if (deity.mask && (m & deity.mask)) result.push(deity.short || deity.name)
-      }
-      return result
-    },
-
     // ---- Filters ----
     applyFilters() {
       const q = this.search.toLowerCase().trim()
@@ -623,50 +535,6 @@ export default {
         .filter(r => this.typeFilter === -1 || Number(r.type || 0) === this.typeFilter)
         .filter(r => !q || String(r.id).includes(q) || String(r.name || "").toLowerCase().includes(q))
         .sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
-    },
-
-    // ---- Bitmask selectors with Apply/Cancel ----
-    openClassSelector() {
-      this.classSelectorMask = Number(this.selected.classes || 0)
-      this.pendingClassMask = this.classSelectorMask
-      this.$refs.classSelectorModal.show()
-    },
-    onClassMaskChanged(mask) {
-      this.pendingClassMask = Number(mask || 0)
-    },
-    applyClassSelection() {
-      if (!this.selected) return
-      this.selected.classes = this.pendingClassMask
-      this.markDirty()
-      this.$refs.classSelectorModal.hide()
-    },
-    openRaceSelector() {
-      this.raceSelectorMask = Number(this.selected.races || 0)
-      this.pendingRaceMask = this.raceSelectorMask
-      this.$refs.raceSelectorModal.show()
-    },
-    onRaceMaskChanged(mask) {
-      this.pendingRaceMask = Number(mask || 0)
-    },
-    applyRaceSelection() {
-      if (!this.selected) return
-      this.selected.races = this.pendingRaceMask
-      this.markDirty()
-      this.$refs.raceSelectorModal.hide()
-    },
-    openDeitySelector() {
-      this.deitySelectorMask = Number(this.selected.deities || 0)
-      this.pendingDeityMask = this.deitySelectorMask
-      this.$refs.deitySelectorModal.show()
-    },
-    onDeityMaskChanged(mask) {
-      this.pendingDeityMask = Number(mask || 0)
-    },
-    applyDeitySelection() {
-      if (!this.selected) return
-      this.selected.deities = this.pendingDeityMask
-      this.markDirty()
-      this.$refs.deitySelectorModal.hide()
     },
 
     // ---- Expansion selector ----
@@ -1085,24 +953,6 @@ export default {
   border-radius: 6px;
   padding: 12px;
 }
-.aa-restriction-display {
-  min-height: 28px;
-}
-.aa-tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.aa-tag {
-  display: inline-block;
-  background: rgba(138, 163, 255, 0.15);
-  border: 1px solid rgba(138, 163, 255, 0.3);
-  border-radius: 3px;
-  padding: 1px 8px;
-  font-size: 12px;
-  color: #a8bcff;
-}
-
 /* Rank cards */
 .rank-card {
   border: 1px solid rgba(174, 189, 213, 0.2);
