@@ -24,7 +24,14 @@
                 <b-button size="sm" variant="outline-warning" @click="refreshAll"><i class="fa fa-refresh mr-1"/>Refresh</b-button>
                 <b-button size="sm" variant="outline-success" @click="newAbility"><i class="fa fa-plus mr-1"/>New</b-button>
               </div>
-              <small class="text-muted" v-if="filteredRows.length">{{ filteredRows.length }} abilities</small>
+              <div class="d-flex align-items-center gap-2">
+                <small class="text-muted">Sort:</small>
+                <div class="btn-group btn-group-sm">
+                  <b-button size="sm" :variant="sortBy === 'id' ? 'secondary' : 'outline-secondary'" @click="sortBy = 'id'; applyFilters()">ID</b-button>
+                  <b-button size="sm" :variant="sortBy === 'name' ? 'secondary' : 'outline-secondary'" @click="sortBy = 'name'; applyFilters()">Name</b-button>
+                </div>
+                <small class="text-muted" v-if="filteredRows.length">{{ filteredRows.length }}</small>
+              </div>
             </div>
           </div>
 
@@ -65,7 +72,7 @@
             <div v-if="selected" class="minified-inputs p-2">
               <!-- Action bar -->
               <div class="aa-action-bar d-flex align-items-center gap-2 flex-wrap mb-3 p-2">
-                <b-button size="sm" variant="outline-warning" @click="saveSelected" :disabled="!dirty"><i class="fa fa-save mr-1"/>Save All</b-button>
+                <b-button size="sm" variant="outline-warning" @click="saveSelected" :disabled="!dirty" :class="{ 'save-btn-glow': dirty }"><i class="fa fa-save mr-1"/>Save All</b-button>
                 <b-button size="sm" variant="outline-secondary" @click="discardChanges" :disabled="!dirty"><i class="fa fa-undo mr-1"/>Discard</b-button>
                 <b-button size="sm" variant="outline-info" @click="cloneAbility" v-if="!isNew"><i class="fa fa-clone mr-1"/>Clone</b-button>
                 <b-button size="sm" variant="outline-danger" @click="deleteSelected" :disabled="isNew"><i class="fa fa-trash mr-1"/>Delete</b-button>
@@ -81,28 +88,39 @@
                   <div class="p-2">
                     <div class="row">
                       <div class="col-2">ID<b-form-input v-model.number="selected.id" disabled/></div>
-                      <div class="col-5">Name<b-form-input v-model="selected.name" @input="markDirty" placeholder="AA ability name"/></div>
-                      <div class="col-2">Category<b-form-input v-model.number="selected.category" @input="markDirty"/></div>
+                      <div class="col-5">Name<b-form-input v-model="selected.name" placeholder="AA ability name" :class="{ 'pending-edit': isFieldEdited('name') }" @input="trackFieldEdit('name', originalValues.name, selected.name); markDirty()"/></div>
+                      <div class="col-2">
+                        Category
+                        <b-form-select v-model.number="selected.category" :options="aaCategoryOptions" :class="{ 'pending-edit': isFieldEdited('category') }" @change="trackFieldEdit('category', originalValues.category, selected.category); markDirty()"/>
+                      </div>
                       <div class="col-3">
                         Type
-                        <b-form-select v-model.number="selected.type" :options="aaTypeOptions" @change="markDirty"/>
+                        <b-form-select v-model.number="selected.type" :options="aaTypeOptions" :class="{ 'pending-edit': isFieldEdited('type') }" @change="trackFieldEdit('type', originalValues.type, selected.type); markDirty()"/>
                       </div>
                     </div>
 
                     <div class="row mt-3">
-                      <div class="col-2">First Rank ID<b-form-input v-model.number="selected.first_rank_id" @input="onFirstRankIdChanged"/></div>
-                      <div class="col-2">Charges<b-form-input v-model.number="selected.charges" @input="markDirty"/></div>
-                      <div class="col-2">Status<b-form-input v-model.number="selected.status" @input="markDirty"/></div>
-                      <div class="col-2">Drakkin Heritage<b-form-input v-model.number="selected.drakkin_heritage" @input="markDirty"/></div>
+                      <div class="col-2">First Rank ID<b-form-input v-model.number="selected.first_rank_id" :class="{ 'pending-edit': isFieldEdited('first_rank_id') }" @input="trackFieldEdit('first_rank_id', originalValues.first_rank_id, selected.first_rank_id); onFirstRankIdChanged()"/></div>
+                      <div class="col-2">Charges<b-form-input v-model.number="selected.charges" :class="{ 'pending-edit': isFieldEdited('charges') }" @input="trackFieldEdit('charges', originalValues.charges, selected.charges); markDirty()"/></div>
+                      <div class="col-2">Status<b-form-input v-model.number="selected.status" :class="{ 'pending-edit': isFieldEdited('status') }" @input="trackFieldEdit('status', originalValues.status, selected.status); markDirty()"/></div>
+                      <div class="col-2">Drakkin Heritage<b-form-input v-model.number="selected.drakkin_heritage" :class="{ 'pending-edit': isFieldEdited('drakkin_heritage') }" @input="trackFieldEdit('drakkin_heritage', originalValues.drakkin_heritage, selected.drakkin_heritage); markDirty()"/></div>
                     </div>
 
                     <!-- Flags -->
                     <div class="aa-flags-row mt-3 p-2">
                       <div class="d-flex gap-4 flex-wrap">
-                        <eq-checkbox :value="selected.enabled" label-right="Enabled" @input="v => { selected.enabled = v; markDirty() }"/>
-                        <eq-checkbox :value="selected.grant_only" label-right="Grant Only" @input="v => { selected.grant_only = v; markDirty() }"/>
-                        <eq-checkbox :value="selected.auto_grant_enabled" label-right="Auto Grant" @input="v => { selected.auto_grant_enabled = v; markDirty() }"/>
-                        <eq-checkbox :value="selected.reset_on_death" label-right="Reset On Death" @input="v => { selected.reset_on_death = v; markDirty() }"/>
+                        <div :class="{ 'pending-edit-check': isFieldEdited('enabled') }" style="border-radius: 4px; padding: 2px 6px;">
+                          <eq-checkbox :value="selected.enabled" label-right="Enabled" @input="v => { selected.enabled = v; trackFieldEdit('enabled', originalValues.enabled, v); markDirty() }"/>
+                        </div>
+                        <div :class="{ 'pending-edit-check': isFieldEdited('grant_only') }" style="border-radius: 4px; padding: 2px 6px;">
+                          <eq-checkbox :value="selected.grant_only" label-right="Grant Only" @input="v => { selected.grant_only = v; trackFieldEdit('grant_only', originalValues.grant_only, v); markDirty() }"/>
+                        </div>
+                        <div :class="{ 'pending-edit-check': isFieldEdited('auto_grant_enabled') }" style="border-radius: 4px; padding: 2px 6px;">
+                          <eq-checkbox :value="selected.auto_grant_enabled" label-right="Auto Grant" @input="v => { selected.auto_grant_enabled = v; trackFieldEdit('auto_grant_enabled', originalValues.auto_grant_enabled, v); markDirty() }"/>
+                        </div>
+                        <div :class="{ 'pending-edit-check': isFieldEdited('reset_on_death') }" style="border-radius: 4px; padding: 2px 6px;">
+                          <eq-checkbox :value="selected.reset_on_death" label-right="Reset On Death" @input="v => { selected.reset_on_death = v; trackFieldEdit('reset_on_death', originalValues.reset_on_death, v); markDirty() }"/>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -113,54 +131,44 @@
                   <div class="p-2">
                     <!-- Classes -->
                     <div class="aa-restriction-section mb-3">
-                      <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div>
-                          <strong>Classes</strong>
-                          <span class="text-muted ml-2">Bitmask: {{ selected.classes }}</span>
-                        </div>
-                        <b-button size="sm" variant="outline-info" @click="openClassSelector"><i class="fa fa-pencil mr-1"/>Edit</b-button>
+                      <div class="mb-2">
+                        <strong>Classes</strong>
+                        <span class="text-muted ml-2">Bitmask: {{ selected.classes }}</span>
                       </div>
-                      <div class="aa-restriction-display">
-                        <span v-if="selected.classes === 0" class="text-muted">None (all classes)</span>
-                        <span v-else-if="selected.classes >= 65535" class="text-success">All Classes</span>
-                        <span v-else class="aa-tag-list">
-                          <span v-for="cls in resolveClasses(selected.classes)" :key="cls" class="aa-tag">{{ cls }}</span>
-                        </span>
-                      </div>
+                      <class-bitmask-calculator
+                        :mask="selected.classes"
+                        :show-text-top="true"
+                        :centered-buttons="true"
+                        @input="selected.classes = Number($event || 0); markDirty()"
+                      />
                     </div>
 
                     <!-- Races -->
                     <div class="aa-restriction-section mb-3">
-                      <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div>
-                          <strong>Races</strong>
-                          <span class="text-muted ml-2">Bitmask: {{ selected.races }}</span>
-                        </div>
-                        <b-button size="sm" variant="outline-info" @click="openRaceSelector"><i class="fa fa-pencil mr-1"/>Edit</b-button>
+                      <div class="mb-2">
+                        <strong>Races</strong>
+                        <span class="text-muted ml-2">Bitmask: {{ selected.races }}</span>
                       </div>
-                      <div class="aa-restriction-display">
-                        <span v-if="selected.races === 0" class="text-muted">None (all races)</span>
-                        <span v-else class="aa-tag-list">
-                          <span v-for="r in resolveRaces(selected.races)" :key="r" class="aa-tag">{{ r }}</span>
-                        </span>
-                      </div>
+                      <race-bitmask-calculator
+                        :mask="selected.races"
+                        :show-text-top="true"
+                        :centered-buttons="true"
+                        @input="selected.races = Number($event || 0); markDirty()"
+                      />
                     </div>
 
                     <!-- Deities -->
                     <div class="aa-restriction-section">
-                      <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div>
-                          <strong>Deities</strong>
-                          <span class="text-muted ml-2">Bitmask: {{ selected.deities }}</span>
-                        </div>
-                        <b-button size="sm" variant="outline-info" @click="openDeitySelector"><i class="fa fa-pencil mr-1"/>Edit</b-button>
+                      <div class="mb-2">
+                        <strong>Deities</strong>
+                        <span class="text-muted ml-2">Bitmask: {{ selected.deities }}</span>
                       </div>
-                      <div class="aa-restriction-display">
-                        <span v-if="selected.deities === 0" class="text-muted">None (all deities)</span>
-                        <span v-else class="aa-tag-list">
-                          <span v-for="d in resolveDeities(selected.deities)" :key="d" class="aa-tag">{{ d }}</span>
-                        </span>
-                      </div>
+                      <deity-bitmask-calculator
+                        :mask="selected.deities"
+                        :show-names="true"
+                        :centered-buttons="true"
+                        @input="selected.deities = Number($event || 0); markDirty()"
+                      />
                     </div>
                   </div>
                 </eq-tab>
@@ -176,6 +184,7 @@
                         </span>
                       </div>
                       <div class="btn-group">
+                        <b-button v-if="chainRanks.length" size="sm" variant="outline-secondary" @click="toggleAllRanks"><i class="fa mr-1" :class="allRanksExpanded ? 'fa-compress' : 'fa-expand'"/>{{ allRanksExpanded ? 'Collapse All' : 'Expand All' }}</b-button>
                         <b-button size="sm" variant="outline-info" @click="loadChainByFirstRank"><i class="fa fa-refresh mr-1"/>Reload Chain</b-button>
                         <b-button size="sm" variant="outline-success" @click="appendRank"><i class="fa fa-plus mr-1"/>Add Rank</b-button>
                       </div>
@@ -188,18 +197,25 @@
 
                     <div v-for="(rank, idx) in chainRanks" :key="rank.id || idx" class="rank-card mb-3" :class="{ 'rank-card-new': rank._isNew }">
                       <!-- Rank header -->
-                      <div class="rank-card-header d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                          <span class="rank-badge">Rank {{ idx + 1 }}</span>
-                          <span class="text-muted small">ID: {{ rank.id }}</span>
-                          <span v-if="rank._isNew" class="badge-new">NEW</span>
-                          <span v-if="rank._dirty && !rank._isNew" class="badge-modified">MODIFIED</span>
+                      <div class="rank-card-header d-flex align-items-center justify-content-between rank-card-header-clickable" @click.self="rank._expanded = !rank._expanded; $forceUpdate()">
+                        <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 0;" @click="rank._expanded = !rank._expanded; $forceUpdate()">
+                          <i class="fa mr-1" :class="rank._expanded ? 'fa-chevron-down' : 'fa-chevron-right'" style="width:12px; opacity:.6; flex-shrink:0;"/>
+                          <span class="rank-badge" style="flex-shrink:0;">Rank {{ idx + 1 }}</span>
+                          <span class="text-muted small" style="flex-shrink:0;">ID: {{ rank.id }}</span>
+                          <span v-if="rank._isNew" class="badge-new" style="flex-shrink:0;">NEW</span>
+                          <span v-if="rank._dirty && !rank._isNew" class="badge-modified" style="flex-shrink:0;">MODIFIED</span>
+                          <span v-if="!rank._expanded" class="rank-collapsed-summary ml-2">
+                            <span v-if="rank.cost" class="mr-3"><span class="summary-label">Cost</span> {{ rank.cost }}</span>
+                            <span v-if="rank.spell" class="mr-3"><span class="summary-label">Spell</span> {{ rank.spell }}</span>
+                            <span v-if="rank.effects && rank.effects.length" class="mr-3"><span class="summary-label">Effects</span> {{ rank.effects.length }}</span>
+                            <span v-if="rank.prereqs && rank.prereqs.length"><span class="summary-label">Prereqs</span> {{ rank.prereqs.length }}</span>
+                          </span>
                         </div>
-                        <b-button size="sm" variant="outline-danger" @click="removeRank(idx, rank)" title="Remove this rank"><i class="fa fa-trash"/></b-button>
+                        <b-button size="sm" variant="outline-danger" @click.stop="removeRank(idx, rank)" title="Remove this rank" style="flex-shrink:0;"><i class="fa fa-trash"/></b-button>
                       </div>
 
                       <!-- Rank body -->
-                      <div class="rank-card-body">
+                      <div v-if="rank._expanded" class="rank-card-body">
                         <div class="row">
                           <div class="col-2">Cost<b-form-input v-model.number="rank.cost" @input="markRankDirty(rank)"/></div>
                           <div class="col-2">Level Req<b-form-input v-model.number="rank.level_req" @input="markRankDirty(rank)"/></div>
@@ -251,8 +267,8 @@
                               <th style="width: 60px; text-align: center;">Slot</th>
                               <th style="width: 140px;">Effect ID</th>
                               <th>Effect Name</th>
-                              <th style="width: 100px;">Base 1</th>
-                              <th style="width: 100px;">Base 2</th>
+                              <th style="width: 100px;" title="Base 1 (Base) — hover the input for effect-specific description">Base 1</th>
+                              <th style="width: 100px;" title="Base 2 (Max) — hover the input for effect-specific description">Base 2</th>
                               <th style="width: 36px;"></th>
                             </tr>
                             </thead>
@@ -266,8 +282,8 @@
                                 </div>
                               </td>
                               <td><small class="text-muted">{{ spaName(fx.effect_id) }}</small></td>
-                              <td><b-form-input size="sm" v-model.number="fx.base_1" @input="markRankDirty(rank)"/></td>
-                              <td><b-form-input size="sm" v-model.number="fx.base_2" @input="markRankDirty(rank)"/></td>
+                              <td><b-form-input size="sm" v-model.number="fx.base_1" @input="markRankDirty(rank)" :title="spaBase1Tooltip(fx.effect_id)"/></td>
+                              <td><b-form-input size="sm" v-model.number="fx.base_2" @input="markRankDirty(rank)" :title="spaBase2Tooltip(fx.effect_id)"/></td>
                               <td><b-button size="sm" variant="outline-danger" @click="removeRankEffect(rank, fxIdx)" title="Remove effect"><i class="fa fa-times"/></b-button></td>
                             </tr>
                             </tbody>
@@ -292,7 +308,12 @@
                             </thead>
                             <tbody>
                             <tr v-for="(pr, prIdx) in rank.prereqs" :key="`${rank.id}-pr-${prIdx}`">
-                              <td><b-form-input size="sm" v-model.number="pr.aa_id" @input="markRankDirty(rank)"/></td>
+                              <td>
+                                <div class="d-flex gap-1 align-items-center">
+                                  <b-form-input size="sm" v-model.number="pr.aa_id" @input="markRankDirty(rank)" style="flex: 1"/>
+                                  <b-button size="sm" variant="outline-info" @click="openAaSelector(rank, pr)" title="Select AA"><i class="fa fa-search"/></b-button>
+                                </div>
+                              </td>
                               <td><small class="text-muted">{{ aaName(pr.aa_id) }}</small></td>
                               <td><b-form-input size="sm" v-model.number="pr.points" @input="markRankDirty(rank)"/></td>
                               <td><b-button size="sm" variant="outline-danger" @click="removeRankPrereq(rank, prIdx)" title="Remove prereq"><i class="fa fa-times"/></b-button></td>
@@ -320,45 +341,6 @@
       </div>
     </div>
 
-    <!-- Class Selector Modal -->
-    <b-modal ref="classSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
-      <eq-window title="Class Selector">
-        <div class="p-3">
-          <class-bitmask-calculator :mask="classSelectorMask" @input="onClassMaskChanged" :show-text-top="true" :centered-buttons="true"/>
-          <div class="d-flex justify-content-end mt-3 gap-2">
-            <b-button size="sm" variant="outline-secondary" @click="$refs.classSelectorModal.hide()">Cancel</b-button>
-            <b-button size="sm" variant="outline-warning" @click="applyClassSelection"><i class="fa fa-check mr-1"/>Apply</b-button>
-          </div>
-        </div>
-      </eq-window>
-    </b-modal>
-
-    <!-- Race Selector Modal -->
-    <b-modal ref="raceSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
-      <eq-window title="Race Selector">
-        <div class="p-3">
-          <race-bitmask-calculator :mask="raceSelectorMask" @input="onRaceMaskChanged" :show-text-top="true" :centered-buttons="true"/>
-          <div class="d-flex justify-content-end mt-3 gap-2">
-            <b-button size="sm" variant="outline-secondary" @click="$refs.raceSelectorModal.hide()">Cancel</b-button>
-            <b-button size="sm" variant="outline-warning" @click="applyRaceSelection"><i class="fa fa-check mr-1"/>Apply</b-button>
-          </div>
-        </div>
-      </eq-window>
-    </b-modal>
-
-    <!-- Deity Selector Modal -->
-    <b-modal ref="deitySelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
-      <eq-window title="Deity Selector">
-        <div class="p-3">
-          <deity-bitmask-calculator :mask="deitySelectorMask" @input="onDeityMaskChanged" :show-names="true" :centered-buttons="true"/>
-          <div class="d-flex justify-content-end mt-3 gap-2">
-            <b-button size="sm" variant="outline-secondary" @click="$refs.deitySelectorModal.hide()">Cancel</b-button>
-            <b-button size="sm" variant="outline-warning" @click="applyDeitySelection"><i class="fa fa-check mr-1"/>Apply</b-button>
-          </div>
-        </div>
-      </eq-window>
-    </b-modal>
-
     <!-- Expansion Selector Modal -->
     <b-modal ref="expansionSelectorModal" size="lg" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
       <eq-window title="Expansion Selector">
@@ -371,7 +353,7 @@
     <!-- Spell Selector Modal -->
     <b-modal ref="spellSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
       <eq-window title="Spell Selector">
-        <div class="p-2">
+        <div class="p-2 spell-selector-wrap">
           <spell-selector @input="onSpellSelected"/>
         </div>
       </eq-window>
@@ -408,6 +390,41 @@
         </div>
       </eq-window>
     </b-modal>
+
+    <!-- AA Selector Modal -->
+    <b-modal ref="aaSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
+      <eq-window title="AA Ability Selector">
+        <div class="p-3">
+          <div class="d-flex gap-2 mb-2">
+            <b-form-input v-model="aaSearch" placeholder="Search by AA name or id..." autofocus class="flex-grow-1"/>
+            <b-form-select v-model.number="aaSearchType" :options="aaTypeOptionsWithAll" style="width: 180px;"/>
+          </div>
+          <div class="aa-selector-table-wrap">
+            <table class="eq-table eq-highlight-rows bordered w-100">
+              <thead class="eq-table-floating-header">
+              <tr>
+                <th style="width: 80px; text-align: center;">ID</th>
+                <th>Name</th>
+                <th style="width: 100px; text-align: center;">Type</th>
+                <th style="width: 80px;"></th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr v-for="aa in filteredAaForSelector" :key="aa.id" @dblclick="selectAaId(aa.id)">
+                <td style="text-align: center;">{{ aa.id }}</td>
+                <td>{{ aa.name || '(unnamed)' }}</td>
+                <td style="text-align: center;"><small>{{ aaTypeLabel(aa.type) }}</small></td>
+                <td style="text-align: center;"><b-button size="sm" variant="outline-warning" @click="selectAaId(aa.id)">Use</b-button></td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-end mt-2">
+            <b-button size="sm" variant="outline-secondary" @click="$refs.aaSelectorModal.hide()">Cancel</b-button>
+          </div>
+        </div>
+      </eq-window>
+    </b-modal>
   </content-area>
 </template>
 
@@ -430,10 +447,7 @@ import {AaAbilityApi} from "@/app/api/api/aa-ability-api";
 import {AaRankApi} from "@/app/api/api/aa-rank-api";
 import {AaRankEffectApi} from "@/app/api/api/aa-rank-effect-api";
 import {AaRankPrereqApi} from "@/app/api/api/aa-rank-prereq-api";
-import {DB_SPA, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
-import {DB_PLAYER_CLASSES_ALL} from "@/app/constants/eq-classes-constants";
-import {DB_PLAYER_RACES} from "@/app/constants/eq-races-constants";
-import {DB_DIETIES_FULL} from "@/app/constants/eq-deities-constants";
+import {DB_SPA, DB_SPA_DESCRIPTIONS, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
 import {EXPANSION_NAMES} from "@/app/constants/eq-expansions";
 
 const AaAbilityClient = new AaAbilityApi(...SpireApi.cfg())
@@ -442,7 +456,7 @@ const AaRankEffectClient = new AaRankEffectApi(...SpireApi.cfg())
 const AaRankPrereqClient = new AaRankPrereqApi(...SpireApi.cfg())
 
 const DEFAULT_ABILITY = () => ({ id: 0, name: "", first_rank_id: 0, category: 0, charges: 0, classes: 0, deities: 0, drakkin_heritage: 0, enabled: 1, grant_only: 0, auto_grant_enabled: 0, races: 0, reset_on_death: 0, status: 0, type: 0 })
-const DEFAULT_RANK = (id = 0) => ({ id, cost: 0, desc_sid: 0, expansion: 0, level_req: 0, lower_hotkey_sid: 0, next_id: 0, prev_id: 0, recast_time: 0, spell: 0, spell_type: 0, title_sid: 0, upper_hotkey_sid: 0, effects: [], prereqs: [], _dirty: true, _isNew: true })
+const DEFAULT_RANK = (id = 0) => ({ id, cost: 0, desc_sid: 0, expansion: 0, level_req: 0, lower_hotkey_sid: 0, next_id: 0, prev_id: 0, recast_time: 0, spell: 0, spell_type: 0, title_sid: 0, upper_hotkey_sid: 0, effects: [], prereqs: [], _dirty: true, _isNew: true, _expanded: true })
 
 export default {
   name: "AaEditor",
@@ -497,18 +511,29 @@ export default {
       selectedExpansionValue: 0,
       selectedSpellRankIndex: null,
       selectedEffectTarget: null,
-      // Bitmask selector staging values
-      classSelectorMask: 0,
-      raceSelectorMask: 0,
-      deitySelectorMask: 0,
-      pendingClassMask: 0,
-      pendingRaceMask: 0,
-      pendingDeityMask: 0,
+      aaSearch: "",
+      aaSearchType: -1,
+      selectedAaTarget: null,
       dirty: false,
       notification: "",
       error: "",
       isNew: false,
       showDetailsScrollHint: false,
+      sortBy: 'id',
+      originalValues: {},
+      pendingChanges: { editedFields: {} },
+      aaCategoryOptions: [
+        {value: -1, text: "None"},
+        {value: 1, text: "Passive"},
+        {value: 2, text: "Progression"},
+        {value: 3, text: "Shroud Passive"},
+        {value: 4, text: "Shroud Active"},
+        {value: 5, text: "Veteran Reward"},
+        {value: 6, text: "Tradeskill"},
+        {value: 7, text: "Expendable"},
+        {value: 8, text: "Racial Innate"},
+        {value: 9, text: "Everquest"},
+      ],
     }
   },
   computed: {
@@ -525,6 +550,20 @@ export default {
     },
     totalRankCost() {
       return this.chainRanks.reduce((sum, r) => sum + Number(r.cost || 0), 0)
+    },
+    aaTypeOptionsWithAll() {
+      return [{value: -1, text: "All Types"}].concat(this.aaTypeOptions)
+    },
+    allRanksExpanded() {
+      return this.chainRanks.length > 0 && this.chainRanks.every(r => r._expanded)
+    },
+    filteredAaForSelector() {
+      const q = String(this.aaSearch || "").toLowerCase().trim()
+      return this.rows
+        .filter(r => this.aaSearchType === -1 || Number(r.type || 0) === this.aaSearchType)
+        .filter(r => !q || String(r.id).includes(q) || String(r.name || "").toLowerCase().includes(q))
+        .sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
+        .slice(0, 500)
     },
   },
   async mounted() {
@@ -570,6 +609,14 @@ export default {
       const id = Number(effectId || 0)
       return DB_SPA[id] || `Unknown (${id})`
     },
+    spaBase1Tooltip(effectId) {
+      const desc = DB_SPA_DESCRIPTIONS[Number(effectId || 0)]
+      return desc ? `Base 1 (Base): ${desc.base}` : 'Base 1 (Base)'
+    },
+    spaBase2Tooltip(effectId) {
+      const desc = DB_SPA_DESCRIPTIONS[Number(effectId || 0)]
+      return desc ? `Base 2 (Max): ${desc.max}` : 'Base 2 (Max)'
+    },
     aaName(aaId) {
       const id = Number(aaId || 0)
       if (!id) return ''
@@ -586,35 +633,6 @@ export default {
       if (id === -1) return 'All'
       return EXPANSION_NAMES[id] || `Expansion ${id}`
     },
-    resolveClasses(mask) {
-      const result = []
-      const m = Number(mask || 0)
-      if (!m) return result
-      for (const [, cls] of Object.entries(DB_PLAYER_CLASSES_ALL)) {
-        if (m & cls.mask) result.push(cls.short)
-      }
-      return result
-    },
-    resolveRaces(mask) {
-      const result = []
-      const m = Number(mask || 0)
-      if (!m) return result
-      for (const [, race] of Object.entries(DB_PLAYER_RACES)) {
-        if (race.mask && (m & Number(race.mask))) result.push(race.short)
-      }
-      if (result.length === 0) result.push(`Mask: ${m}`)
-      return result
-    },
-    resolveDeities(mask) {
-      const result = []
-      const m = Number(mask || 0)
-      if (!m) return result
-      for (const [, deity] of Object.entries(DB_DIETIES_FULL)) {
-        if (deity.mask && (m & deity.mask)) result.push(deity.short || deity.name)
-      }
-      return result
-    },
-
     // ---- Filters ----
     applyFilters() {
       const q = this.search.toLowerCase().trim()
@@ -622,51 +640,49 @@ export default {
         .filter(r => this.enabledFilter === -1 || Number(r.enabled || 0) === this.enabledFilter)
         .filter(r => this.typeFilter === -1 || Number(r.type || 0) === this.typeFilter)
         .filter(r => !q || String(r.id).includes(q) || String(r.name || "").toLowerCase().includes(q))
-        .sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
+        .sort((a, b) => this.sortBy === 'name'
+          ? String(a.name || '').localeCompare(String(b.name || ''))
+          : Number(a.id || 0) - Number(b.id || 0))
     },
 
-    // ---- Bitmask selectors with Apply/Cancel ----
-    openClassSelector() {
-      this.classSelectorMask = Number(this.selected.classes || 0)
-      this.pendingClassMask = this.classSelectorMask
-      this.$refs.classSelectorModal.show()
+    // ---- Rank collapse toggle ----
+    toggleAllRanks() {
+      const expand = !this.allRanksExpanded
+      this.chainRanks.forEach(r => { r._expanded = expand })
+      this.$forceUpdate()
     },
-    onClassMaskChanged(mask) {
-      this.pendingClassMask = Number(mask || 0)
+
+    // ---- Pending changes / field tracking ----
+    trackFieldEdit(key, oldVal, newVal) {
+      const oldStr = String(oldVal != null ? oldVal : '')
+      const newStr = String(newVal != null ? newVal : '')
+      if (oldStr === newStr) {
+        this.$delete(this.pendingChanges.editedFields, key)
+      } else {
+        this.$set(this.pendingChanges.editedFields, key, {old: oldVal, new: newVal})
+      }
     },
-    applyClassSelection() {
+    isFieldEdited(key) {
+      return !!this.pendingChanges.editedFields[key]
+    },
+    storeOriginalValues() {
       if (!this.selected) return
-      this.selected.classes = this.pendingClassMask
-      this.markDirty()
-      this.$refs.classSelectorModal.hide()
+      this.originalValues = {
+        name: this.selected.name,
+        category: this.selected.category,
+        type: this.selected.type,
+        first_rank_id: this.selected.first_rank_id,
+        charges: this.selected.charges,
+        status: this.selected.status,
+        drakkin_heritage: this.selected.drakkin_heritage,
+        enabled: this.selected.enabled,
+        grant_only: this.selected.grant_only,
+        auto_grant_enabled: this.selected.auto_grant_enabled,
+        reset_on_death: this.selected.reset_on_death,
+      }
     },
-    openRaceSelector() {
-      this.raceSelectorMask = Number(this.selected.races || 0)
-      this.pendingRaceMask = this.raceSelectorMask
-      this.$refs.raceSelectorModal.show()
-    },
-    onRaceMaskChanged(mask) {
-      this.pendingRaceMask = Number(mask || 0)
-    },
-    applyRaceSelection() {
-      if (!this.selected) return
-      this.selected.races = this.pendingRaceMask
-      this.markDirty()
-      this.$refs.raceSelectorModal.hide()
-    },
-    openDeitySelector() {
-      this.deitySelectorMask = Number(this.selected.deities || 0)
-      this.pendingDeityMask = this.deitySelectorMask
-      this.$refs.deitySelectorModal.show()
-    },
-    onDeityMaskChanged(mask) {
-      this.pendingDeityMask = Number(mask || 0)
-    },
-    applyDeitySelection() {
-      if (!this.selected) return
-      this.selected.deities = this.pendingDeityMask
-      this.markDirty()
-      this.$refs.deitySelectorModal.hide()
+    resetPendingChanges() {
+      this.pendingChanges = {editedFields: {}}
     },
 
     // ---- Expansion selector ----
@@ -716,6 +732,21 @@ export default {
       this.selectedEffectTarget = null
     },
 
+    // ---- AA selector ----
+    openAaSelector(rank, prereq) {
+      this.selectedAaTarget = {rank, prereq}
+      this.aaSearch = ""
+      this.aaSearchType = -1
+      this.$refs.aaSelectorModal.show()
+    },
+    selectAaId(aaId) {
+      if (!this.selectedAaTarget) return
+      this.selectedAaTarget.prereq.aa_id = Number(aaId || 0)
+      this.markRankDirty(this.selectedAaTarget.rank)
+      this.$refs.aaSelectorModal.hide()
+      this.selectedAaTarget = null
+    },
+
     // ---- Selection / CRUD ----
     async selectRow(row) {
       if (this.dirty && !confirm("Discard unsaved changes?")) return
@@ -727,6 +758,7 @@ export default {
       this.notification = ""
       this.error = ""
       this.tabSelected = "Basic"
+      this.storeOriginalValues()
       await this.loadChainByFirstRank()
     },
     newAbility() {
@@ -741,6 +773,7 @@ export default {
       this.dirty = true
       this.tabSelected = "Basic"
       this.notification = "New AA ability draft initialized"
+      this.storeOriginalValues()
     },
     cloneAbility() {
       if (this.dirty && !confirm("Discard unsaved changes?")) return
@@ -755,6 +788,7 @@ export default {
       this.dirty = true
       this.tabSelected = "Basic"
       this.notification = `Cloned AA ability as #${nextId}. Ranks were not cloned.`
+      this.storeOriginalValues()
     },
     onFirstRankIdChanged() {
       this.markDirty()
@@ -770,6 +804,8 @@ export default {
       this.chainRanks = []
       this.deletedRanks = []
       this.dirty = false
+      this.resetPendingChanges()
+      this.storeOriginalValues()
       this.notification = "Changes discarded"
       this.loadChainByFirstRank()
     },
@@ -790,6 +826,8 @@ export default {
         visited.add(cursor)
         rank.effects = await this.fetchRankEffects(cursor)
         rank.prereqs = await this.fetchRankPrereqs(cursor)
+        rank.spell_type = Number(rank.spell_type || 0)
+        rank._expanded = false
         rank._dirty = false
         rank._isNew = false
         this.chainRanks.push(rank)
@@ -947,6 +985,8 @@ export default {
           await this.loadChainByFirstRank()
           this.deletedRanks = []
           this.dirty = false
+          this.storeOriginalValues()
+          this.resetPendingChanges()
         }
         this.notification = `${this.notification} (chain, effects, prereqs saved)`
       } catch (e) {
@@ -1085,24 +1125,6 @@ export default {
   border-radius: 6px;
   padding: 12px;
 }
-.aa-restriction-display {
-  min-height: 28px;
-}
-.aa-tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.aa-tag {
-  display: inline-block;
-  background: rgba(138, 163, 255, 0.15);
-  border: 1px solid rgba(138, 163, 255, 0.3);
-  border-radius: 3px;
-  padding: 1px 8px;
-  font-size: 12px;
-  color: #a8bcff;
-}
-
 /* Rank cards */
 .rank-card {
   border: 1px solid rgba(174, 189, 213, 0.2);
@@ -1147,6 +1169,31 @@ export default {
   padding: 10px;
 }
 
+/* Clickable rank header */
+.rank-card-header-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+.rank-card-header-clickable:hover {
+  background: rgba(20, 33, 56, 0.8);
+}
+
+/* Collapsed rank summary */
+.rank-collapsed-summary {
+  font-size: 12px;
+  color: #8a9bb0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-collapsed-summary .summary-label {
+  color: #5a6a7a;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-right: 2px;
+}
+
 /* Rank sub-sections (effects, prereqs) */
 .rank-subsection {
   background: rgba(11, 18, 31, 0.5);
@@ -1177,6 +1224,32 @@ export default {
   padding: 2px 6px;
 }
 
+/* Spell selector modal */
+.spell-selector-wrap { max-height: 80vh; overflow-y: auto; overflow-x: hidden; }
+
 /* Effect selector modal */
 .effect-selector-table-wrap { max-height: 55vh; overflow-y: auto; }
+
+/* AA selector modal */
+.aa-selector-table-wrap { max-height: 55vh; overflow-y: auto; }
+
+/* Pending edit field highlights */
+.pending-edit {
+  background-color: rgba(255, 165, 0, 0.15) !important;
+  border-color: rgba(255, 165, 0, 0.5) !important;
+  box-shadow: 0 0 0 1px rgba(255, 165, 0, 0.3);
+}
+.pending-edit-check {
+  background: rgba(255, 165, 0, 0.15);
+  border-radius: 4px;
+}
+
+/* Save button glow when dirty */
+.save-btn-glow {
+  animation: save-glow 1.5s ease-in-out infinite;
+}
+@keyframes save-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 100, 0, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(255, 100, 0, 0.7); }
+}
 </style>
