@@ -241,8 +241,8 @@
                               <th style="width: 60px; text-align: center;">Slot</th>
                               <th style="width: 140px;">Effect ID</th>
                               <th>Effect Name</th>
-                              <th style="width: 100px;">Base 1</th>
-                              <th style="width: 100px;">Base 2</th>
+                              <th style="width: 100px;" title="Base 1 (Base) — hover the input for effect-specific description">Base 1</th>
+                              <th style="width: 100px;" title="Base 2 (Max) — hover the input for effect-specific description">Base 2</th>
                               <th style="width: 36px;"></th>
                             </tr>
                             </thead>
@@ -256,8 +256,8 @@
                                 </div>
                               </td>
                               <td><small class="text-muted">{{ spaName(fx.effect_id) }}</small></td>
-                              <td><b-form-input size="sm" v-model.number="fx.base_1" @input="markRankDirty(rank)"/></td>
-                              <td><b-form-input size="sm" v-model.number="fx.base_2" @input="markRankDirty(rank)"/></td>
+                              <td><b-form-input size="sm" v-model.number="fx.base_1" @input="markRankDirty(rank)" :title="spaBase1Tooltip(fx.effect_id)"/></td>
+                              <td><b-form-input size="sm" v-model.number="fx.base_2" @input="markRankDirty(rank)" :title="spaBase2Tooltip(fx.effect_id)"/></td>
                               <td><b-button size="sm" variant="outline-danger" @click="removeRankEffect(rank, fxIdx)" title="Remove effect"><i class="fa fa-times"/></b-button></td>
                             </tr>
                             </tbody>
@@ -381,7 +381,7 @@ import {AaAbilityApi} from "@/app/api/api/aa-ability-api";
 import {AaRankApi} from "@/app/api/api/aa-rank-api";
 import {AaRankEffectApi} from "@/app/api/api/aa-rank-effect-api";
 import {AaRankPrereqApi} from "@/app/api/api/aa-rank-prereq-api";
-import {DB_SPA, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
+import {DB_SPA, DB_SPA_DESCRIPTIONS, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
 import {EXPANSION_NAMES} from "@/app/constants/eq-expansions";
 
 const AaAbilityClient = new AaAbilityApi(...SpireApi.cfg())
@@ -510,6 +510,14 @@ export default {
     spaName(effectId) {
       const id = Number(effectId || 0)
       return DB_SPA[id] || `Unknown (${id})`
+    },
+    spaBase1Tooltip(effectId) {
+      const desc = DB_SPA_DESCRIPTIONS[Number(effectId || 0)]
+      return desc ? `Base 1 (Base): ${desc.base}` : 'Base 1 (Base)'
+    },
+    spaBase2Tooltip(effectId) {
+      const desc = DB_SPA_DESCRIPTIONS[Number(effectId || 0)]
+      return desc ? `Base 2 (Max): ${desc.max}` : 'Base 2 (Max)'
     },
     aaName(aaId) {
       const id = Number(aaId || 0)
