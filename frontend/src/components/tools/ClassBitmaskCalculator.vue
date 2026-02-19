@@ -49,7 +49,7 @@
       <!-- Select All / None - below icons -->
       <div
         v-if="displayAllNone && allNoneBelow"
-        style="display: block; width: 100%; text-align: right; margin-top: 6px;"
+        style="display: block; width: 100%; text-align: center; margin-top: 6px;"
       >
         <div
           class="d-inline-block mr-1"

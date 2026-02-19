@@ -34,32 +34,38 @@
               </div>
             </div>
 
-            <!-- Bitmask filters - compact single row -->
+            <!-- Bitmask filters - compact rows with per-row All/None -->
             <div class="mt-2 pt-2" style="border-top: 1px solid rgba(174,189,213,0.15)">
-              <div class="d-flex align-items-center">
-                <div class="filter-compact-wrap flex-grow-1">
-                  <div class="filter-compact-row">
-                    <span class="filter-compact-label">CLS</span>
-                    <div class="filter-compact-icons">
-                      <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" :icon-small="true" @input="classFilter = Number($event || 0); applyFilters()"/>
-                    </div>
+              <div class="filter-compact-wrap">
+                <div class="filter-compact-row">
+                  <span class="filter-compact-label">CLS</span>
+                  <div class="filter-compact-icons">
+                    <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" :icon-small="true" @input="classFilter = Number($event || 0); applyFilters()"/>
                   </div>
-                  <div class="filter-compact-row">
-                    <span class="filter-compact-label">RCE</span>
-                    <div class="filter-compact-icons">
-                      <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" :icon-small="true" @input="raceFilter = Number($event || 0); applyFilters()"/>
-                    </div>
-                  </div>
-                  <div class="filter-compact-row">
-                    <span class="filter-compact-label">DEI</span>
-                    <div class="filter-compact-icons">
-                      <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" :icon-small="true" @input="deityFilter = Number($event || 0); applyFilters()"/>
-                    </div>
+                  <div class="filter-row-btns">
+                    <b-button variant="outline-secondary" @click="classFilter = 65535; applyFilters()">All</b-button>
+                    <b-button variant="outline-secondary" @click="classFilter = 0; applyFilters()">None</b-button>
                   </div>
                 </div>
-                <div class="d-flex flex-column ml-2 filter-all-none-btns">
-                  <b-button size="sm" variant="outline-secondary" class="mb-1" @click="setAllFilters">All</b-button>
-                  <b-button size="sm" variant="outline-secondary" @click="clearAllFilters">None</b-button>
+                <div class="filter-compact-row">
+                  <span class="filter-compact-label">RCE</span>
+                  <div class="filter-compact-icons">
+                    <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" :icon-small="true" @input="raceFilter = Number($event || 0); applyFilters()"/>
+                  </div>
+                  <div class="filter-row-btns">
+                    <b-button variant="outline-secondary" @click="raceFilter = 65535; applyFilters()">All</b-button>
+                    <b-button variant="outline-secondary" @click="raceFilter = 0; applyFilters()">None</b-button>
+                  </div>
+                </div>
+                <div class="filter-compact-row">
+                  <span class="filter-compact-label">DEI</span>
+                  <div class="filter-compact-icons">
+                    <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" :icon-small="true" @input="deityFilter = Number($event || 0); applyFilters()"/>
+                  </div>
+                  <div class="filter-row-btns">
+                    <b-button variant="outline-secondary" @click="deityFilter = 131071; applyFilters()">All</b-button>
+                    <b-button variant="outline-secondary" @click="deityFilter = 0; applyFilters()">None</b-button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1346,11 +1352,12 @@ export default {
 
 /* Compact bitmask filter row */
 .filter-compact-wrap { min-width: 0; overflow: hidden; }
-.filter-compact-row { display: flex; align-items: center; margin-bottom: 2px; overflow: hidden; }
-.filter-compact-label { font-size: 9px; color: #8a9bb0; width: 22px; flex-shrink: 0; line-height: 1; text-transform: uppercase; letter-spacing: 0.3px; }
-.filter-compact-icons { overflow: hidden; flex: 1; min-width: 0; }
-.filter-all-none-btns { flex-shrink: 0; }
-.filter-all-none-btns .btn { font-size: 11px; padding: 2px 8px; line-height: 1.4; }
+.filter-compact-row { display: flex; align-items: stretch; margin-bottom: 2px; overflow: hidden; }
+.filter-compact-label { font-size: 9px; color: #8a9bb0; width: 22px; flex-shrink: 0; line-height: 1; text-transform: uppercase; letter-spacing: 0.3px; display: flex; align-items: center; }
+.filter-compact-icons { overflow: hidden; flex: 1; min-width: 0; display: flex; align-items: center; }
+.filter-compact-icons .row { margin-left: 0; margin-right: 0; }
+.filter-row-btns { display: flex; flex-direction: column; flex-shrink: 0; gap: 1px; margin-left: 3px; }
+.filter-row-btns .btn { font-size: 9px; padding: 0 6px; line-height: 1; flex: 1; }
 
 /* Save button glow when dirty */
 .save-btn-glow {
