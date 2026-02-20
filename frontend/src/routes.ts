@@ -54,6 +54,7 @@ export const ROUTE = {
   SPELL_ANIMATION_VIEWER: "/spell-animation-viewer",
   SPELL_EDIT: "/spell/%s",
   SPELLS_LIST: "/spells",
+  AA_EDITOR: "/aa",
   STRINGS_DATABASE: "/strings-database",
   TASK_EDIT: "/tasks/%s",
   TASKS: "/tasks",

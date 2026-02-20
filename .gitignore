@@ -26,6 +26,7 @@ spire-linux-amd64.zip
 spire-windows-amd64.exe.zip
 spire.old
 
+*.bak
 *.sql
 dbstr.txt
 spells_us.txt
@@ -48,3 +49,5 @@ EQSAGE-SPIRE-INTEGRATION.md
 PROGRESS.md
 frontend/.env.production
 .playwright-cli/
+
+*.bak
