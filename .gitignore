@@ -49,3 +49,5 @@ EQSAGE-SPIRE-INTEGRATION.md
 PROGRESS.md
 frontend/.env.production
 .playwright-cli/
+
+*.bak
