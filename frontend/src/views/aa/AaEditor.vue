@@ -2,7 +2,7 @@
   <content-area style="padding: 0 !important;">
     <div class="row">
       <!-- Left panel: AA ability list -->
-      <div class="col-4">
+      <div class="col-5">
         <eq-window title="Alternate Advancement Editor" class="p-0">
           <div class="p-3 border-bottom aa-toolbar minified-inputs">
             <div class="d-flex gap-2 align-items-end flex-wrap">
@@ -101,7 +101,7 @@
       </div>
 
       <!-- Right panel: AA ability details -->
-      <div class="col-8">
+      <div class="col-7">
         <eq-window :title="selectedTitle" class="aa-details-window">
           <div ref="aaDetailsScroll" class="aa-details-wrap" @scroll="onAaDetailsScroll">
             <div v-if="!selected" class="text-center text-muted p-5">
