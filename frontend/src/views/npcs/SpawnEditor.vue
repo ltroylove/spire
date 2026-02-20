@@ -476,11 +476,17 @@
               </div>
               <div class="col-3 mb-2">
                 <label class="field-label">Content Flags</label>
-                <input v-model="editData.content_flags" class="form-control form-control-sm" />
+                <content-flag-selector
+                  :value="editData.content_flags"
+                  @input="editData.content_flags = $event"
+                />
               </div>
               <div class="col-3 mb-2">
                 <label class="field-label">Flags Disabled</label>
-                <input v-model="editData.content_flags_disabled" class="form-control form-control-sm" />
+                <content-flag-selector
+                  :value="editData.content_flags_disabled"
+                  @input="editData.content_flags_disabled = $event"
+                />
               </div>
             </div>
           </eq-window>
@@ -498,17 +504,30 @@
               </div>
               <div class="col-3 mb-3">
                 <label class="field-label">Roam Distance</label>
-                <input v-model.number="editSpawngroup.dist" type="number" step="0.1" class="form-control form-control-sm" />
+                <div class="d-flex align-items-center">
+                  <input v-model.number="editSpawngroup.dist" type="range" min="0" max="500" step="1" class="mr-2" style="flex: 1;" />
+                  <input v-model.number="editSpawngroup.dist" type="number" step="0.1" class="form-control form-control-sm text-center" style="width: 75px;" />
+                </div>
               </div>
             </div>
             <div class="row">
               <div class="col-3 mb-3">
-                <label class="field-label">Delay</label>
-                <input v-model.number="editSpawngroup.delay" type="number" class="form-control form-control-sm" />
+                <label class="field-label">Delay (ms)</label>
+                <div class="input-group input-group-sm">
+                  <input v-model.number="editSpawngroup.delay" type="number" class="form-control" />
+                  <div class="input-group-append">
+                    <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(Math.round((editSpawngroup.delay || 0) / 1000)) }}</span>
+                  </div>
+                </div>
               </div>
               <div class="col-3 mb-3">
-                <label class="field-label">Min Delay</label>
-                <input v-model.number="editSpawngroup.mindelay" type="number" class="form-control form-control-sm" />
+                <label class="field-label">Min Delay (ms)</label>
+                <div class="input-group input-group-sm">
+                  <input v-model.number="editSpawngroup.mindelay" type="number" class="form-control" />
+                  <div class="input-group-append">
+                    <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(Math.round((editSpawngroup.mindelay || 0) / 1000)) }}</span>
+                  </div>
+                </div>
               </div>
               <div class="col-3 mb-3">
                 <label class="field-label">Despawn</label>
@@ -520,8 +539,13 @@
                 </select>
               </div>
               <div class="col-3 mb-3">
-                <label class="field-label">Despawn Timer</label>
-                <input v-model.number="editSpawngroup.despawn_timer" type="number" class="form-control form-control-sm" />
+                <label class="field-label">Despawn Timer (sec)</label>
+                <div class="input-group input-group-sm">
+                  <input v-model.number="editSpawngroup.despawn_timer" type="number" class="form-control" />
+                  <div class="input-group-append">
+                    <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(editSpawngroup.despawn_timer) }}</span>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="row">
@@ -616,7 +640,7 @@
               </tbody>
             </table>
             <div class="d-flex justify-content-between align-items-center mt-2">
-              <button class="btn btn-xs btn-outline-warning" @click="addNpcToSpawngroup" title="Add another NPC to this spawngroup">
+              <button class="btn btn-xs btn-outline-warning" @click="$bvModal.show('add-npc-modal')" title="Add another NPC to this spawngroup">
                 <i class="fa fa-plus mr-1"></i> Add NPC
               </button>
               <button class="btn btn-xs btn-dark" @click="balanceChances" title="Equally distribute chances">
@@ -624,45 +648,55 @@
               </button>
             </div>
 
-            <!-- Add NPC Panel -->
-            <div v-if="showAddNpcPanel" class="add-npc-panel mt-2">
-              <div class="row align-items-end">
-                <div class="col-6">
-                  <label class="field-label">NPC Search</label>
-                  <div class="position-relative">
-                    <input
-                      v-model="addNpcSearch"
-                      class="form-control form-control-sm"
-                      placeholder="Search NPC..."
-                      @input="onAddNpcSearch"
-                      @focus="showAddNpcDropdown = true"
-                      @blur="delayCloseAddNpcDropdown"
-                      autocomplete="off"
-                    />
-                    <div v-if="showAddNpcDropdown && addNpcResults.length > 0" class="zone-dropdown">
-                      <div
-                        v-for="n in addNpcResults"
-                        :key="n.id"
-                        class="zone-option"
-                        @mousedown.prevent="selectAddNpc(n)"
-                      >
-                        <span class="text-warning">{{ (n.name || '').replace(/_/g, ' ') }}</span>
-                        <span class="text-muted ml-2">#{{ n.id }}</span>
-                      </div>
+            <!-- Add NPC Modal -->
+            <b-modal
+              id="add-npc-modal"
+              title="Add NPC to Spawngroup"
+              hide-footer
+              @show="resetAddNpcForm"
+            >
+              <div class="mb-3">
+                <label class="field-label">NPC Search</label>
+                <div class="position-relative">
+                  <input
+                    v-model="addNpcSearch"
+                    class="form-control form-control-sm"
+                    placeholder="Search NPC by name or ID..."
+                    @input="onAddNpcSearch"
+                    @focus="showAddNpcDropdown = true"
+                    @blur="delayCloseAddNpcDropdown"
+                    autocomplete="off"
+                  />
+                  <div v-if="showAddNpcDropdown && addNpcResults.length > 0" class="zone-dropdown">
+                    <div
+                      v-for="n in addNpcResults"
+                      :key="n.id"
+                      class="zone-option"
+                      @mousedown.prevent="selectAddNpc(n)"
+                    >
+                      <span class="text-warning">{{ (n.name || '').replace(/_/g, ' ') }}</span>
+                      <span class="text-muted ml-2">#{{ n.id }}</span>
                     </div>
                   </div>
                 </div>
-                <div class="col-3">
-                  <label class="field-label">Chance %</label>
-                  <input v-model.number="addNpcChance" type="number" min="0" max="100" class="form-control form-control-sm" />
-                </div>
-                <div class="col-3">
-                  <button class="btn btn-sm btn-outline-success w-100" @click="confirmAddNpc" :disabled="!addNpcId">
-                    <i class="fa fa-plus mr-1"></i> Add
-                  </button>
+                <div v-if="addNpcId" class="text-muted mt-1" style="font-size: 0.8em;">
+                  Selected: <span class="text-warning">{{ addNpcSearch }}</span>
                 </div>
               </div>
-            </div>
+              <div class="mb-3">
+                <label class="field-label">Chance %</label>
+                <div class="d-flex align-items-center">
+                  <input v-model.number="addNpcChance" type="range" min="0" max="100" class="mr-2" style="flex: 1;" />
+                  <input v-model.number="addNpcChance" type="number" min="0" max="100" class="form-control form-control-sm text-center" style="width: 70px;" />
+                </div>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button class="btn btn-sm btn-secondary mr-2" @click="$bvModal.hide('add-npc-modal')">Cancel</button>
+                <button class="btn btn-sm btn-outline-success" @click="confirmAddNpc" :disabled="!addNpcId || saving">
+                  <i class="fa fa-plus mr-1"></i> Add NPC
+                </button>
+              </div>
+            </b-modal>
           </eq-window>
         </div>
       </div>
@@ -678,6 +712,7 @@ import { Zones } from "@/app/zones";
 import EqWindow from "../../components/eq-ui/EQWindow";
 import ContentArea from "../../components/layout/ContentArea";
 import NpcPopover from "../../components/NpcPopover";
+import ContentFlagSelector from "../../components/selectors/ContentFlagSelector";
 
 let searchTimeout = null;
 let npcSearchTimeout = null;
@@ -685,7 +720,7 @@ let addNpcSearchTimeout = null;
 
 export default {
   name: "SpawnEditor",
-  components: { EqWindow, ContentArea, NpcPopover },
+  components: { EqWindow, ContentArea, NpcPopover, ContentFlagSelector },
   data() {
     return {
       // Search / list
@@ -723,7 +758,6 @@ export default {
       createForm: this.getDefaultCreateForm(),
 
       // Add NPC to spawngroup
-      showAddNpcPanel: false,
       addNpcSearch: "",
       addNpcId: 0,
       addNpcChance: 50,
@@ -1007,7 +1041,6 @@ export default {
       this.selectedSpawn = sp;
       this.selectedSpawnNpcName = sp.npcName || ('NPC #' + sp.npcId);
       this.clearMessages();
-      this.showAddNpcPanel = false;
 
       // Load full spawn2 data
       try {
@@ -1201,12 +1234,12 @@ export default {
     // ========================
     // Add NPC to spawngroup
     // ========================
-    addNpcToSpawngroup() {
-      this.showAddNpcPanel = !this.showAddNpcPanel;
+    resetAddNpcForm() {
       this.addNpcSearch = "";
       this.addNpcId = 0;
       this.addNpcChance = 50;
       this.addNpcResults = [];
+      this.showAddNpcDropdown = false;
     },
 
     onAddNpcSearch() {
@@ -1251,13 +1284,15 @@ export default {
       try {
         const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
         await spawnentryApi.createSpawnentry({
-          spawngroup_id: this.selectedSpawn.spawngroupId,
-          npc_id: this.addNpcId,
-          chance: this.normalizeChance(this.addNpcChance),
+          spawnentry: {
+            spawngroup_id: this.selectedSpawn.spawngroupId,
+            npc_id: this.addNpcId,
+            chance: this.normalizeChance(this.addNpcChance),
+          }
         });
 
         this.editorSuccess = `Added NPC #${this.addNpcId} to spawngroup.`;
-        this.showAddNpcPanel = false;
+        this.$bvModal.hide('add-npc-modal');
         await this.loadSpawnEntries(this.selectedSpawn.spawngroupId);
       } catch (e) {
         console.error("Failed to add NPC to spawngroup", e);
@@ -1274,7 +1309,7 @@ export default {
 
       try {
         const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
-        await spawnentryApi.deleteSpawnentry(entry.spawngroup_id);
+        await spawnentryApi.deleteSpawnentry({ id: entry.spawngroup_id });
 
         this.editorSuccess = `Removed NPC #${entry.npc_id} from spawngroup.`;
         await this.loadSpawnEntries(this.selectedSpawn.spawngroupId);
@@ -1300,52 +1335,61 @@ export default {
         const spawngroupApi = new SpawngroupApi(...SpireApi.cfg());
 
         // Save spawn2
-        await spawn2Api.updateSpawn2(this.selectedSpawn.id, {
+        await spawn2Api.updateSpawn2({
           id: this.selectedSpawn.id,
-          spawngroup_id: this.selectedSpawn.spawngroupId,
-          zone: (this.editData.zone || "").toLowerCase(),
-          version: Number(this.editData.version || 0),
-          x: Number(this.editData.x || 0),
-          y: Number(this.editData.y || 0),
-          z: Number(this.editData.z || 0),
-          heading: Number(this.editData.heading || 0),
-          respawntime: Number(this.editData.respawntime || 0),
-          variance: Number(this.editData.variance || 0),
-          pathgrid: Number(this.editData.pathgrid || 0),
-          animation: Number(this.editData.animation || 0),
-          _condition: Number(this.editData.condition || 0),
-          cond_value: Number(this.editData.cond_value || 1),
-          min_expansion: Number(this.editData.min_expansion != null ? this.editData.min_expansion : -1),
-          max_expansion: Number(this.editData.max_expansion != null ? this.editData.max_expansion : -1),
-          content_flags: this.editData.content_flags || "",
-          content_flags_disabled: this.editData.content_flags_disabled || "",
+          spawn2: {
+            id: this.selectedSpawn.id,
+            spawngroup_id: this.selectedSpawn.spawngroupId,
+            zone: (this.editData.zone || "").toLowerCase(),
+            version: Number(this.editData.version || 0),
+            x: Number(this.editData.x || 0),
+            y: Number(this.editData.y || 0),
+            z: Number(this.editData.z || 0),
+            heading: Number(this.editData.heading || 0),
+            respawntime: Number(this.editData.respawntime || 0),
+            variance: Number(this.editData.variance || 0),
+            pathgrid: Number(this.editData.pathgrid || 0),
+            animation: Number(this.editData.animation || 0),
+            _condition: Number(this.editData.condition || 0),
+            cond_value: Number(this.editData.cond_value || 1),
+            min_expansion: Number(this.editData.min_expansion != null ? this.editData.min_expansion : -1),
+            max_expansion: Number(this.editData.max_expansion != null ? this.editData.max_expansion : -1),
+            content_flags: this.editData.content_flags || "",
+            content_flags_disabled: this.editData.content_flags_disabled || "",
+          }
         });
 
         // Save spawngroup
         if (this.editSpawngroup) {
-          await spawngroupApi.updateSpawngroup(this.selectedSpawn.spawngroupId, {
+          await spawngroupApi.updateSpawngroup({
             id: this.selectedSpawn.spawngroupId,
-            name: this.editSpawngroup.name || "",
-            spawn_limit: Number(this.editSpawngroup.spawn_limit || 0),
-            dist: Number(this.editSpawngroup.dist || 0),
-            delay: Number(this.editSpawngroup.delay || 45000),
-            mindelay: Number(this.editSpawngroup.mindelay || 15000),
-            despawn: Number(this.editSpawngroup.despawn || 0),
-            despawn_timer: Number(this.editSpawngroup.despawn_timer || 100),
-            wp_spawns: Number(this.editSpawngroup.wp_spawns || 0),
-            min_x: Number(this.editSpawngroup.min_x || 0),
-            max_x: Number(this.editSpawngroup.max_x || 0),
-            min_y: Number(this.editSpawngroup.min_y || 0),
-            max_y: Number(this.editSpawngroup.max_y || 0),
+            spawngroup: {
+              id: this.selectedSpawn.spawngroupId,
+              name: this.editSpawngroup.name || "",
+              spawn_limit: Number(this.editSpawngroup.spawn_limit || 0),
+              dist: Number(this.editSpawngroup.dist || 0),
+              delay: Number(this.editSpawngroup.delay || 45000),
+              mindelay: Number(this.editSpawngroup.mindelay || 15000),
+              despawn: Number(this.editSpawngroup.despawn || 0),
+              despawn_timer: Number(this.editSpawngroup.despawn_timer || 100),
+              wp_spawns: Number(this.editSpawngroup.wp_spawns || 0),
+              min_x: Number(this.editSpawngroup.min_x || 0),
+              max_x: Number(this.editSpawngroup.max_x || 0),
+              min_y: Number(this.editSpawngroup.min_y || 0),
+              max_y: Number(this.editSpawngroup.max_y || 0),
+            }
           });
         }
 
         // Save spawn entry chances
         for (const entry of this.editSpawnEntries) {
-          await spawnentryApi.updateSpawnentry(this.selectedSpawn.spawngroupId, {
-            spawngroup_id: this.selectedSpawn.spawngroupId,
-            npc_id: entry.npc_id,
-            chance: this.normalizeChance(entry.chance),
+          await spawnentryApi.updateSpawnentry({
+            id: this.selectedSpawn.spawngroupId,
+            spawnentry: {
+              spawngroup_id: this.selectedSpawn.spawngroupId,
+              npc_id: entry.npc_id,
+              chance: this.normalizeChance(entry.chance),
+            }
           });
         }
 
@@ -1379,7 +1423,7 @@ export default {
 
       try {
         const spawn2Api = new Spawn2Api(...SpireApi.cfg());
-        await spawn2Api.deleteSpawn2(this.selectedSpawn.id);
+        await spawn2Api.deleteSpawn2({ id: this.selectedSpawn.id });
 
         this.spawnList = this.spawnList.filter(s => s.id !== this.selectedSpawn.id);
         this.selectedSpawn = null;
@@ -1414,27 +1458,31 @@ export default {
           ? this.createForm.spawngroupName.trim()
           : `${zone}_${this.createForm.npcId}`;
 
-        const sgCreate = await spawngroupApi.createSpawngroup({ name: sgName, id: 0 });
+        const sgCreate = await spawngroupApi.createSpawngroup({ spawngroup: { name: sgName, id: 0 } });
         const sg = (sgCreate.data && sgCreate.data[0]) ? sgCreate.data[0] : null;
         const spawngroupId = sg && (sg.id || sg.ID);
         if (!spawngroupId) throw new Error("Unable to create spawngroup");
 
         await spawn2Api.createSpawn2({
-          spawngroup_id: spawngroupId,
-          zone: zone,
-          version: Number(this.createForm.version || 0),
-          x: Number(this.createForm.x || 0),
-          y: Number(this.createForm.y || 0),
-          z: Number(this.createForm.z || 0),
-          heading: Number(this.createForm.heading || 0),
-          respawntime: Number(this.createForm.respawntime || 1200),
-          pathgrid: Number(this.createForm.pathgrid || 0),
+          spawn2: {
+            spawngroup_id: spawngroupId,
+            zone: zone,
+            version: Number(this.createForm.version || 0),
+            x: Number(this.createForm.x || 0),
+            y: Number(this.createForm.y || 0),
+            z: Number(this.createForm.z || 0),
+            heading: Number(this.createForm.heading || 0),
+            respawntime: Number(this.createForm.respawntime || 1200),
+            pathgrid: Number(this.createForm.pathgrid || 0),
+          }
         });
 
         await spawnentryApi.createSpawnentry({
-          spawngroup_id: spawngroupId,
-          npc_id: this.createForm.npcId,
-          chance: this.normalizeChance(this.createForm.chance),
+          spawnentry: {
+            spawngroup_id: spawngroupId,
+            npc_id: this.createForm.npcId,
+            chance: this.normalizeChance(this.createForm.chance),
+          }
         });
 
         this.editorSuccess = `Created spawngroup #${spawngroupId} in ${zone}.`;
@@ -1466,10 +1514,13 @@ export default {
           const chance = equalChance + (i < remainder ? 1 : 0);
           entry.chance = chance;
 
-          await spawnentryApi.updateSpawnentry(this.selectedSpawn.spawngroupId, {
-            spawngroup_id: this.selectedSpawn.spawngroupId,
-            npc_id: entry.npc_id,
-            chance: chance,
+          await spawnentryApi.updateSpawnentry({
+            id: this.selectedSpawn.spawngroupId,
+            spawnentry: {
+              spawngroup_id: this.selectedSpawn.spawngroupId,
+              npc_id: entry.npc_id,
+              chance: chance,
+            }
           });
         }
 
