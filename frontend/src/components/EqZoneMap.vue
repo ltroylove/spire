@@ -843,6 +843,9 @@ export default {
 
     npcMarkerClick(e) {
       this.$emit("npc-marker-hover", e.npc);
+      if (e.spawn2) {
+        this.$emit("spawn2-selected", e.spawn2);
+      }
     },
 
     spellMarkerHover(s) {
@@ -1134,6 +1137,7 @@ export default {
                       point: this.createPoint(-spawn2.x, -spawn2.y),
                       label: Npcs.getCleanName(npcName),
                       npc: n,
+                      spawn2: spawn2,
                       grid: spawn2.pathgrid,
                       iconClass: 'fade-in ' + this.getNpcIcon(n),
                       iconSize: this.raceIconSizes[this.getNpcIcon(n)] ? this.raceIconSizes[this.getNpcIcon(n)] : [30, 100]
