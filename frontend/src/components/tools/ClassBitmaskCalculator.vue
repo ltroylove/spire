@@ -1,8 +1,8 @@
 <template>
   <div class="row" v-if="mask >= 0">
     <div
-      class="ml-1 mr-3 d-inline-block"
-      :style="(centeredButtons ? 'width: 100%; margin: 0;' : '')"
+      class="ml-1 mr-3 d-inline-block text-center"
+      :style="(centeredButtons ? 'width: 100%' : '')"
     >
       <div v-for="(gClass, classId) in classes" class="d-inline-block">
         <div class="text-center p-0 mr-1 col-lg-12 col-sm-12">
@@ -12,16 +12,16 @@
               :title="gClass.class"
               @click="selectClass(classId)"
               :style="(isClassSelected(classId) ? 'border-radius: 3px;' : 'border-radius: 3px; opacity: .6')"
-              :class="'hover-highlight-inner item-' + gClass.icon + ' ' + (isClassSelected(classId) ? 'highlight-selected-inner' : '')"
+              :class="'hover-highlight-inner item-' + gClass.icon + (iconSmall ? '-sm' : '') + ' ' + (isClassSelected(classId) ? 'highlight-selected-inner' : '')"
             />
           </div>
         </div>
       </div>
 
-      <!-- Select All / None -->
+      <!-- Select All / None - inline (original behaviour) -->
       <div
         class="d-inline-block"
-        v-if="displayAllNone"
+        v-if="displayAllNone && !allNoneBelow"
         :style="'line-height: 25px; bottom: ' + (centeredButtons ? -10 : 15) + 'px; position: relative;'"
       >
         <div
@@ -43,6 +43,27 @@
           title="When this is selected, only entries selected will appear in the results"
         >
           Only
+        </div>
+      </div>
+
+      <!-- Select All / None - below icons -->
+      <div
+        v-if="displayAllNone && allNoneBelow"
+        style="display: block; width: 100%; text-align: center; margin-top: 6px;"
+      >
+        <div
+          class="d-inline-block mr-1"
+          :class="'btn-xs eq-button-fancy ' + (parseInt(mask) >= 65535 && !this.isOnlySelectedAndEnabled() ? 'eq-button-fancy-highlighted' : '')"
+          @click="selectAll()"
+        >
+          All
+        </div>
+        <div
+          class="d-inline-block"
+          :class="'btn-xs eq-button-fancy ' + (parseInt(mask) === 0 && !this.isOnlySelectedAndEnabled() ? 'eq-button-fancy-highlighted' : '')"
+          @click="selectNone()"
+        >
+          None
         </div>
       </div>
 
@@ -95,7 +116,17 @@ export default {
       type: Boolean,
       required: false,
       default: false,
-    }
+    },
+    iconSmall: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    allNoneBelow: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   watch: {
     mask: {
