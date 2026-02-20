@@ -506,9 +506,22 @@
                 <label class="field-label">Roam Distance</label>
                 <div class="d-flex align-items-center">
                   <input v-model.number="editSpawngroup.dist" type="range" min="0" max="500" step="1" class="mr-2" style="flex: 1;" />
-                  <input v-model.number="editSpawngroup.dist" type="number" step="0.1" class="form-control form-control-sm text-center" style="width: 75px;" />
+                  <input
+                    v-model.number="editSpawngroup.dist"
+                    type="number"
+                    step="0.1"
+                    class="form-control form-control-sm text-center"
+                    style="width: 75px;"
+                    @focus="roamDistVisualizerActive = true"
+                    @blur="roamDistVisualizerActive = false"
+                  />
                 </div>
               </div>
+            </div>
+            <!-- Roam Distance Range Visualizer -->
+            <div v-if="roamDistVisualizerActive && editSpawngroup.dist > 0" class="mt-2 mb-2">
+              <div class="field-label mb-1">Range Visualizer — {{ editSpawngroup.dist }} units</div>
+              <range-visualizer :unit-marker="editSpawngroup.dist" />
             </div>
             <div class="row">
               <div class="col-3 mb-3">
@@ -570,17 +583,17 @@
 
           <!-- Spawngroup Entries (NPCs in this group) -->
           <eq-window title="NPCs in Spawngroup" class="mt-3" v-if="editSpawnEntries && editSpawnEntries.length > 0">
-            <table class="eq-table eq-highlight-rows w-100" style="font-size: 13px;">
+            <table class="eq-table eq-highlight-rows w-100" style="font-size: 13px; table-layout: fixed;">
               <thead class="eq-table-floating-header">
                 <tr>
-                  <th style="width: 35%;">NPC</th>
-                  <th class="text-center" style="width: 220px;">Chance %</th>
-                  <th class="text-center" style="width: 80px;"></th>
+                  <th style="width: 45%;">NPC</th>
+                  <th class="text-center" style="width: 45%;">Chance %</th>
+                  <th class="text-center" style="width: 10%;"></th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="entry in editSpawnEntries" :key="entry.npc_id">
-                  <td style="vertical-align: middle; width: 35%;">
+                  <td style="vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     <npc-popover
                       v-if="entry.npcData"
                       :npc="entry.npcData"
@@ -713,6 +726,7 @@ import EqWindow from "../../components/eq-ui/EQWindow";
 import ContentArea from "../../components/layout/ContentArea";
 import NpcPopover from "../../components/NpcPopover";
 import ContentFlagSelector from "../../components/selectors/ContentFlagSelector";
+import RangeVisualizer from "../../components/tools/RangeVisualizer";
 
 let searchTimeout = null;
 let npcSearchTimeout = null;
@@ -720,7 +734,7 @@ let addNpcSearchTimeout = null;
 
 export default {
   name: "SpawnEditor",
-  components: { EqWindow, ContentArea, NpcPopover, ContentFlagSelector },
+  components: { EqWindow, ContentArea, NpcPopover, ContentFlagSelector, RangeVisualizer },
   data() {
     return {
       // Search / list
@@ -768,6 +782,7 @@ export default {
       saving: false,
       editorError: "",
       editorSuccess: "",
+      roamDistVisualizerActive: false,
     };
   },
 
