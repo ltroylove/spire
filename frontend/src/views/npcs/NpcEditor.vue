@@ -490,7 +490,7 @@
         </eq-window>
 
         <eq-window v-if="npc && !isAnySelectorActive()" class="mt-3">
-          <npc-spawn-locations :npc-id="npc.id"/>
+          <npc-spawn-viewer :npc-id="npc.id"/>
         </eq-window>
 
         <eq-window v-if="selectorActive['special_abilities']">
@@ -611,7 +611,7 @@ import RaceSelector             from "../../components/selectors/RaceSelector";
 import FacialAppearanceSelector from "../../components/selectors/FacialAppearanceSelector";
 import MerchantSubEditor        from "../../components/subeditors/MerchantSubEditor";
 import LootSubEditor            from "../../components/subeditors/LootSubEditor";
-import NpcSpawnLocations        from "../../components/subeditors/NpcSpawnLocations";
+import NpcSpawnViewer           from "../../components/subeditors/NpcSpawnViewer";
 import FactionSubEditor         from "../../components/subeditors/FactionSubEditor";
 import { Chrome }               from "vue-color";
 import SpellsSubEditor          from "../../components/subeditors/SpellsSubEditor";
@@ -624,7 +624,7 @@ export default {
   name: "ItemEdit",
   components: {
     LootSubEditor,
-    NpcSpawnLocations,
+    NpcSpawnViewer,
     FactionSubEditor,
     SpellsSubEditor,
     AltCurrencySubEditor,
