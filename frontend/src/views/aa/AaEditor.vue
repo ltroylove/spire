@@ -45,7 +45,7 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :icon-small="true" :centered-buttons="false" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
+                  <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
                 </div>
               </div>
               <div class="filter-section">
@@ -57,7 +57,7 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :icon-small="true" :centered-buttons="false" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
+                  <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
                 </div>
               </div>
               <div class="filter-section">
@@ -69,7 +69,7 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :icon-small="true" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
+                  <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
                 </div>
               </div>
             </div>
@@ -1355,14 +1355,17 @@ export default {
 }
 
 /* Compact inline bitmask filter sections */
-.filter-section { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
-.filter-left { display: flex; flex-direction: column; align-items: center; min-width: 40px; flex-shrink: 0; }
+.filter-section { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.filter-left { display: flex; flex-direction: column; align-items: center; min-width: 44px; flex-shrink: 0; padding-top: 2px; }
 .filter-label { font-size: 10px; color: #8a9bb0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; white-space: nowrap; }
-.filter-header-btns { display: flex; gap: 2px; margin-top: 2px; }
+.filter-header-btns { display: flex; gap: 2px; margin-top: 3px; }
 .filter-header-btns .btn { font-size: 9px; padding: 0 5px; line-height: 1.5; }
-.filter-icons { flex: 1; min-width: 0; }
-.filter-icons .row { margin: 0; flex-wrap: wrap; }
-.filter-icons .row > div { flex-shrink: 0; }
+.filter-icons { flex: 1; min-width: 0; overflow: hidden; }
+/* Force icon row to fill full width and wrap neatly */
+.filter-icons ::v-deep .row { margin: 0; width: 100%; }
+.filter-icons ::v-deep .row > div { display: flex !important; flex-wrap: wrap; width: 100%; margin: 0 !important; padding: 0 !important; }
+.filter-icons ::v-deep .row > div > div { margin: 0 !important; }
+.filter-icons ::v-deep .row > div > div > div { padding: 0 !important; margin-right: 1px !important; }
 
 /* Save button glow when dirty */
 .save-btn-glow {
