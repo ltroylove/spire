@@ -12,7 +12,6 @@
           :version="version"
           @npc-marker-hover="processNpcMarkerHover"
           @spell-marker-hover="processSpellMarkerHover"
-          @spawn2-selected="processSpawn2Selected"
         />
 
         <!-- Arrow overlay -->
@@ -110,17 +109,6 @@
           />
         </eq-window>
 
-        <!-- Spawn Group Panel -->
-        <eq-window
-          class="fade-in mt-2"
-          v-if="selectorActive['npc-hover'] && selectedSpawn2"
-        >
-          <spawn-group-panel
-            :spawn2="selectedSpawn2"
-            @spawn2-updated="onSpawn2Updated"
-          />
-        </eq-window>
-
         <!-- Spell Preview -->
         <eq-window
           class="fade-in"
@@ -150,13 +138,12 @@ import {EventBus}        from "../../app/event-bus/event-bus";
 import {NpcTypeApi}      from "../../app/api";
 import {SpireApi}        from "../../app/api/spire-api";
 import {SpireQueryBuilder} from "../../app/api/spire-query-builder";
-import SpawnGroupPanel   from "../../components/subeditors/SpawnGroupPanel";
 
 const MILLISECONDS_BEFORE_WINDOW_RESET = 5000;
 
 export default {
   name: "Zone",
-  components: { SpawnGroupPanel, EqZoneCardPreview, EqSpellPreview, EqNpcCardPreview, EqZoneMap, EqWindow, ContentArea },
+  components: { EqZoneCardPreview, EqSpellPreview, EqNpcCardPreview, EqZoneMap, EqWindow, ContentArea },
   data() {
     return {
       zone: "",
@@ -167,7 +154,6 @@ export default {
       mapWidth: 0,
       isDragging: false,
       arrowLine: null,
-      selectedSpawn2: null,
     }
   },
   beforeDestroy() {
@@ -406,14 +392,6 @@ export default {
       if (t) {
         t.scrollTop = 0;
       }
-    },
-
-    processSpawn2Selected(spawn2) {
-      this.selectedSpawn2 = spawn2
-    },
-
-    onSpawn2Updated(updatedSpawn2) {
-      this.selectedSpawn2 = Object.assign({}, updatedSpawn2)
     }
   }
 }
