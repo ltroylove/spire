@@ -6,21 +6,32 @@
       <div class="col-4">
         <eq-window title="Spawn Points">
           <!-- Search Controls -->
-          <div class="mb-2">
+          <div class="spawn-search-pane">
+            <!-- Row 1: NPC search + New button -->
             <div class="d-flex mb-2">
-              <div class="position-relative flex-grow-1">
+              <div class="input-group input-group-sm flex-grow-1">
+                <div class="input-group-prepend">
+                  <span class="input-group-text spawn-input-icon">
+                    <i class="fa fa-search"></i>
+                  </span>
+                </div>
                 <input
                   type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Search by NPC name, ID, or zone..."
+                  class="form-control"
+                  placeholder="NPC name, ID..."
                   v-model="search"
                   @keyup.enter="doSearch"
                   @input="debouncedSearch"
                   autofocus
                 />
+                <div class="input-group-append" v-if="search">
+                  <button class="btn btn-sm spawn-clear-btn" @click="search = ''; doSearch()" title="Clear search">
+                    <i class="fa fa-times"></i>
+                  </button>
+                </div>
               </div>
               <button
-                class="btn btn-sm btn-outline-warning ml-2"
+                class="btn btn-sm btn-outline-warning ml-2 flex-shrink-0"
                 @click="showCreatePanel = !showCreatePanel"
                 title="Create a new spawn point"
               >
@@ -28,45 +39,87 @@
               </button>
             </div>
 
-            <!-- Zone filter -->
-            <div class="d-flex align-items-center">
-              <div class="position-relative flex-grow-1">
-                <input
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Filter by zone..."
-                  v-model="zoneFilter"
-                  @input="onZoneFilterInput"
-                  @focus="showZoneFilterDropdown = true"
-                  @blur="delayCloseZoneFilter"
-                  autocomplete="off"
-                />
-                <div v-if="showZoneFilterDropdown && filteredZoneOptions.length > 0" class="zone-dropdown">
-                  <div
-                    class="zone-option"
-                    @mousedown.prevent="zoneFilter = ''; selectedZone = ''; doSearch()"
-                  >
-                    <span class="text-muted">(All Zones)</span>
-                  </div>
-                  <div
-                    v-for="z in filteredZoneOptions"
-                    :key="z.short_name + '-' + z.version"
-                    class="zone-option"
-                    @mousedown.prevent="selectZoneFilter(z)"
-                  >
-                    <span class="text-warning">{{ z.short_name }}</span>
-                    <span class="text-muted ml-2" style="font-size: 0.85em;">{{ z.long_name }}</span>
-                  </div>
+            <!-- Row 2: Zone filter -->
+            <div class="input-group input-group-sm mb-2 position-relative">
+              <div class="input-group-prepend">
+                <span class="input-group-text spawn-input-icon">
+                  <i class="fa fa-map-marker"></i>
+                </span>
+              </div>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Filter by zone..."
+                v-model="zoneFilter"
+                @input="onZoneFilterInput"
+                @focus="showZoneFilterDropdown = true"
+                @blur="delayCloseZoneFilter"
+                autocomplete="off"
+              />
+              <div class="input-group-append" v-if="selectedZone">
+                <button class="btn btn-sm spawn-clear-btn" @click="zoneFilter = ''; selectedZone = ''; doSearch()" title="Clear zone filter">
+                  <i class="fa fa-times"></i>
+                </button>
+              </div>
+              <div v-if="showZoneFilterDropdown && filteredZoneOptions.length > 0" class="zone-dropdown">
+                <div
+                  class="zone-option"
+                  @mousedown.prevent="zoneFilter = ''; selectedZone = ''; doSearch()"
+                >
+                  <span class="text-muted">(All Zones)</span>
+                </div>
+                <div
+                  v-for="z in filteredZoneOptions"
+                  :key="z.short_name + '-' + z.version"
+                  class="zone-option"
+                  @mousedown.prevent="selectZoneFilter(z)"
+                >
+                  <span class="text-warning">{{ z.short_name }}</span>
+                  <span class="text-muted ml-2" style="font-size: 0.85em;">{{ z.long_name }}</span>
                 </div>
               </div>
-              <button
-                v-if="selectedZone"
-                class="btn btn-sm btn-dark ml-1"
-                @click="zoneFilter = ''; selectedZone = ''; doSearch()"
-                title="Clear zone filter"
+            </div>
+
+            <!-- Row 3: Version + Respawn filters -->
+            <div class="d-flex mb-2" style="gap: 6px;">
+              <div class="spawn-filter-group flex-grow-1">
+                <label class="spawn-filter-label">Version</label>
+                <select class="form-control form-control-sm spawn-filter-select" v-model="selectedVersion" @change="currentPage = 1; doSearch()">
+                  <option value="">Any</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                </select>
+              </div>
+              <div class="spawn-filter-group flex-grow-1">
+                <label class="spawn-filter-label">Respawn</label>
+                <select class="form-control form-control-sm spawn-filter-select" v-model="selectedRespawnFilter" @change="currentPage = 1; doSearch()">
+                  <option value="">Any</option>
+                  <option value="short">Short (&lt;5m)</option>
+                  <option value="medium">Medium (5–30m)</option>
+                  <option value="long">Long (&gt;30m)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Active filter chips -->
+            <div class="spawn-active-filters" v-if="activeFilterChips.length > 0">
+              <span
+                v-for="chip in activeFilterChips"
+                :key="chip.key"
+                class="spawn-filter-chip"
               >
-                <i class="fa fa-times"></i>
-              </button>
+                <i :class="chip.icon + ' mr-1'" style="font-size: 0.8em;"></i>{{ chip.label }}
+                <span class="spawn-chip-remove" @click="chip.clear()"><i class="fa fa-times"></i></span>
+              </span>
+            </div>
+
+            <!-- Results count -->
+            <div class="spawn-results-meta" v-if="!listLoading">
+              <i class="fa fa-database mr-1" style="opacity: 0.5;"></i>
+              <span v-if="totalResults === 0">No results</span>
+              <span v-else>{{ spawnList.length }} spawn{{ spawnList.length !== 1 ? 's' : '' }}<span v-if="totalResults > perPage"> &middot; page {{ currentPage }}</span></span>
             </div>
           </div>
 
@@ -610,6 +663,8 @@ export default {
       search: "",
       zoneFilter: "",
       selectedZone: "",
+      selectedVersion: "",
+      selectedRespawnFilter: "",
       showZoneFilterDropdown: false,
       zones: [],
       spawnList: [],
@@ -660,6 +715,23 @@ export default {
       return this.zones
         .filter(z => z.short_name.includes(q) || (z.long_name && z.long_name.toLowerCase().includes(q)))
         .slice(0, 15);
+    },
+    activeFilterChips() {
+      const chips = [];
+      if (this.search) {
+        chips.push({ key: "search", icon: "fa fa-search", label: this.search, clear: () => { this.search = ""; this.doSearch(); } });
+      }
+      if (this.selectedZone) {
+        chips.push({ key: "zone", icon: "fa fa-map-marker", label: this.selectedZone, clear: () => { this.zoneFilter = ""; this.selectedZone = ""; this.doSearch(); } });
+      }
+      if (this.selectedVersion !== "") {
+        chips.push({ key: "version", icon: "fa fa-code-fork", label: `v${this.selectedVersion}`, clear: () => { this.selectedVersion = ""; this.doSearch(); } });
+      }
+      if (this.selectedRespawnFilter) {
+        const labels = { short: "Short respawn", medium: "Medium respawn", long: "Long respawn" };
+        chips.push({ key: "respawn", icon: "fa fa-clock-o", label: labels[this.selectedRespawnFilter] || this.selectedRespawnFilter, clear: () => { this.selectedRespawnFilter = ""; this.doSearch(); } });
+      }
+      return chips;
     },
   },
 
@@ -762,13 +834,27 @@ export default {
           builder.where("zone", "=", this.selectedZone);
         }
 
+        // Version filter
+        if (this.selectedVersion !== "" && this.selectedVersion !== null) {
+          builder.where("version", "=", Number(this.selectedVersion));
+        }
+
+        // Respawn time filter
+        if (this.selectedRespawnFilter === "short") {
+          builder.where("respawntime", "<", 300);
+        } else if (this.selectedRespawnFilter === "medium") {
+          builder.where("respawntime", ">=", 300);
+          builder.where("respawntime", "<=", 1800);
+        } else if (this.selectedRespawnFilter === "long") {
+          builder.where("respawntime", ">", 1800);
+        }
+
         // Text search - could be NPC ID or a zone name
         const q = (this.search || "").trim();
         if (q) {
           const isNumeric = /^\d+$/.test(q);
           if (isNumeric) {
-            // Search by spawngroupID referencing NPC ID via spawnentry
-            // We'll search spawn entries for this NPC ID first
+            // Search spawn entries for this NPC ID to find spawngroup IDs
             const entryApi = new SpawnentryApi(...SpireApi.cfg());
             const entryBuilder = new SpireQueryBuilder();
             entryBuilder.where("npcID", "=", parseInt(q));
@@ -782,14 +868,13 @@ export default {
                 builder.whereOr("spawngroupID", "=", sgId);
               }
             } else {
-              // No entries found, return empty
               this.spawnList = [];
               this.totalResults = 0;
               this.listLoading = false;
               return;
             }
           } else {
-            // Text search: try matching zone name
+            // Text search: try matching zone name first
             const matchingZones = this.zones
               .filter(z => z.short_name.includes(q.toLowerCase()) || (z.long_name && z.long_name.toLowerCase().includes(q.toLowerCase())))
               .map(z => z.short_name);
@@ -843,38 +928,21 @@ export default {
         builder.offset((this.currentPage - 1) * this.perPage);
         builder.orderBy(["zone"]);
 
+        // Use includes to load spawnentries + NPC type in a single request
+        // (avoids N+1 queries that caused the list to appear empty)
+        builder.includes(["Spawnentries.NpcType"]);
+
         const result = await spawn2Api.listSpawn2s(builder.get());
         const spawn2s = result.data || [];
 
-        // Resolve NPC names for each spawn2 via spawnentries
-        const enriched = [];
-        for (const s2 of spawn2s) {
+        const enriched = spawn2s.map(s2 => {
           const sgId = s2.spawngroup_id || s2.spawngroupID;
-          let npcName = "";
-          let npcId = 0;
+          const firstEntry = s2.spawnentries && s2.spawnentries[0];
+          const npcType = firstEntry && (firstEntry.npc_type || firstEntry.NpcType);
+          const npcId = firstEntry ? (firstEntry.npc_id || firstEntry.npcID || 0) : 0;
+          const npcName = npcType ? (npcType.name || "").replace(/_/g, " ") : "";
 
-          try {
-            const entryApi = new SpawnentryApi(...SpireApi.cfg());
-            const eb = new SpireQueryBuilder();
-            eb.where("spawngroupID", "=", sgId);
-            eb.limit(1);
-            const er = await entryApi.listSpawnentries(eb.get());
-            if (er.data && er.data[0]) {
-              npcId = er.data[0].npc_id || er.data[0].npcID;
-              try {
-                const npcApi = new NpcTypeApi(...SpireApi.cfg());
-                const nb = new SpireQueryBuilder();
-                nb.where("id", "=", npcId);
-                nb.select(["id", "name"]);
-                const nr = await npcApi.listNpcTypes(nb.get());
-                if (nr.data && nr.data[0]) {
-                  npcName = (nr.data[0].name || "").replace(/_/g, " ");
-                }
-              } catch (e) { /* ignore */ }
-            }
-          } catch (e) { /* ignore */ }
-
-          enriched.push({
+          return {
             id: s2.id,
             spawngroupId: sgId,
             zone: s2.zone || "unknown",
@@ -885,8 +953,8 @@ export default {
             respawntime: Number(s2.respawntime || 0),
             npcId: npcId,
             npcName: npcName,
-          });
-        }
+          };
+        });
 
         this.spawnList = enriched;
         this.totalResults = enriched.length >= this.perPage ? (this.currentPage * this.perPage) + 1 : enriched.length;
@@ -1385,6 +1453,86 @@ export default {
 </script>
 
 <style scoped>
+/* Search pane */
+.spawn-search-pane {
+  margin-bottom: 8px;
+}
+.spawn-input-icon {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8em;
+}
+.spawn-clear-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  padding: 0 8px;
+}
+.spawn-clear-btn:hover {
+  color: #fcc721;
+  border-color: rgba(252, 199, 33, 0.4);
+}
+.spawn-filter-group {
+  display: flex;
+  flex-direction: column;
+}
+.spawn-filter-label {
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 2px;
+  font-weight: bold;
+}
+.spawn-filter-select {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  font-size: 0.8em;
+}
+.spawn-filter-select:focus {
+  border-color: rgba(138, 163, 255, 0.5);
+  box-shadow: 0 0 0 0.15rem rgba(138, 163, 255, 0.15);
+}
+.spawn-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.spawn-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(138, 163, 255, 0.12);
+  border: 1px solid rgba(138, 163, 255, 0.25);
+  border-radius: 12px;
+  padding: 2px 8px 2px 8px;
+  font-size: 0.78em;
+  color: #8aa3ff;
+  cursor: default;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spawn-chip-remove {
+  margin-left: 5px;
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 0.9em;
+  flex-shrink: 0;
+}
+.spawn-chip-remove:hover {
+  opacity: 1;
+  color: #fcc721;
+}
+.spawn-results-meta {
+  font-size: 0.75em;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 0 1px 4px;
+}
+
 /* Spawn list items */
 .spawn-list-item {
   padding: 8px 10px;
