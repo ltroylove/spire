@@ -68,7 +68,7 @@
                     <b-button size="sm" variant="outline-secondary" @click="deityFilter = 0; applyFilters()">None</b-button>
                   </div>
                 </div>
-                <div class="filter-icons filter-icons--deity">
+                <div class="filter-icons">
                   <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
                 </div>
               </div>
@@ -1361,13 +1361,11 @@ export default {
 .filter-header-btns { display: flex; gap: 2px; margin-top: 3px; }
 .filter-header-btns .btn { font-size: 9px; padding: 0 5px; line-height: 1.5; }
 .filter-icons { flex: 1; min-width: 0; overflow: hidden; }
-/* Force icon row to fill full width and wrap neatly */
+/* Force icons into a single non-wrapping row; overflow is clipped by parent overflow:hidden */
 .filter-icons ::v-deep .row { margin: 0; width: 100%; }
-.filter-icons ::v-deep .row > div { display: flex !important; flex-wrap: wrap; width: 100%; margin: 0 !important; padding: 0 !important; }
-.filter-icons ::v-deep .row > div > div { margin: 0 !important; }
+.filter-icons ::v-deep .row > div { display: flex !important; flex-wrap: nowrap; margin: 0 !important; padding: 0 !important; }
+.filter-icons ::v-deep .row > div > div { margin: 0 !important; flex-shrink: 0; }
 .filter-icons ::v-deep .row > div > div > div { padding: 0 !important; margin-right: 1px !important; }
-/* Deity has 17 icons — cap item width so 9 fit per row, giving 2 rows instead of 3 */
-.filter-icons--deity ::v-deep .row > div > div { max-width: 32px !important; }
 
 /* Save button glow when dirty */
 .save-btn-glow {
