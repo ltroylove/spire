@@ -549,31 +549,59 @@
             <table class="eq-table eq-highlight-rows w-100" style="font-size: 13px;">
               <thead class="eq-table-floating-header">
                 <tr>
-                  <th>NPC</th>
-                  <th class="text-center" style="width: 100px;">Chance %</th>
+                  <th style="width: 35%;">NPC</th>
+                  <th class="text-center" style="width: 220px;">Chance %</th>
                   <th class="text-center" style="width: 80px;"></th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="entry in editSpawnEntries" :key="entry.npc_id">
-                  <td style="vertical-align: middle;">
-                    <router-link
-                      :to="'/npc/' + entry.npc_id"
-                      class="npc-link"
+                  <td style="vertical-align: middle; width: 35%;">
+                    <npc-popover
+                      v-if="entry.npcData"
+                      :npc="entry.npcData"
+                      :show-image="false"
+                      :show-label="false"
                     >
-                      {{ entry.npcName || ('NPC #' + entry.npc_id) }}
-                    </router-link>
-                    <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
+                      <router-link
+                        :to="'/npc/' + entry.npc_id"
+                        target="_blank"
+                        class="npc-link"
+                      >
+                        {{ entry.npcName || ('NPC #' + entry.npc_id) }}
+                      </router-link>
+                      <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
+                    </npc-popover>
+                    <span v-else>
+                      <router-link
+                        :to="'/npc/' + entry.npc_id"
+                        target="_blank"
+                        class="npc-link"
+                      >
+                        {{ entry.npcName || ('NPC #' + entry.npc_id) }}
+                      </router-link>
+                      <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
+                    </span>
                   </td>
-                  <td class="text-center" style="vertical-align: middle;">
-                    <input
-                      v-model.number="entry.chance"
-                      type="number"
-                      min="0"
-                      max="100"
-                      class="form-control form-control-sm text-center"
-                      style="width: 70px; display: inline-block;"
-                    />
+                  <td style="vertical-align: middle;">
+                    <div class="d-flex align-items-center justify-content-center">
+                      <input
+                        v-model.number="entry.chance"
+                        type="range"
+                        min="0"
+                        max="100"
+                        class="mr-2"
+                        style="width: 90px;"
+                      />
+                      <input
+                        v-model.number="entry.chance"
+                        type="number"
+                        min="0"
+                        max="100"
+                        class="form-control form-control-sm text-center"
+                        style="width: 60px; display: inline-block;"
+                      />
+                    </div>
                   </td>
                   <td class="text-center" style="vertical-align: middle;">
                     <button
@@ -649,6 +677,7 @@ import { SpireQueryBuilder } from "@/app/api/spire-query-builder";
 import { Zones } from "@/app/zones";
 import EqWindow from "../../components/eq-ui/EQWindow";
 import ContentArea from "../../components/layout/ContentArea";
+import NpcPopover from "../../components/NpcPopover";
 
 let searchTimeout = null;
 let npcSearchTimeout = null;
@@ -656,7 +685,7 @@ let addNpcSearchTimeout = null;
 
 export default {
   name: "SpawnEditor",
-  components: { EqWindow, ContentArea },
+  components: { EqWindow, ContentArea, NpcPopover },
   data() {
     return {
       // Search / list
@@ -1066,20 +1095,22 @@ export default {
         for (const entry of entries) {
           const npcId = entry.npc_id || entry.npcID;
           let npcName = "";
+          let npcData = null;
           try {
             const npcApi = new NpcTypeApi(...SpireApi.cfg());
             const nb = new SpireQueryBuilder();
             nb.where("id", "=", npcId);
-            nb.select(["id", "name"]);
             const nr = await npcApi.listNpcTypes(nb.get());
             if (nr.data && nr.data[0]) {
-              npcName = (nr.data[0].name || "").replace(/_/g, " ");
+              npcData = nr.data[0];
+              npcName = (npcData.name || "").replace(/_/g, " ");
             }
           } catch (e) { /* ignore */ }
 
           enriched.push({
             npc_id: npcId,
             npcName: npcName,
+            npcData: npcData,
             chance: Number(entry.chance || 0),
             spawngroup_id: entry.spawngroup_id || entry.spawngroupID,
           });
