@@ -98,40 +98,41 @@
           </b-button>
         </eq-window>
 
-        <!-- NPC Preview -->
-        <eq-window
-          class="fade-in"
-          id="preview-pane"
-          :style="'max-height: ' + (isZoneCardActive() ? '91' : '83') + 'vh; overflow-y: scroll; overflow-x: hidden'"
-          v-if="selectorActive['npc-hover'] && npc"
-        >
-          <eq-npc-card-preview
-            :npc="npc"
-          />
-        </eq-window>
+        <!-- Scrollable preview area: NPC card + SpawnGroupPanel + Spell preview share one scroll container -->
+        <div class="sidebar-preview-scroll">
+          <!-- NPC Preview -->
+          <eq-window
+            class="fade-in"
+            id="preview-pane"
+            v-if="selectorActive['npc-hover'] && npc"
+          >
+            <eq-npc-card-preview
+              :npc="npc"
+            />
+          </eq-window>
 
-        <!-- Spawn Group Panel -->
-        <eq-window
-          class="fade-in mt-2"
-          v-if="selectorActive['npc-hover'] && selectedSpawn2"
-        >
-          <spawn-group-panel
-            :spawn2="selectedSpawn2"
-            @spawn2-updated="onSpawn2Updated"
-          />
-        </eq-window>
+          <!-- Spawn Group Panel -->
+          <eq-window
+            class="fade-in mt-2"
+            v-if="selectorActive['npc-hover'] && selectedSpawn2"
+          >
+            <spawn-group-panel
+              :spawn2="selectedSpawn2"
+              @spawn2-updated="onSpawn2Updated"
+            />
+          </eq-window>
 
-        <!-- Spell Preview -->
-        <eq-window
-          class="fade-in"
-          id="preview-pane"
-          :style="'max-height: ' + (isZoneCardActive() ? '91' : '83') + 'vh; overflow-y: scroll; overflow-x: hidden'"
-          v-if="selectorActive['spell-hover'] && spell"
-        >
-          <eq-spell-preview
-            :spell-data="spell"
-          />
-        </eq-window>
+          <!-- Spell Preview -->
+          <eq-window
+            class="fade-in"
+            id="preview-pane"
+            v-if="selectorActive['spell-hover'] && spell"
+          >
+            <eq-spell-preview
+              :spell-data="spell"
+            />
+          </eq-window>
+        </div>
       </div>
     </div>
   </div>
@@ -511,6 +512,13 @@ export default {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.sidebar-preview-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .zone-sidebar-header {
