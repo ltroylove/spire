@@ -925,7 +925,7 @@ export default {
         }
 
         builder.limit(this.perPage);
-        builder.offset((this.currentPage - 1) * this.perPage);
+        builder.page(this.currentPage);
         builder.orderBy(["zone"]);
 
         // Use includes to load spawnentries + NPC type in a single request
