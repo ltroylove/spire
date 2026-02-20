@@ -16,6 +16,7 @@ export class Spawn {
 
     if (withRelations) {
       includes = [...includes, ...[
+        "Spawngroup",
         "Spawnentries.NpcType.NpcSpell.NpcSpellsEntries.SpellsNew",
         "Spawnentries.NpcType.NpcFactions.NpcFactionEntries.FactionList",
         "Spawnentries.NpcType.NpcFactions",
