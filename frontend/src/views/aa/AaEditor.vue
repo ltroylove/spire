@@ -34,10 +34,10 @@
               </div>
             </div>
 
-            <!-- Bitmask filters - full-width rows -->
+            <!-- Bitmask filters - compact inline rows -->
             <div class="mt-2 pt-2" style="border-top: 1px solid rgba(174,189,213,0.15)">
               <div class="filter-section">
-                <div class="filter-header">
+                <div class="filter-left">
                   <span class="filter-label">Class</span>
                   <div class="filter-header-btns">
                     <b-button size="sm" variant="outline-secondary" @click="classFilter = 65535; applyFilters()">All</b-button>
@@ -45,11 +45,11 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
+                  <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :icon-small="true" :centered-buttons="false" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
                 </div>
               </div>
               <div class="filter-section">
-                <div class="filter-header">
+                <div class="filter-left">
                   <span class="filter-label">Race</span>
                   <div class="filter-header-btns">
                     <b-button size="sm" variant="outline-secondary" @click="raceFilter = 65535; applyFilters()">All</b-button>
@@ -57,11 +57,11 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
+                  <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :icon-small="true" :centered-buttons="false" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
                 </div>
               </div>
               <div class="filter-section">
-                <div class="filter-header">
+                <div class="filter-left">
                   <span class="filter-label">Deity</span>
                   <div class="filter-header-btns">
                     <b-button size="sm" variant="outline-secondary" @click="deityFilter = 131071; applyFilters()">All</b-button>
@@ -69,7 +69,7 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
+                  <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :icon-small="true" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
                 </div>
               </div>
             </div>
@@ -1354,14 +1354,14 @@ export default {
   border-radius: 4px;
 }
 
-/* Full-width bitmask filter sections */
-.filter-section { margin-bottom: 6px; }
-.filter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-.filter-label { font-size: 11px; color: #8a9bb0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-.filter-header-btns { display: flex; gap: 4px; }
-.filter-header-btns .btn { font-size: 10px; padding: 0 8px; line-height: 1.6; }
-.filter-icons { width: 100%; }
-.filter-icons .row { margin: 0; width: 100%; flex-wrap: wrap; }
+/* Compact inline bitmask filter sections */
+.filter-section { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.filter-left { display: flex; flex-direction: column; align-items: center; min-width: 40px; flex-shrink: 0; }
+.filter-label { font-size: 10px; color: #8a9bb0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; white-space: nowrap; }
+.filter-header-btns { display: flex; gap: 2px; margin-top: 2px; }
+.filter-header-btns .btn { font-size: 9px; padding: 0 5px; line-height: 1.5; }
+.filter-icons { flex: 1; min-width: 0; }
+.filter-icons .row { margin: 0; flex-wrap: wrap; }
 .filter-icons .row > div { flex-shrink: 0; }
 
 /* Save button glow when dirty */
