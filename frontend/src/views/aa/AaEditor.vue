@@ -68,7 +68,7 @@
                     <b-button size="sm" variant="outline-secondary" @click="deityFilter = 0; applyFilters()">None</b-button>
                   </div>
                 </div>
-                <div class="filter-icons">
+                <div class="filter-icons filter-icons--deity">
                   <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
                 </div>
               </div>
@@ -1366,6 +1366,8 @@ export default {
 .filter-icons ::v-deep .row > div { display: flex !important; flex-wrap: wrap; width: 100%; margin: 0 !important; padding: 0 !important; }
 .filter-icons ::v-deep .row > div > div { margin: 0 !important; }
 .filter-icons ::v-deep .row > div > div > div { padding: 0 !important; margin-right: 1px !important; }
+/* Deity has 17 icons — cap item width so 9 fit per row, giving 2 rows instead of 3 */
+.filter-icons--deity ::v-deep .row > div > div { max-width: 32px !important; }
 
 /* Save button glow when dirty */
 .save-btn-glow {
