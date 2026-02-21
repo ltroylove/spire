@@ -279,6 +279,54 @@ test.describe('Spawn Editor — Zone Filter', () => {
     await expect(meta).toContainText('qeynos');
   });
 
+  test('zone filter without search term shows NPC results for selected zone', async ({ page }) => {
+    await gotoSpawnEditor(page);
+
+    // Apply qeynos zone filter (no search term)
+    await page.locator('.zone-filter-add-btn').click();
+    const modal = page.locator('#zone-filter-modal .eq-window-simple');
+    await modal.locator('tbody tr').first().click(); // qeynos is first
+    await modal.locator('button:has-text("Add Selected")').click();
+    await expect(modal).not.toBeVisible();
+
+    // Zone filter pill should be visible
+    await expect(page.locator('.zone-filter-pill').first()).toContainText('qeynos');
+
+    // Without any search term, the NPC list should show results from the qeynos zone
+    const npcItems = page.locator('.spawn-list-item');
+    await expect(npcItems.first()).toBeVisible({ timeout: 5000 });
+
+    // Both NPCs in the qeynos zone (Guard_Morgan #101, Guard_Hana #102) should appear
+    await expect(npcItems).toHaveCount(2);
+
+    // Results meta should reflect the total and active zone
+    const meta = page.locator('.spawn-results-meta');
+    await expect(meta).toBeVisible();
+    await expect(meta).toContainText('qeynos');
+    await expect(meta).toContainText('2 NPCs');
+  });
+
+  test('search term further filters zone filter results', async ({ page }) => {
+    await gotoSpawnEditor(page);
+
+    // Apply qeynos zone filter
+    await page.locator('.zone-filter-add-btn').click();
+    const modal = page.locator('#zone-filter-modal .eq-window-simple');
+    await modal.locator('tbody tr').first().click();
+    await modal.locator('button:has-text("Add Selected")').click();
+    await expect(modal).not.toBeVisible();
+
+    // Wait for zone-filtered results to load (2 NPCs: Guard_Morgan and Guard_Hana)
+    await expect(page.locator('.spawn-list-item')).toHaveCount(2, { timeout: 5000 });
+
+    // Now type a search term to further filter — 'Mammoth' is not in qeynos
+    await page.locator('input[placeholder*="Search NPC"]').fill('Mammoth');
+    await page.waitForTimeout(600);
+
+    // Mammoth (id 201) is not in qeynos zone, so no results should be shown
+    await expect(page.locator('.spawn-list-item')).toHaveCount(0);
+  });
+
 });
 
 // ---------------------------------------------------------------------------
