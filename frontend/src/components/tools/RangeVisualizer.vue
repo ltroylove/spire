@@ -155,7 +155,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 6px;
+  margin-top: 14px;
 }
 
 .rv-slider {
