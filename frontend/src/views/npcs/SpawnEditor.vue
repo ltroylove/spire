@@ -24,7 +24,7 @@
                   autofocus
                 />
                 <div class="input-group-append" v-if="npcSearch">
-                  <button class="btn btn-sm spawn-clear-btn" @click="npcSearch = ''; npcList = []; selectedNpc = null; spawnGroupCards = [];" title="Clear">
+                  <button class="btn btn-sm spawn-clear-btn" @click="clearNpcSearch" title="Clear">
                     <i class="fa fa-times"></i>
                   </button>
                 </div>
@@ -38,26 +38,44 @@
               </button>
             </div>
 
+            <!-- Zone filter pills -->
+            <div class="zone-filter-row mb-2">
+              <div class="d-flex flex-wrap align-items-center" style="gap: 4px;">
+                <span class="zone-filter-label">Zones:</span>
+                <span
+                  v-for="zone in zoneFilter"
+                  :key="zone"
+                  class="zone-filter-pill"
+                >
+                  {{ zone }}
+                  <span class="zone-filter-pill-remove" @click="removeZoneFilter(zone)" title="Remove">×</span>
+                </span>
+                <button class="btn btn-xs zone-filter-add-btn" @click="openZoneFilterModal" title="Add zone filter">
+                  <i class="fa fa-plus mr-1"></i>{{ zoneFilter.length === 0 ? 'All Zones' : 'Add' }}
+                </button>
+                <i v-if="zoneFilterLoading" class="fa fa-spinner fa-spin ml-1" style="font-size: 11px; color: #888;"></i>
+              </div>
+            </div>
+
             <!-- Results count -->
-            <div class="spawn-results-meta" v-if="!npcListLoading && npcSearch">
+            <div class="spawn-results-meta" v-if="!npcListLoading && !zoneFilterLoading && npcList.length > 0">
               <i class="fa fa-database mr-1" style="opacity: 0.5;"></i>
-              <span v-if="npcList.length === 0">No NPCs found</span>
-              <span v-else>{{ npcList.length }} NPC{{ npcList.length !== 1 ? 's' : '' }}<span v-if="npcTotalResults > npcPerPage"> &middot; page {{ npcCurrentPage }}</span></span>
+              <span>{{ npcTotalResults }} NPC{{ npcTotalResults !== 1 ? 's' : '' }}<span v-if="zoneFilter.length > 0"> in {{ zoneFilter.join(', ') }}</span><span v-if="npcTotalResults > npcPerPage"> &middot; page {{ npcCurrentPage }}</span></span>
             </div>
           </div>
 
           <!-- NPC List -->
-          <div class="spawn-list" style="height: calc(100vh - 200px); overflow-y: auto;">
-            <div v-if="npcListLoading" class="text-center p-3">
-              <i class="fa fa-spinner fa-spin"></i> Searching...
+          <div class="spawn-list" style="height: calc(100vh - 255px); overflow-y: auto;">
+            <div v-if="npcListLoading || zoneFilterLoading" class="text-center p-3">
+              <i class="fa fa-spinner fa-spin"></i> {{ zoneFilterLoading ? 'Loading zone filter...' : 'Searching...' }}
             </div>
 
-            <div v-if="!npcListLoading && npcList.length === 0 && npcSearch" class="text-center p-3" style="opacity: .5;">
+            <div v-if="!npcListLoading && !zoneFilterLoading && npcList.length === 0 && (npcSearch || zoneFilter.length > 0)" class="text-center p-3" style="opacity: .5;">
               <i class="ra ra-dragon d-block mb-2" style="font-size: 2em;"></i>
               No NPCs found
             </div>
 
-            <div v-if="!npcListLoading && !npcSearch && npcList.length === 0" class="text-center p-3" style="opacity: .4;">
+            <div v-if="!npcListLoading && !zoneFilterLoading && !npcSearch && zoneFilter.length === 0 && npcList.length === 0" class="text-center p-3" style="opacity: .4;">
               <i class="ra ra-dragon" style="font-size: 3em;"></i>
               <div class="mt-3">Search for an NPC to view its spawn groups</div>
             </div>
@@ -317,7 +335,7 @@
               <!-- Spawngroup Header -->
               <div
                 class="d-flex justify-content-between align-items-center"
-                :class="card.collapsed ? '' : 'mb-2'"
+                :class="[card.collapsed ? '' : 'mb-2', card._pendingNew ? 'spawn-group-header-new' : '']"
                 style="cursor: pointer;"
                 @click="$set(card, 'collapsed', !card.collapsed)"
               >
@@ -330,11 +348,12 @@
                     :class="card.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"
                     style="color: #888; font-size: 11px; flex-shrink: 0;"
                   ></i>
-                  <span style="color: #fcc721; font-weight: bold; white-space: nowrap;">
+                  <span class="spawn-group-name-text" :style="{color: card._pendingNew ? '#4caf50' : '#fcc721', fontWeight: 'bold', whiteSpace: 'nowrap'}">
                     <i class="fa fa-object-group mr-1"></i>
                     {{ card.spawngroup.name || ('Spawngroup #' + card.spawngroupId) }}
                   </span>
                   <small class="text-muted ml-2" style="white-space: nowrap;">SG #{{ card.spawngroupId }}</small>
+                  <span v-if="card._pendingNew" class="badge ml-2" style="background: rgba(76,175,80,0.25); color: #4caf50; font-size: 0.75em;">New</span>
                   <!-- Collapsed summary: NPC count + spawn point count -->
                   <small v-if="card.collapsed" class="text-muted ml-3" style="font-size: 10px; white-space: nowrap; opacity: 0.7;">
                     {{ card.entries.length }} NPC{{ card.entries.length !== 1 ? 's' : '' }}
@@ -371,6 +390,7 @@
                   </button>
                   <button
                     class="btn btn-sm btn-outline-success mr-1"
+                    :class="{'save-btn-pulse': cardHasPendingChanges(card)}"
                     @click.stop="saveSpawnGroupCard(card)"
                     :disabled="saving"
                     title="Save all queued changes to this spawngroup"
@@ -837,6 +857,75 @@
       </eq-window>
     </b-modal>
 
+    <!-- Zone Filter Modal (multi-select) -->
+    <b-modal
+      id="zone-filter-modal"
+      hide-header
+      hide-footer
+      modal-class="eq-style-modal"
+      content-class="bg-transparent border-0 shadow-none"
+      body-class="p-0"
+      size="lg"
+    >
+      <eq-window title="Filter by Zone">
+        <input
+          v-model="zoneFilterModal.search"
+          class="form-control form-control-sm mb-2"
+          placeholder="Search by zone short name or long name..."
+          @input="onZoneFilterModalSearch"
+          autofocus
+        />
+        <div style="height: 55vh; overflow-y: auto;">
+          <table class="eq-table eq-highlight-rows w-100" style="font-size: 13px;">
+            <thead class="eq-table-floating-header">
+              <tr>
+                <th style="width: 36px;"></th>
+                <th style="width: 28%;">Short Name</th>
+                <th>Long Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="z in zoneFilterModal.filteredZones"
+                :key="z.short_name"
+                style="cursor: pointer;"
+                :class="{ 'zone-filter-modal-selected': zoneFilterModal.pendingZones.includes(z.short_name) }"
+                @click="toggleZoneFilterModalZone(z.short_name)"
+              >
+                <td style="text-align: center;">
+                  <input
+                    type="checkbox"
+                    :checked="zoneFilterModal.pendingZones.includes(z.short_name)"
+                    @click.stop="toggleZoneFilterModalZone(z.short_name)"
+                  />
+                </td>
+                <td class="text-warning">{{ z.short_name }}</td>
+                <td class="text-muted">{{ z.long_name }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <small class="text-muted">
+            <template v-if="zoneFilterModal.pendingZones.length > 0">
+              {{ zoneFilterModal.pendingZones.length }} zone{{ zoneFilterModal.pendingZones.length !== 1 ? 's' : '' }} selected
+            </template>
+            <template v-else>Select one or more zones to filter NPCs</template>
+          </small>
+          <div>
+            <button class="btn btn-sm btn-dark mr-2" @click="$bvModal.hide('zone-filter-modal')">Cancel</button>
+            <button
+              class="btn btn-sm btn-outline-success"
+              @click="applyZoneFilterModal"
+              :disabled="zoneFilterModal.pendingZones.length === 0"
+            >
+              <i class="fa fa-filter mr-1"></i> Add Selected
+            </button>
+          </div>
+        </div>
+      </eq-window>
+    </b-modal>
+
     <!-- Zone Picker Modal -->
     <b-modal
       id="zone-picker-modal"
@@ -970,6 +1059,16 @@ export default {
       npcPerPage: 50,
       npcTotalResults: 0,
 
+      // Zone filter for NPC search
+      zoneFilter: [],
+      zoneFilterNpcIds: null,   // null=not loaded, Set<number> when loaded
+      zoneFilterLoading: false,
+      zoneFilterModal: {
+        search: "",
+        filteredZones: [],
+        pendingZones: [],
+      },
+
       // Selected NPC and its spawngroup cards (right panel)
       selectedNpc: null,
       spawnGroupCards: [],
@@ -1068,6 +1167,13 @@ export default {
     isFieldEdited(card, field) {
       if (!card._originalSpawngroup) return false;
       return card.spawngroup[field] !== card._originalSpawngroup[field];
+    },
+
+    cardHasPendingChanges(card) {
+      if (card.entries && card.entries.some(e => e._pendingAdd || e._pendingDelete)) return true;
+      if (card.spawnPoints && card.spawnPoints.some(sp => sp._pendingAdd || sp._pendingDelete)) return true;
+      const fields = ['name', 'spawn_limit', 'dist', 'delay', 'mindelay', 'despawn', 'despawn_timer', 'wp_spawns', 'min_x', 'max_x', 'min_y', 'max_y'];
+      return fields.some(f => this.isFieldEdited(card, f));
     },
 
     queueRemoveSpawnEntry(card, entry) {
@@ -1247,7 +1353,9 @@ export default {
 
     async doNpcSearch() {
       const q = (this.npcSearch || "").trim();
-      if (!q) {
+
+      // Need either a text query or an active zone filter to show results
+      if (!q && this.zoneFilter.length === 0) {
         this.npcList = [];
         this.npcTotalResults = 0;
         return;
@@ -1256,8 +1364,50 @@ export default {
       this.npcListLoading = true;
       this.npcList = [];
 
+      // Ensure zone filter NPC IDs are loaded before filtering
+      if (this.zoneFilter.length > 0 && this.zoneFilterNpcIds === null) {
+        await this.loadZoneFilterNpcIds();
+      }
+
       try {
         const npcApi = new NpcTypeApi(...SpireApi.cfg());
+
+        // Case 1: zone filter active with no text query — page directly through zone NPC IDs
+        if (this.zoneFilter.length > 0 && !q) {
+          const allIds = this.zoneFilterNpcIds ? [...this.zoneFilterNpcIds].sort((a, b) => a - b) : [];
+          this.npcTotalResults = allIds.length;
+
+          const start = (this.npcCurrentPage - 1) * this.npcPerPage;
+          const pageIds = allIds.slice(start, start + this.npcPerPage);
+
+          if (pageIds.length === 0) {
+            this.npcList = [];
+            this.npcListLoading = false;
+            return;
+          }
+
+          const builder = new SpireQueryBuilder();
+          for (const id of pageIds) {
+            builder.whereOr("id", "=", id);
+          }
+          builder.select(["id", "name", "level", "race", "class"]);
+          builder.limit(this.npcPerPage);
+          builder.orderBy(["id"]);
+
+          const result = await npcApi.listNpcTypes(builder.get());
+          this.npcList = (result.data || []).map(n => ({
+            id: n.id,
+            name: n.name || "",
+            cleanName: (n.name || "").replace(/_/g, " "),
+            level: n.level || 0,
+            race: n.race || 0,
+            class: n.class || 0,
+          }));
+          this.npcListLoading = false;
+          return;
+        }
+
+        // Case 2: text search (with or without zone filter)
         const builder = new SpireQueryBuilder();
 
         if (/^\d+$/.test(q)) {
@@ -1267,8 +1417,10 @@ export default {
         }
 
         builder.select(["id", "name", "level", "race", "class"]);
-        builder.limit(this.npcPerPage);
-        builder.page(this.npcCurrentPage);
+        // Fetch a larger result set when zone filter active so client-side filtering has more to work with
+        const fetchLimit = this.zoneFilter.length > 0 ? 500 : this.npcPerPage;
+        builder.limit(fetchLimit);
+        builder.page(this.zoneFilter.length > 0 ? 1 : this.npcCurrentPage);
         builder.orderBy(["id"]);
 
         const result = await npcApi.listNpcTypes(builder.get());
@@ -1286,7 +1438,7 @@ export default {
           });
         }
 
-        this.npcList = npcs.map(n => ({
+        let mapped = npcs.map(n => ({
           id: n.id,
           name: n.name || "",
           cleanName: (n.name || "").replace(/_/g, " "),
@@ -1295,9 +1447,22 @@ export default {
           class: n.class || 0,
         }));
 
-        this.npcTotalResults = this.npcList.length >= this.npcPerPage
-          ? (this.npcCurrentPage * this.npcPerPage) + 1
-          : this.npcList.length;
+        // Apply zone filter client-side
+        if (this.zoneFilter.length > 0 && this.zoneFilterNpcIds !== null) {
+          mapped = mapped.filter(n => this.zoneFilterNpcIds.has(n.id));
+        }
+
+        if (this.zoneFilter.length > 0) {
+          // Client-side pagination when zone filter is active
+          this.npcTotalResults = mapped.length;
+          const start = (this.npcCurrentPage - 1) * this.npcPerPage;
+          this.npcList = mapped.slice(start, start + this.npcPerPage);
+        } else {
+          this.npcList = mapped;
+          this.npcTotalResults = mapped.length >= this.npcPerPage
+            ? (this.npcCurrentPage * this.npcPerPage) + 1
+            : mapped.length;
+        }
       } catch (e) {
         console.error("Failed to search NPCs", e);
       }
@@ -1308,6 +1473,130 @@ export default {
     paginateNpcs(page) {
       this.npcCurrentPage = page;
       this.doNpcSearch();
+    },
+
+    clearNpcSearch() {
+      this.npcSearch = '';
+      this.selectedNpc = null;
+      this.spawnGroupCards = [];
+      this.npcCurrentPage = 1;
+      if (this.zoneFilter.length > 0) {
+        this.doNpcSearch();
+      } else {
+        this.npcList = [];
+        this.npcTotalResults = 0;
+      }
+    },
+
+    // ========================
+    // Zone filter
+    // ========================
+    openZoneFilterModal() {
+      // Deduplicate zones by short_name
+      const unique = [...new Map(this.zones.map(z => [z.short_name, z])).values()];
+      this.zoneFilterModal.search = "";
+      this.zoneFilterModal.filteredZones = unique.slice(0, 100);
+      // Pre-select zones already in the filter
+      this.zoneFilterModal.pendingZones = [...this.zoneFilter];
+      this.$bvModal.show("zone-filter-modal");
+    },
+
+    onZoneFilterModalSearch() {
+      const q = (this.zoneFilterModal.search || "").toLowerCase();
+      const unique = [...new Map(this.zones.map(z => [z.short_name, z])).values()];
+      if (!q) {
+        this.zoneFilterModal.filteredZones = unique.slice(0, 100);
+        return;
+      }
+      this.zoneFilterModal.filteredZones = unique.filter(z =>
+        z.short_name.toLowerCase().includes(q) ||
+        (z.long_name && z.long_name.toLowerCase().includes(q))
+      ).slice(0, 100);
+    },
+
+    toggleZoneFilterModalZone(shortName) {
+      const idx = this.zoneFilterModal.pendingZones.indexOf(shortName);
+      if (idx === -1) {
+        this.zoneFilterModal.pendingZones.push(shortName);
+      } else {
+        this.zoneFilterModal.pendingZones.splice(idx, 1);
+      }
+    },
+
+    applyZoneFilterModal() {
+      let changed = false;
+      for (const zone of this.zoneFilterModal.pendingZones) {
+        if (!this.zoneFilter.includes(zone)) {
+          this.zoneFilter.push(zone);
+          changed = true;
+        }
+      }
+      this.$bvModal.hide("zone-filter-modal");
+      if (changed) {
+        this.zoneFilterNpcIds = null;
+        this.npcCurrentPage = 1;
+        this.doNpcSearch();
+      }
+    },
+
+    removeZoneFilter(zone) {
+      const idx = this.zoneFilter.indexOf(zone);
+      if (idx !== -1) {
+        this.zoneFilter.splice(idx, 1);
+        this.zoneFilterNpcIds = null;
+        this.npcCurrentPage = 1;
+        this.doNpcSearch();
+      }
+    },
+
+    async loadZoneFilterNpcIds() {
+      if (this.zoneFilter.length === 0) {
+        this.zoneFilterNpcIds = null;
+        return;
+      }
+
+      this.zoneFilterLoading = true;
+      try {
+        const spawn2Api = new Spawn2Api(...SpireApi.cfg());
+        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
+
+        // Step 1: Get spawngroup IDs for all selected zones
+        const s2Builder = new SpireQueryBuilder();
+        for (const zone of this.zoneFilter) {
+          s2Builder.whereOr("zone", "=", zone);
+        }
+        s2Builder.select(["spawngroup_id"]);
+        s2Builder.limit(5000);
+        const s2Result = await spawn2Api.listSpawn2s(s2Builder.get());
+        const sgIds = [...new Set((s2Result.data || []).map(r => r.spawngroup_id).filter(Boolean))];
+
+        if (sgIds.length === 0) {
+          this.zoneFilterNpcIds = new Set();
+          this.zoneFilterLoading = false;
+          return;
+        }
+
+        // Step 2: Get NPC IDs from spawnentries in batches (to avoid huge query strings)
+        const npcIds = new Set();
+        const batchSize = 100;
+        for (let i = 0; i < sgIds.length; i += batchSize) {
+          const batch = sgIds.slice(i, i + batchSize);
+          const seBuilder = new SpireQueryBuilder();
+          for (const sgId of batch) {
+            seBuilder.whereOr("spawngroup_id", "=", sgId);
+          }
+          seBuilder.select(["npc_id"]);
+          seBuilder.limit(batchSize * 10);
+          const seResult = await spawnentryApi.listSpawnentries(seBuilder.get());
+          (seResult.data || []).forEach(e => { if (e.npc_id) npcIds.add(e.npc_id); });
+        }
+
+        this.zoneFilterNpcIds = npcIds;
+      } catch (e) {
+        console.error("Failed to load zone filter NPC IDs", e);
+        this.zoneFilterNpcIds = new Set();
+      }
+      this.zoneFilterLoading = false;
     },
 
     // ========================
@@ -1640,6 +1929,9 @@ export default {
         // Update the original snapshot so edit highlighting resets
         card._originalSpawngroup = Object.assign({}, card.spawngroup);
 
+        // Clear the new-card indicator now that the card has been saved
+        this.$set(card, '_pendingNew', false);
+
         this.editorSuccess = `Saved spawngroup #${card.spawngroupId} successfully.`;
       } catch (e) {
         console.error("Failed to save spawngroup card", e);
@@ -1856,6 +2148,7 @@ export default {
         const newCard = await this.loadSpawnGroupCard(newSgId);
         if (newCard) {
           newCard.collapsed = false;
+          newCard._pendingNew = true;
           this.spawnGroupCards.push(newCard);
         }
 
@@ -1988,6 +2281,11 @@ export default {
         // If an NPC is selected, refresh its data
         if (this.selectedNpc) {
           await this.selectNpc(this.selectedNpc);
+          // Mark the newly created spawn group card as new for visual feedback
+          const newCard = this.spawnGroupCards.find(c => c.spawngroupId === spawngroupId);
+          if (newCard) {
+            this.$set(newCard, '_pendingNew', true);
+          }
         }
       } catch (e) {
         console.error("Failed to create spawn", e);
@@ -2339,4 +2637,70 @@ tr.pending-delete-row select {
   pointer-events: none;
   opacity: 0.5;
 }
+
+/* Zone filter row */
+.zone-filter-row {
+  font-size: 12px;
+}
+
+.zone-filter-label {
+  color: #888;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.zone-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(252, 199, 33, 0.15);
+  color: #fcc721;
+  border: 1px solid rgba(252, 199, 33, 0.35);
+  border-radius: 20px;
+  padding: 1px 8px 1px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: nowrap;
+  gap: 4px;
+}
+
+.zone-filter-pill-remove {
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 14px;
+  line-height: 1;
+  margin-left: 1px;
+}
+.zone-filter-pill-remove:hover {
+  opacity: 1;
+}
+
+.zone-filter-add-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #aaa;
+  border-radius: 20px;
+  padding: 1px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.zone-filter-add-btn:hover {
+  border-color: rgba(252, 199, 33, 0.4);
+  color: #fcc721;
+}
+
+/* Zone filter modal selected row highlight */
+.zone-filter-modal-selected td {
+  background: rgba(76, 175, 80, 0.1) !important;
+}
+
+/* Save button subtle pulse when there are pending changes */
+@keyframes pending-save-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(40, 167, 69, 0); }
+}
+.save-btn-pulse {
+  animation: pending-save-pulse 2s ease-in-out infinite;
+}
+
 </style>
