@@ -5,9 +5,10 @@ import {AaAbilityApi} from "@/app/api/api/aa-ability-api";
 import {DbStrApi} from "@/app/api";
 
 export class AA {
-  public static _aaRanks   = <any>[]
-  public static _aaAbility = <any>[]
-  public static _dbStrs    = <any>[]
+  public static _aaRanks    = <any>[]
+  public static _aaAbility  = <any>[]
+  public static _dbStrs     = <any>[]
+  public static _dbStrsDesc = <any>[]
 
   static isPreloaded() {
     return this._aaRanks.length > 0
@@ -39,9 +40,9 @@ export class AA {
     ).then(async (r) => {
         const aaRanks = await r[0].data
         const aaAbils = await r[1].data
-        const dbStrs  = await r[2].data.filter((e) => {
-          return e.type === 1;
-        })
+        const allDbStrs  = await r[2].data
+        const dbStrs     = allDbStrs.filter((e) => e.type === 1)
+        const dbStrsDesc = allDbStrs.filter((e) => e.type === 4)
 
         if (aaRanks.length > 0) {
           this._aaRanks = aaRanks
@@ -51,6 +52,9 @@ export class AA {
         }
         if (dbStrs.length > 0) {
           this._dbStrs = dbStrs
+        }
+        if (dbStrsDesc.length > 0) {
+          this._dbStrsDesc = dbStrsDesc
         }
       }
     ).catch((e) => {
@@ -89,6 +93,12 @@ export class AA {
 
   static getAANameDbString(id) {
     return this._dbStrs.find((e) => {
+      return parseInt(e.id) === parseInt(id);
+    })
+  }
+
+  static getAADescriptionDbString(id) {
+    return this._dbStrsDesc.find((e) => {
       return parseInt(e.id) === parseInt(id);
     })
   }
