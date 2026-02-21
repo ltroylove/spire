@@ -174,13 +174,13 @@
                     <div v-if="chainRanks.length" class="mt-3">
                       <div class="row">
                         <div class="col-12">
-                          Title
+                          Rank 1 Title
                           <b-form-input :value="rankTitleText(chainRanks[0].title_sid)" disabled placeholder="(no title)"/>
                         </div>
                       </div>
                       <div class="row mt-2">
                         <div class="col-12">
-                          Description
+                          Rank 1 Description
                           <b-form-textarea :value="rankDescText(chainRanks[0].desc_sid)" disabled placeholder="(no description)" rows="3"/>
                         </div>
                       </div>
@@ -312,7 +312,7 @@
                           <div class="col-2">Next ID<b-form-input v-model.number="rank.next_id" @input="markRankDirty(rank)"/></div>
                           <div class="col-2">
                             Title SID
-                            <b-form-input v-model.number="rank.title_sid" @input="markRankDirty(rank)"/>
+                            <b-form-input v-model.number="rank.title_sid" @input="markRankDirty(rank)" :title="rankTitleText(rank.title_sid) || '(no title)'"/>
                             <router-link
                               class="btn btn-warning btn-sm mt-1"
                               tag="button"
@@ -323,7 +323,7 @@
                           </div>
                           <div class="col-3">
                             Desc SID
-                            <b-form-input v-model.number="rank.desc_sid" @input="markRankDirty(rank)"/>
+                            <b-form-input v-model.number="rank.desc_sid" @input="markRankDirty(rank)" :title="rankDescText(rank.desc_sid) || '(no description)'"/>
                             <router-link
                               class="btn btn-warning btn-sm mt-1"
                               tag="button"
