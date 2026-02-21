@@ -295,8 +295,8 @@
               <div
                 v-for="(card, cardIdx) in spawnGroupCards"
                 :key="card.spawngroupId"
-                class="mt-2"
               >
+                <div v-if="cardIdx > 0" class="spawn-group-separator"></div>
                 <eq-window>
               <!-- Spawngroup Header -->
               <div class="d-flex justify-content-between align-items-center" :class="card.collapsed ? '' : 'mb-2'">
@@ -1593,6 +1593,14 @@ export default {
 .npc-link:hover {
   color: #fcc721;
   text-decoration: underline;
+}
+
+/* Separator between spawn group cards */
+.spawn-group-separator {
+  height: 2px;
+  margin: 12px 0;
+  background: linear-gradient(to right, transparent, rgba(252, 199, 33, 0.35), transparent);
+  border-radius: 1px;
 }
 
 /* EQ-styled modal: strip Bootstrap chrome, let eq-window provide the frame */
