@@ -1041,10 +1041,22 @@ export default {
         builder.select(["id", "name", "level", "race", "class"]);
         builder.limit(this.npcPerPage);
         builder.page(this.npcCurrentPage);
-        builder.orderBy(["name"]);
+        builder.orderBy(["id"]);
 
         const result = await npcApi.listNpcTypes(builder.get());
-        const npcs = result.data || [];
+        let npcs = result.data || [];
+
+        if (!/^\d+$/.test(q)) {
+          const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const wordRe = new RegExp('(?:^|[^a-zA-Z0-9])' + escaped + '(?:[^a-zA-Z0-9]|$)', 'i');
+          npcs = npcs.slice().sort((a, b) => {
+            const aWord = wordRe.test(a.name);
+            const bWord = wordRe.test(b.name);
+            if (aWord && !bWord) return -1;
+            if (!aWord && bWord) return 1;
+            return 0;
+          });
+        }
 
         this.npcList = npcs.map(n => ({
           id: n.id,
@@ -1424,7 +1436,19 @@ export default {
         builder.select(["id", "name"]);
         builder.limit(15);
         const result = await npcApi.listNpcTypes(builder.get());
-        this.addNpcResults = result.data || [];
+        let addNpcs = result.data || [];
+        if (!/^\d+$/.test(q)) {
+          const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const wordRe = new RegExp('(?:^|[^a-zA-Z0-9])' + escaped + '(?:[^a-zA-Z0-9]|$)', 'i');
+          addNpcs = addNpcs.slice().sort((a, b) => {
+            const aWord = wordRe.test(a.name);
+            const bWord = wordRe.test(b.name);
+            if (aWord && !bWord) return -1;
+            if (!aWord && bWord) return 1;
+            return 0;
+          });
+        }
+        this.addNpcResults = addNpcs;
       } catch (e) {
         this.addNpcResults = [];
       }
@@ -1619,7 +1643,19 @@ export default {
         builder.select(["id", "name"]);
         builder.limit(15);
         const result = await npcApi.listNpcTypes(builder.get());
-        this.createNpcResults = result.data || [];
+        let createNpcs = result.data || [];
+        if (!/^\d+$/.test(q)) {
+          const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const wordRe = new RegExp('(?:^|[^a-zA-Z0-9])' + escaped + '(?:[^a-zA-Z0-9]|$)', 'i');
+          createNpcs = createNpcs.slice().sort((a, b) => {
+            const aWord = wordRe.test(a.name);
+            const bWord = wordRe.test(b.name);
+            if (aWord && !bWord) return -1;
+            if (!aWord && bWord) return 1;
+            return 0;
+          });
+        }
+        this.createNpcResults = createNpcs;
       } catch (e) {
         this.createNpcResults = [];
       }
