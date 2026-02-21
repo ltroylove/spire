@@ -19,8 +19,6 @@
       All
     </div>
 
-    ({{ selectedExpansion }}) {{ getExpansionName(selectedExpansion) }}
-
   </div>
 </template>
 

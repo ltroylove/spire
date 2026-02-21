@@ -15,6 +15,18 @@
       <div class="rv-vertical-line-tick" :style="'left: ' + tick + '%'" v-if="tick > 0"></div>
     </div>
 
+    <div class="rv-slider-container">
+      <input
+        type="range"
+        class="rv-slider"
+        :min="0"
+        :max="1000"
+        :step="1"
+        :value="localValue"
+        @input="onSliderInput"
+      >
+      <span class="rv-slider-value">{{ localValue }}</span>
+    </div>
   </div>
 </template>
 
@@ -24,11 +36,12 @@ export default {
   data() {
     return {
       unitTicks: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90],
+      localValue: this.unitMarker,
     }
   },
   computed: {
     unitMarkerComputed() {
-      return this.unitMarker > 1000 ? 1000 : this.unitMarker
+      return this.localValue > 1000 ? 1000 : this.localValue
     }
   },
   props: {
@@ -37,7 +50,19 @@ export default {
       type: Number,
     },
   },
+  watch: {
+    unitMarker(val) {
+      this.localValue = val
+    }
+  },
   methods: {
+    onSliderInput(event) {
+      const val = parseInt(event.target.value)
+      this.localValue = val
+      this.$emit('update:unitMarker', val)
+      this.$emit('input', val)
+    },
+
     getImageFromMax() {
       if (this.getCurrentRangeMax() === 1000) {
         return require('@/assets/img/range-visualizer/range-1000.png')
@@ -51,10 +76,10 @@ export default {
 
     getCurrentRangeMax() {
       let max = 1000
-      if (parseInt(this.unitMarker) <= 250) {
+      if (parseInt(this.localValue) <= 250) {
         max = 250
       }
-      if (parseInt(this.unitMarker) <= 50) {
+      if (parseInt(this.localValue) <= 50) {
         max = 50
       }
 
@@ -124,5 +149,24 @@ export default {
   display: block;
   top: 1%;
   left: 10%;
+}
+
+.rv-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.rv-slider {
+  flex: 1;
+  cursor: pointer;
+}
+
+.rv-slider-value {
+  min-width: 45px;
+  text-align: right;
+  font-weight: bold;
+  font-size: 14px;
 }
 </style>

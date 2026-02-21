@@ -161,7 +161,7 @@
               <div class="row mt-2">
                 <div class="col-6 mb-2">
                   <label class="field-label">Zone</label>
-                  <div class="position-relative">
+                  <div class="d-flex position-relative">
                     <input
                       v-model="createForm.zoneSearch"
                       class="form-control form-control-sm"
@@ -170,7 +170,13 @@
                       @focus="showCreateZoneDropdown = true"
                       @blur="delayCloseCreateZoneDropdown"
                       autocomplete="off"
+                      style="flex: 1;"
                     />
+                    <button
+                      class="btn btn-sm btn-dark ml-1 flex-shrink-0"
+                      @click="openZonePicker(z => { createForm.zone = z.short_name; createForm.zoneSearch = z.short_name; })"
+                      title="Browse zones"
+                    ><i class="fa fa-search"></i></button>
                     <div v-if="showCreateZoneDropdown && createFilteredZones.length > 0" class="zone-dropdown">
                       <div
                         v-for="z in createFilteredZones"
@@ -309,11 +315,15 @@
                 <div v-if="cardIdx > 0" class="spawn-group-separator"></div>
                 <eq-window>
               <!-- Spawngroup Header -->
-              <div class="d-flex justify-content-between align-items-center" :class="card.collapsed ? '' : 'mb-2'">
+              <div
+                class="d-flex justify-content-between align-items-center"
+                :class="card.collapsed ? '' : 'mb-2'"
+                style="cursor: pointer;"
+                @click="$set(card, 'collapsed', !card.collapsed)"
+              >
                 <div
                   class="d-flex align-items-center"
-                  style="cursor: pointer; flex: 1; min-width: 0;"
-                  @click="$set(card, 'collapsed', !card.collapsed)"
+                  style="flex: 1; min-width: 0;"
                 >
                   <i
                     class="fa mr-2"
@@ -343,6 +353,14 @@
                   </template>
                 </div>
                 <div class="ml-2" style="flex-shrink: 0;">
+                  <button
+                    class="btn btn-sm btn-outline-info mr-1"
+                    @click.stop="cloneSpawnGroupCard(card)"
+                    :disabled="saving"
+                    title="Clone this spawngroup"
+                  >
+                    <i class="fa fa-copy mr-1"></i> Clone
+                  </button>
                   <button
                     class="btn btn-sm btn-outline-success mr-1"
                     @click.stop="saveSpawnGroupCard(card)"
@@ -470,11 +488,11 @@
                 <table class="eq-table eq-highlight-rows w-100 mt-2" style="font-size: 13px; table-layout: fixed;">
                   <thead class="eq-table-floating-header">
                     <tr>
-                      <th style="width: 22%;">NPC</th>
-                      <th class="text-center" style="width: 18%;">Chance %</th>
-                      <th style="width: 20%;">Content Flags</th>
-                      <th style="width: 20%;">Flags Disabled</th>
-                      <th style="width: 12%;">Exp. Range</th>
+                      <th style="width: 20%;">NPC</th>
+                      <th class="text-center" style="width: 26%;">Chance %</th>
+                      <th style="width: 18%;">Content Flags</th>
+                      <th style="width: 18%;">Flags Disabled</th>
+                      <th style="width: 10%;">Exp. Range</th>
                       <th class="text-center" style="width: 8%;"></th>
                     </tr>
                   </thead>
@@ -505,7 +523,7 @@
                       </td>
                       <td style="vertical-align: middle;">
                         <div class="d-flex align-items-center justify-content-center">
-                          <input v-model.number="entry.chance" type="range" min="0" max="100" class="mr-2" style="width: 70px;" />
+                          <input v-model.number="entry.chance" type="range" min="0" max="100" class="mr-2" style="width: 140px;" />
                           <input v-model.number="entry.chance" type="number" min="0" max="100" class="form-control form-control-sm text-center" style="width: 55px;" />
                         </div>
                       </td>
@@ -587,7 +605,7 @@
                   <div class="row mt-2">
                     <div class="col-4 mb-2">
                       <label class="field-label">Zone</label>
-                      <div class="position-relative">
+                      <div class="d-flex position-relative">
                         <input
                           v-model="sp.zoneSearch"
                           class="form-control form-control-sm"
@@ -595,7 +613,13 @@
                           @focus="sp.showZoneDropdown = true"
                           @blur="delayClose(sp, 'showZoneDropdown')"
                           autocomplete="off"
+                          style="flex: 1;"
                         />
+                        <button
+                          class="btn btn-sm btn-dark ml-1 flex-shrink-0"
+                          @click="openZonePicker(z => { selectSpEditZone(sp, z); })"
+                          title="Browse zones"
+                        ><i class="fa fa-search"></i></button>
                         <div v-if="sp.showZoneDropdown && sp.filteredZones && sp.filteredZones.length > 0" class="zone-dropdown">
                           <div
                             v-for="z in sp.filteredZones"
@@ -743,6 +767,51 @@
       </eq-window>
     </b-modal>
 
+    <!-- Zone Picker Modal -->
+    <b-modal
+      id="zone-picker-modal"
+      hide-header
+      hide-footer
+      modal-class="eq-style-modal"
+      content-class="bg-transparent border-0 shadow-none"
+      body-class="p-0"
+      size="lg"
+    >
+      <eq-window title="Select Zone">
+        <input
+          v-model="zonePicker.search"
+          class="form-control form-control-sm mb-2"
+          placeholder="Search by zone name or short name..."
+          @input="onZonePickerSearch"
+          autofocus
+        />
+        <div style="height: 60vh; overflow-y: auto;">
+          <table class="eq-table eq-highlight-rows w-100" style="font-size: 13px;">
+            <thead class="eq-table-floating-header">
+              <tr>
+                <th style="width: 30%;">Short Name</th>
+                <th>Long Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="z in zonePicker.filteredZones"
+                :key="z.short_name + '-' + z.version"
+                style="cursor: pointer;"
+                @click="selectZonePicker(z)"
+              >
+                <td class="text-warning">{{ z.short_name }}</td>
+                <td class="text-muted">{{ z.long_name }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-end mt-2">
+          <button class="btn btn-sm btn-dark" @click="$bvModal.hide('zone-picker-modal')">Cancel</button>
+        </div>
+      </eq-window>
+    </b-modal>
+
     <!-- Add NPC Modal -->
     <b-modal
       id="add-npc-modal"
@@ -860,6 +929,13 @@ export default {
       expansionPickerField: "",
       expansionPickerLabel: "",
       expansionPickerValue: -1,
+
+      // Zone picker modal
+      zonePicker: {
+        search: "",
+        filteredZones: [],
+        callback: null,
+      },
 
       // State
       saving: false,
@@ -1407,6 +1483,97 @@ export default {
       for (let i = 0; i < card.entries.length; i++) {
         card.entries[i].chance = equalChance + (i < remainder ? 1 : 0);
       }
+    },
+
+    // ========================
+    // Zone picker modal
+    // ========================
+    openZonePicker(callback) {
+      this.zonePicker.search = "";
+      this.zonePicker.filteredZones = this.zones.slice(0, 100);
+      this.zonePicker.callback = callback;
+      this.$bvModal.show("zone-picker-modal");
+    },
+    onZonePickerSearch() {
+      const q = (this.zonePicker.search || "").toLowerCase();
+      if (!q) {
+        this.zonePicker.filteredZones = this.zones.slice(0, 100);
+        return;
+      }
+      this.zonePicker.filteredZones = this.zones
+        .filter(z => z.short_name.toLowerCase().includes(q) || (z.long_name && z.long_name.toLowerCase().includes(q)))
+        .slice(0, 100);
+    },
+    selectZonePicker(zone) {
+      if (this.zonePicker.callback) {
+        this.zonePicker.callback(zone);
+      }
+      this.$bvModal.hide("zone-picker-modal");
+    },
+
+    // ========================
+    // Clone spawngroup card
+    // ========================
+    async cloneSpawnGroupCard(card) {
+      this.saving = true;
+      this.clearMessages();
+
+      try {
+        const spawngroupApi = new SpawngroupApi(...SpireApi.cfg());
+        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
+
+        const newName = "Copy of " + (card.spawngroup.name || "Spawngroup #" + card.spawngroupId);
+        const sgCreate = await spawngroupApi.createSpawngroup({
+          spawngroup: {
+            id: 0,
+            name: newName,
+            spawn_limit: Number(card.spawngroup.spawn_limit || 0),
+            dist: Number(card.spawngroup.dist || 0),
+            delay: Number(card.spawngroup.delay || 45000),
+            mindelay: Number(card.spawngroup.mindelay || 15000),
+            despawn: Number(card.spawngroup.despawn || 0),
+            despawn_timer: Number(card.spawngroup.despawn_timer || 100),
+            wp_spawns: Number(card.spawngroup.wp_spawns || 0),
+            min_x: Number(card.spawngroup.min_x || 0),
+            max_x: Number(card.spawngroup.max_x || 0),
+            min_y: Number(card.spawngroup.min_y || 0),
+            max_y: Number(card.spawngroup.max_y || 0),
+          }
+        });
+        const sg = (sgCreate.data && sgCreate.data[0]) ? sgCreate.data[0] : null;
+        const newSgId = sg && (sg.id || sg.ID);
+        if (!newSgId) throw new Error("Unable to create cloned spawngroup");
+
+        for (const entry of card.entries) {
+          await spawnentryApi.createSpawnentry({
+            spawnentry: {
+              spawngroup_id: newSgId,
+              npc_id: entry.npc_id,
+              chance: this.normalizeChance(entry.chance),
+              content_flags: entry.content_flags || "",
+              content_flags_disabled: entry.content_flags_disabled || "",
+              min_expansion: Number(entry.min_expansion != null ? entry.min_expansion : -1),
+              max_expansion: Number(entry.max_expansion != null ? entry.max_expansion : -1),
+              min_time: Number(entry.min_time || 0),
+              max_time: Number(entry.max_time || 0),
+              condition_value_filter: Number(entry.condition_value_filter || 0),
+            }
+          });
+        }
+
+        const newCard = await this.loadSpawnGroupCard(newSgId);
+        if (newCard) {
+          newCard.collapsed = false;
+          this.spawnGroupCards.push(newCard);
+        }
+
+        this.editorSuccess = `Cloned spawngroup #${card.spawngroupId} → new spawngroup #${newSgId}.`;
+      } catch (e) {
+        console.error("Failed to clone spawngroup", e);
+        this.editorError = "Failed to clone spawngroup.";
+      }
+
+      this.saving = false;
     },
 
     // ========================
