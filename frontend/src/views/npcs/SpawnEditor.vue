@@ -354,6 +354,14 @@
                 </div>
                 <div class="ml-2" style="flex-shrink: 0;">
                   <button
+                    class="btn btn-sm btn-outline-danger mr-1"
+                    @click.stop="deleteSpawnGroupCard(card)"
+                    :disabled="saving"
+                    title="Permanently delete this entire spawngroup"
+                  >
+                    <i class="fa fa-trash mr-1"></i> Delete
+                  </button>
+                  <button
                     class="btn btn-sm btn-outline-info mr-1"
                     @click.stop="cloneSpawnGroupCard(card)"
                     :disabled="saving"
@@ -365,7 +373,7 @@
                     class="btn btn-sm btn-outline-success mr-1"
                     @click.stop="saveSpawnGroupCard(card)"
                     :disabled="saving"
-                    title="Save all changes to this spawngroup"
+                    title="Save all queued changes to this spawngroup"
                   >
                     <i class="fa fa-save mr-1"></i> Save
                   </button>
@@ -383,11 +391,11 @@
                 <div class="row mt-2">
                   <div class="col-4 mb-2">
                     <label class="field-label">Group Name</label>
-                    <input v-model="card.spawngroup.name" class="form-control form-control-sm" />
+                    <input v-model="card.spawngroup.name" class="form-control form-control-sm" :class="{ 'pending-edit-input': isFieldEdited(card, 'name') }" />
                   </div>
                   <div class="col-2 mb-2">
                     <label class="field-label">Spawn Limit</label>
-                    <input v-model.number="card.spawngroup.spawn_limit" type="number" class="form-control form-control-sm" />
+                    <input v-model.number="card.spawngroup.spawn_limit" type="number" class="form-control form-control-sm" :class="{ 'pending-edit-input': isFieldEdited(card, 'spawn_limit') }" />
                   </div>
                   <div class="col-3 mb-2">
                     <label class="field-label">Roam Distance</label>
@@ -396,13 +404,15 @@
                       type="number"
                       step="0.1"
                       class="form-control form-control-sm"
+                      :class="{ 'pending-edit-input': isFieldEdited(card, 'dist') }"
+                      :data-roam-dist-for="card.spawngroupId"
                       @focus="$set(card, 'roamDistVisualizerActive', true)"
-                      @blur="$set(card, 'roamDistVisualizerActive', false)"
+                      @blur="onRoamDistBlur($event, card)"
                     />
                   </div>
                   <div class="col-3 mb-2">
                     <label class="field-label">Despawn</label>
-                    <select v-model.number="card.spawngroup.despawn" class="form-control form-control-sm">
+                    <select v-model.number="card.spawngroup.despawn" class="form-control form-control-sm" :class="{ 'pending-edit-input': isFieldEdited(card, 'despawn') }">
                       <option :value="0">None</option>
                       <option :value="1">On Death</option>
                       <option :value="2">Depop</option>
@@ -414,7 +424,7 @@
                   <div class="col-3 mb-2">
                     <label class="field-label">Delay (ms)</label>
                     <div class="input-group input-group-sm">
-                      <input v-model.number="card.spawngroup.delay" type="number" class="form-control" />
+                      <input v-model.number="card.spawngroup.delay" type="number" class="form-control" :class="{ 'pending-edit-input': isFieldEdited(card, 'delay') }" />
                       <div class="input-group-append">
                         <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(Math.round((card.spawngroup.delay || 0) / 1000)) }}</span>
                       </div>
@@ -423,7 +433,7 @@
                   <div class="col-3 mb-2">
                     <label class="field-label">Min Delay (ms)</label>
                     <div class="input-group input-group-sm">
-                      <input v-model.number="card.spawngroup.mindelay" type="number" class="form-control" />
+                      <input v-model.number="card.spawngroup.mindelay" type="number" class="form-control" :class="{ 'pending-edit-input': isFieldEdited(card, 'mindelay') }" />
                       <div class="input-group-append">
                         <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(Math.round((card.spawngroup.mindelay || 0) / 1000)) }}</span>
                       </div>
@@ -432,7 +442,7 @@
                   <div class="col-3 mb-2">
                     <label class="field-label">Despawn Timer (sec)</label>
                     <div class="input-group input-group-sm">
-                      <input v-model.number="card.spawngroup.despawn_timer" type="number" class="form-control" />
+                      <input v-model.number="card.spawngroup.despawn_timer" type="number" class="form-control" :class="{ 'pending-edit-input': isFieldEdited(card, 'despawn_timer') }" />
                       <div class="input-group-append">
                         <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(card.spawngroup.despawn_timer) }}</span>
                       </div>
@@ -440,25 +450,25 @@
                   </div>
                   <div class="col-3 mb-2">
                     <label class="field-label">WP Spawns</label>
-                    <input v-model.number="card.spawngroup.wp_spawns" type="number" class="form-control form-control-sm" />
+                    <input v-model.number="card.spawngroup.wp_spawns" type="number" class="form-control form-control-sm" :class="{ 'pending-edit-input': isFieldEdited(card, 'wp_spawns') }" />
                   </div>
                 </div>
                 <div class="row">
                   <div class="col-3 mb-2">
                     <label class="field-label">Min X</label>
-                    <input v-model.number="card.spawngroup.min_x" type="number" step="0.1" class="form-control form-control-sm" />
+                    <input v-model.number="card.spawngroup.min_x" type="number" step="0.1" class="form-control form-control-sm" :class="{ 'pending-edit-input': isFieldEdited(card, 'min_x') }" />
                   </div>
                   <div class="col-3 mb-2">
                     <label class="field-label">Max X</label>
-                    <input v-model.number="card.spawngroup.max_x" type="number" step="0.1" class="form-control form-control-sm" />
+                    <input v-model.number="card.spawngroup.max_x" type="number" step="0.1" class="form-control form-control-sm" :class="{ 'pending-edit-input': isFieldEdited(card, 'max_x') }" />
                   </div>
                   <div class="col-3 mb-2">
                     <label class="field-label">Min Y</label>
-                    <input v-model.number="card.spawngroup.min_y" type="number" step="0.1" class="form-control form-control-sm" />
+                    <input v-model.number="card.spawngroup.min_y" type="number" step="0.1" class="form-control form-control-sm" :class="{ 'pending-edit-input': isFieldEdited(card, 'min_y') }" />
                   </div>
                   <div class="col-3 mb-2">
                     <label class="field-label">Max Y</label>
-                    <input v-model.number="card.spawngroup.max_y" type="number" step="0.1" class="form-control form-control-sm" />
+                    <input v-model.number="card.spawngroup.max_y" type="number" step="0.1" class="form-control form-control-sm" :class="{ 'pending-edit-input': isFieldEdited(card, 'max_y') }" />
                   </div>
                 </div>
               </div>
@@ -469,7 +479,10 @@
                 title="Range Visualizer"
                 v-if="card.roamDistVisualizerActive"
               >
-                <range-visualizer :unit-marker="card.spawngroup.dist || 0" />
+                <range-visualizer
+                  :unit-marker="card.spawngroup.dist || 0"
+                  @slider-blur="onSliderBlur($event, card)"
+                />
               </eq-window-simple>
 
               <!-- NPCs in Spawngroup (Spawnentries) -->
@@ -500,7 +513,11 @@
                     <tr
                       v-for="entry in card.entries"
                       :key="entry.npc_id"
-                      :class="{ 'highlight-row': selectedNpc && entry.npc_id === selectedNpc.id }"
+                      :class="{
+                        'highlight-row': selectedNpc && entry.npc_id === selectedNpc.id && !entry._pendingAdd && !entry._pendingDelete,
+                        'pending-add-row': entry._pendingAdd,
+                        'pending-delete-row': entry._pendingDelete
+                      }"
                     >
                       <td style="vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         <npc-popover
@@ -556,8 +573,21 @@
                         </div>
                       </td>
                       <td class="text-center" style="vertical-align: middle;">
-                        <button class="btn btn-xs btn-dark" @click="removeSpawnEntry(card, entry)" title="Remove NPC">
+                        <button
+                          v-if="!entry._pendingDelete"
+                          class="btn btn-xs btn-dark"
+                          @click="queueRemoveSpawnEntry(entry)"
+                          title="Remove NPC"
+                        >
                           <i class="fa fa-times text-danger"></i>
+                        </button>
+                        <button
+                          v-else
+                          class="btn btn-xs btn-dark"
+                          @click="restoreSpawnEntry(entry)"
+                          title="Restore - undo removal"
+                        >
+                          <i class="fa fa-undo text-warning"></i>
                         </button>
                       </td>
                     </tr>
@@ -565,41 +595,81 @@
                 </table>
               </div>
 
-              <!-- Spawn Point Toggle Button -->
-              <div class="mb-2" v-if="card.spawnPoints.length > 0">
+              <!-- Spawn Points section header -->
+              <div class="mb-2 d-flex align-items-center" style="gap: 4px;">
                 <button
-                  class="btn btn-sm btn-block spawn-point-toggle"
+                  v-if="card.spawnPoints.length > 0"
+                  class="btn btn-sm spawn-point-toggle"
+                  style="flex: 1;"
                   @click="$set(card, 'showSpawnPoints', !card.showSpawnPoints)"
                 >
                   <i class="fa mr-1" :class="card.showSpawnPoints ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                   <i class="fa fa-map-marker mr-1"></i>
                   Spawn Points ({{ card.spawnPoints.length }})
                 </button>
+                <span v-else style="flex: 1; font-size: 0.8em; color: rgba(255,255,255,0.3);">
+                  <i class="fa fa-map-marker mr-1"></i> No spawn points
+                </span>
+                <button
+                  class="btn btn-sm btn-outline-warning flex-shrink-0"
+                  @click="addSpawnPoint(card)"
+                  :disabled="saving"
+                  title="Add a new spawn point to this spawngroup"
+                >
+                  <i class="fa fa-plus mr-1"></i> Add Point
+                </button>
               </div>
 
               <!-- Spawn Points (spawn2) Editor for this Spawngroup -->
-              <div v-if="card.showSpawnPoints && card.spawnPoints.length > 0">
+              <div v-if="card.showSpawnPoints">
                 <div
                   v-for="(sp, spIdx) in card.spawnPoints"
-                  :key="sp.id"
+                  :key="sp.id || sp._tempId"
                   class="detail-section mb-3"
+                  :class="{
+                    'pending-add-section': sp._pendingAdd,
+                    'pending-delete-section': sp._pendingDelete
+                  }"
                 >
                   <div class="detail-section-title d-flex justify-content-between align-items-center">
                     <span>
                       <i class="fa fa-map-marker mr-1"></i>
-                      Spawn Point #{{ sp.id }}
+                      Spawn Point #{{ sp.id || '(new)' }}
                       <span class="text-muted ml-2" style="font-size: 0.85em;">
-                        {{ sp.zone }} ({{ Number(sp.x || 0).toFixed(1) }}, {{ Number(sp.y || 0).toFixed(1) }}, {{ Number(sp.z || 0).toFixed(1) }})
+                        {{ sp.zone || '(no zone)' }} ({{ Number(sp.x || 0).toFixed(1) }}, {{ Number(sp.y || 0).toFixed(1) }}, {{ Number(sp.z || 0).toFixed(1) }})
                       </span>
+                      <span v-if="sp._pendingAdd" class="badge ml-2" style="background: rgba(76,175,80,0.25); color: #4caf50; font-size: 0.75em;">New</span>
+                      <span v-if="sp._pendingDelete" class="badge ml-2" style="background: rgba(244,67,54,0.25); color: #f44336; font-size: 0.75em;">Pending Delete</span>
                     </span>
-                    <button
-                      class="btn btn-xs btn-outline-danger"
-                      @click="deleteSpawnPoint(card, sp)"
-                      :disabled="saving"
-                      title="Delete this spawn point"
-                    >
-                      <i class="fa fa-trash mr-1"></i> Delete
-                    </button>
+                    <div>
+                      <button
+                        v-if="!sp._pendingDelete"
+                        class="btn btn-xs btn-outline-info mr-1"
+                        @click="cloneSpawnPoint(card, sp)"
+                        :disabled="saving"
+                        title="Clone this spawn point"
+                      >
+                        <i class="fa fa-copy mr-1"></i> Clone
+                      </button>
+                      <button
+                        v-if="!sp._pendingDelete"
+                        class="btn btn-xs btn-outline-danger"
+                        @click="queueDeleteSpawnPoint(sp)"
+                        :disabled="saving"
+                        title="Delete this spawn point"
+                      >
+                        <i class="fa fa-trash mr-1"></i> Delete
+                      </button>
+                      <button
+                        v-if="sp._pendingDelete"
+                        class="btn btn-xs btn-outline-warning"
+                        @click="restoreSpawnPoint(sp)"
+                        :disabled="saving"
+                        title="Restore – undo deletion"
+                      >
+                        <i class="fa fa-undo mr-1"></i> Restore
+                      </button>
+                    </div>
                   </div>
 
                   <div class="row mt-2">
@@ -969,6 +1039,152 @@ export default {
   },
 
   methods: {
+    // ========================
+    // Range Visualizer blur handling
+    // ========================
+    onRoamDistBlur(event, card) {
+      // If focus moved to the RangeVisualizer slider, keep the visualizer open
+      // so the user can drag the slider without it immediately closing.
+      const rt = event.relatedTarget;
+      if (rt && rt.classList && rt.classList.contains('rv-slider')) {
+        return;
+      }
+      this.$set(card, 'roamDistVisualizerActive', false);
+    },
+
+    onSliderBlur(event, card) {
+      // Called when the RangeVisualizer's slider loses focus.
+      // Keep the visualizer open if focus returned to this card's roam distance input.
+      const rt = event.relatedTarget;
+      if (rt && rt.dataset && rt.dataset.roamDistFor === String(card.spawngroupId)) {
+        return;
+      }
+      this.$set(card, 'roamDistVisualizerActive', false);
+    },
+
+    // ========================
+    // Queued changes helpers
+    // ========================
+    isFieldEdited(card, field) {
+      if (!card._originalSpawngroup) return false;
+      return card.spawngroup[field] !== card._originalSpawngroup[field];
+    },
+
+    queueRemoveSpawnEntry(entry) {
+      this.$set(entry, '_pendingDelete', true);
+    },
+
+    restoreSpawnEntry(entry) {
+      this.$set(entry, '_pendingDelete', false);
+    },
+
+    queueDeleteSpawnPoint(sp) {
+      this.$set(sp, '_pendingDelete', true);
+    },
+
+    restoreSpawnPoint(sp) {
+      this.$set(sp, '_pendingDelete', false);
+    },
+
+    // ========================
+    // Add new spawn point (queued)
+    // ========================
+    addSpawnPoint(card) {
+      const tempId = 'new_' + Date.now();
+      const newSp = {
+        id: null,
+        _tempId: tempId,
+        spawngroupId: card.spawngroupId,
+        zone: card.spawnPoints.length > 0 ? card.spawnPoints[0].zone : "",
+        zoneSearch: card.spawnPoints.length > 0 ? card.spawnPoints[0].zone : "",
+        version: 0,
+        x: 0, y: 0, z: 0,
+        heading: 0,
+        respawntime: 1200,
+        variance: 0,
+        pathgrid: 0,
+        animation: 0,
+        condition: 0,
+        cond_value: 1,
+        min_expansion: -1,
+        max_expansion: -1,
+        content_flags: "",
+        content_flags_disabled: "",
+        showZoneDropdown: false,
+        filteredZones: [],
+        _pendingAdd: true,
+        _pendingDelete: false,
+      };
+      card.spawnPoints.push(newSp);
+      this.$set(card, 'showSpawnPoints', true);
+    },
+
+    // ========================
+    // Clone spawn point (queued)
+    // ========================
+    cloneSpawnPoint(card, sp) {
+      const tempId = 'clone_' + Date.now();
+      const cloned = Object.assign({}, sp, {
+        id: null,
+        _tempId: tempId,
+        _pendingAdd: true,
+        _pendingDelete: false,
+        showZoneDropdown: false,
+        filteredZones: [],
+      });
+      card.spawnPoints.push(cloned);
+    },
+
+    // ========================
+    // Delete entire spawn group
+    // ========================
+    async deleteSpawnGroupCard(card) {
+      const sgName = card.spawngroup.name || ('Spawngroup #' + card.spawngroupId);
+      const confirmed = confirm(
+        `WARNING: You are about to permanently and irreversibly delete "${sgName}" (ID: ${card.spawngroupId}).\n\n` +
+        `This will destroy:\n` +
+        `  • The spawngroup record\n` +
+        `  • All ${card.entries.length} NPC spawn entries\n` +
+        `  • All ${card.spawnPoints.length} spawn points\n\n` +
+        `This action CANNOT be undone. Are you absolutely certain you want to delete this entire spawngroup?`
+      );
+      if (!confirmed) return;
+
+      this.saving = true;
+      this.clearMessages();
+
+      try {
+        const spawngroupApi = new SpawngroupApi(...SpireApi.cfg());
+        const spawn2Api = new Spawn2Api(...SpireApi.cfg());
+        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
+
+        // Delete all spawn points
+        for (const sp of card.spawnPoints) {
+          if (sp.id) {
+            await spawn2Api.deleteSpawn2({ id: sp.id });
+          }
+        }
+
+        // Delete all spawn entries
+        for (const entry of card.entries) {
+          if (!entry._pendingAdd) {
+            await spawnentryApi.deleteSpawnentry({ id: entry.spawngroup_id });
+          }
+        }
+
+        // Delete the spawngroup
+        await spawngroupApi.deleteSpawngroup({ id: card.spawngroupId });
+
+        this.spawnGroupCards = this.spawnGroupCards.filter(c => c.spawngroupId !== card.spawngroupId);
+        this.editorSuccess = `Deleted spawngroup #${card.spawngroupId} and all its data.`;
+      } catch (e) {
+        console.error("Failed to delete spawngroup", e);
+        this.editorError = `Failed to delete spawngroup #${card.spawngroupId}.`;
+      }
+
+      this.saving = false;
+    },
+
     getDefaultCreateForm() {
       return {
         npcSearch: "",
@@ -1209,24 +1425,37 @@ export default {
           // UI state for zone dropdown
           showZoneDropdown: false,
           filteredZones: [],
+          // Queued changes state
+          _pendingAdd: false,
+          _pendingDelete: false,
+          _tempId: null,
         }));
+
+        // Attach pending flags to entries
+        for (const e of enrichedEntries) {
+          e._pendingAdd = false;
+          e._pendingDelete = false;
+        }
+
+        const spawngroupData = {
+          name: sg.name || "",
+          spawn_limit: Number(sg.spawn_limit || 0),
+          dist: Number(sg.dist || 0),
+          delay: Number(sg.delay || 45000),
+          mindelay: Number(sg.mindelay || 15000),
+          despawn: Number(sg.despawn || 0),
+          despawn_timer: Number(sg.despawn_timer || 100),
+          wp_spawns: Number(sg.wp_spawns || 0),
+          min_x: Number(sg.min_x || 0),
+          max_x: Number(sg.max_x || 0),
+          min_y: Number(sg.min_y || 0),
+          max_y: Number(sg.max_y || 0),
+        };
 
         return {
           spawngroupId: sgId,
-          spawngroup: {
-            name: sg.name || "",
-            spawn_limit: Number(sg.spawn_limit || 0),
-            dist: Number(sg.dist || 0),
-            delay: Number(sg.delay || 45000),
-            mindelay: Number(sg.mindelay || 15000),
-            despawn: Number(sg.despawn || 0),
-            despawn_timer: Number(sg.despawn_timer || 100),
-            wp_spawns: Number(sg.wp_spawns || 0),
-            min_x: Number(sg.min_x || 0),
-            max_x: Number(sg.max_x || 0),
-            min_y: Number(sg.min_y || 0),
-            max_y: Number(sg.max_y || 0),
-          },
+          spawngroup: Object.assign({}, spawngroupData),
+          _originalSpawngroup: Object.assign({}, spawngroupData),
           entries: enrichedEntries,
           spawnPoints: spawnPoints,
           showSpawnPoints: false,
@@ -1261,7 +1490,7 @@ export default {
     },
 
     // ========================
-    // Save Spawngroup Card (all data in one card)
+    // Save Spawngroup Card (applies all queued changes)
     // ========================
     async saveSpawnGroupCard(card) {
       this.saving = true;
@@ -1272,7 +1501,7 @@ export default {
         const spawn2Api = new Spawn2Api(...SpireApi.cfg());
         const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
 
-        // Save spawngroup
+        // Save spawngroup settings
         await spawngroupApi.updateSpawngroup({
           id: card.spawngroupId,
           spawngroup: {
@@ -1292,51 +1521,112 @@ export default {
           }
         });
 
-        // Save spawn entries (chances, content flags, etc.)
+        // Handle spawn entries: create pending-add, delete pending-delete, update the rest
         for (const entry of card.entries) {
-          await spawnentryApi.updateSpawnentry({
-            id: card.spawngroupId,
-            spawnentry: {
-              spawngroup_id: card.spawngroupId,
-              npc_id: entry.npc_id,
-              chance: this.normalizeChance(entry.chance),
-              content_flags: entry.content_flags || "",
-              content_flags_disabled: entry.content_flags_disabled || "",
-              min_expansion: Number(entry.min_expansion != null ? entry.min_expansion : -1),
-              max_expansion: Number(entry.max_expansion != null ? entry.max_expansion : -1),
-              min_time: Number(entry.min_time || 0),
-              max_time: Number(entry.max_time || 0),
-              condition_value_filter: Number(entry.condition_value_filter || 0),
-            }
-          });
+          if (entry._pendingAdd) {
+            await spawnentryApi.createSpawnentry({
+              spawnentry: {
+                spawngroup_id: card.spawngroupId,
+                npc_id: entry.npc_id,
+                chance: this.normalizeChance(entry.chance),
+                content_flags: entry.content_flags || "",
+                content_flags_disabled: entry.content_flags_disabled || "",
+                min_expansion: Number(entry.min_expansion != null ? entry.min_expansion : -1),
+                max_expansion: Number(entry.max_expansion != null ? entry.max_expansion : -1),
+                min_time: Number(entry.min_time || 0),
+                max_time: Number(entry.max_time || 0),
+                condition_value_filter: Number(entry.condition_value_filter || 0),
+              }
+            });
+          } else if (entry._pendingDelete) {
+            await spawnentryApi.deleteSpawnentry({ id: entry.spawngroup_id });
+          } else {
+            await spawnentryApi.updateSpawnentry({
+              id: card.spawngroupId,
+              spawnentry: {
+                spawngroup_id: card.spawngroupId,
+                npc_id: entry.npc_id,
+                chance: this.normalizeChance(entry.chance),
+                content_flags: entry.content_flags || "",
+                content_flags_disabled: entry.content_flags_disabled || "",
+                min_expansion: Number(entry.min_expansion != null ? entry.min_expansion : -1),
+                max_expansion: Number(entry.max_expansion != null ? entry.max_expansion : -1),
+                min_time: Number(entry.min_time || 0),
+                max_time: Number(entry.max_time || 0),
+                condition_value_filter: Number(entry.condition_value_filter || 0),
+              }
+            });
+          }
         }
 
-        // Save spawn points (spawn2 records)
+        // Handle spawn points: create pending-add, delete pending-delete, update the rest
         for (const sp of card.spawnPoints) {
-          await spawn2Api.updateSpawn2({
-            id: sp.id,
-            spawn2: {
-              id: sp.id,
-              spawngroup_id: card.spawngroupId,
-              zone: (sp.zone || "").toLowerCase(),
-              version: Number(sp.version || 0),
-              x: Number(sp.x || 0),
-              y: Number(sp.y || 0),
-              z: Number(sp.z || 0),
-              heading: Number(sp.heading || 0),
-              respawntime: Number(sp.respawntime || 0),
-              variance: Number(sp.variance || 0),
-              pathgrid: Number(sp.pathgrid || 0),
-              animation: Number(sp.animation || 0),
-              _condition: Number(sp.condition || 0),
-              cond_value: Number(sp.cond_value || 1),
-              min_expansion: Number(sp.min_expansion != null ? sp.min_expansion : -1),
-              max_expansion: Number(sp.max_expansion != null ? sp.max_expansion : -1),
-              content_flags: sp.content_flags || "",
-              content_flags_disabled: sp.content_flags_disabled || "",
+          if (sp._pendingAdd) {
+            const result = await spawn2Api.createSpawn2({
+              spawn2: {
+                spawngroup_id: card.spawngroupId,
+                zone: (sp.zone || "").toLowerCase(),
+                version: Number(sp.version || 0),
+                x: Number(sp.x || 0),
+                y: Number(sp.y || 0),
+                z: Number(sp.z || 0),
+                heading: Number(sp.heading || 0),
+                respawntime: Number(sp.respawntime || 0),
+                variance: Number(sp.variance || 0),
+                pathgrid: Number(sp.pathgrid || 0),
+                animation: Number(sp.animation || 0),
+                _condition: Number(sp.condition || 0),
+                cond_value: Number(sp.cond_value || 1),
+                min_expansion: Number(sp.min_expansion != null ? sp.min_expansion : -1),
+                max_expansion: Number(sp.max_expansion != null ? sp.max_expansion : -1),
+                content_flags: sp.content_flags || "",
+                content_flags_disabled: sp.content_flags_disabled || "",
+              }
+            });
+            if (result.data && result.data.id) {
+              sp.id = result.data.id;
+              sp._tempId = null;
             }
-          });
+            sp._pendingAdd = false;
+          } else if (sp._pendingDelete) {
+            await spawn2Api.deleteSpawn2({ id: sp.id });
+          } else {
+            await spawn2Api.updateSpawn2({
+              id: sp.id,
+              spawn2: {
+                id: sp.id,
+                spawngroup_id: card.spawngroupId,
+                zone: (sp.zone || "").toLowerCase(),
+                version: Number(sp.version || 0),
+                x: Number(sp.x || 0),
+                y: Number(sp.y || 0),
+                z: Number(sp.z || 0),
+                heading: Number(sp.heading || 0),
+                respawntime: Number(sp.respawntime || 0),
+                variance: Number(sp.variance || 0),
+                pathgrid: Number(sp.pathgrid || 0),
+                animation: Number(sp.animation || 0),
+                _condition: Number(sp.condition || 0),
+                cond_value: Number(sp.cond_value || 1),
+                min_expansion: Number(sp.min_expansion != null ? sp.min_expansion : -1),
+                max_expansion: Number(sp.max_expansion != null ? sp.max_expansion : -1),
+                content_flags: sp.content_flags || "",
+                content_flags_disabled: sp.content_flags_disabled || "",
+              }
+            });
+          }
         }
+
+        // Remove pending-delete items from the arrays
+        card.entries = card.entries.filter(e => !e._pendingDelete);
+        card.spawnPoints = card.spawnPoints.filter(sp => !sp._pendingDelete);
+
+        // Clear pending-add flags
+        card.entries.forEach(e => { e._pendingAdd = false; });
+        card.spawnPoints.forEach(sp => { sp._pendingAdd = false; });
+
+        // Update the original snapshot so edit highlighting resets
+        card._originalSpawngroup = Object.assign({}, card.spawngroup);
 
         this.editorSuccess = `Saved spawngroup #${card.spawngroupId} successfully.`;
       } catch (e) {
@@ -1348,52 +1638,17 @@ export default {
     },
 
     // ========================
-    // Delete spawn point
+    // Delete spawn point (legacy – kept for any external refs; now uses queue)
     // ========================
-    async deleteSpawnPoint(card, sp) {
-      if (!confirm(`Delete spawn point #${sp.id} in ${sp.zone}?`)) return;
-      this.saving = true;
-      this.clearMessages();
-
-      try {
-        const spawn2Api = new Spawn2Api(...SpireApi.cfg());
-        await spawn2Api.deleteSpawn2({ id: sp.id });
-
-        card.spawnPoints = card.spawnPoints.filter(s => s.id !== sp.id);
-        this.editorSuccess = `Deleted spawn point #${sp.id}.`;
-
-        // If no more spawn points, remove the card
-        if (card.spawnPoints.length === 0) {
-          this.spawnGroupCards = this.spawnGroupCards.filter(c => c.spawngroupId !== card.spawngroupId);
-        }
-      } catch (e) {
-        console.error("Failed to delete spawn point", e);
-        this.editorError = `Failed to delete spawn point #${sp.id}.`;
-      }
-
-      this.saving = false;
+    deleteSpawnPoint(card, sp) {
+      this.queueDeleteSpawnPoint(sp);
     },
 
     // ========================
-    // Remove NPC from spawngroup
+    // Remove NPC from spawngroup (legacy – redirects to queue)
     // ========================
-    async removeSpawnEntry(card, entry) {
-      if (!confirm(`Remove NPC #${entry.npc_id} from spawngroup #${card.spawngroupId}?`)) return;
-      this.saving = true;
-      this.clearMessages();
-
-      try {
-        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
-        await spawnentryApi.deleteSpawnentry({ id: entry.spawngroup_id });
-
-        card.entries = card.entries.filter(e => e.npc_id !== entry.npc_id);
-        this.editorSuccess = `Removed NPC #${entry.npc_id} from spawngroup.`;
-      } catch (e) {
-        console.error("Failed to remove spawn entry", e);
-        this.editorError = "Failed to remove NPC from spawngroup.";
-      }
-
-      this.saving = false;
+    removeSpawnEntry(card, entry) {
+      this.queueRemoveSpawnEntry(entry);
     },
 
     // ========================
@@ -1460,39 +1715,40 @@ export default {
       this.showAddNpcDropdown = false;
     },
 
-    async confirmAddNpc() {
+    confirmAddNpc() {
       if (!this.addNpcId || !this.addNpcTargetCard) return;
-      this.saving = true;
-      this.clearMessages();
 
-      try {
-        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
-        await spawnentryApi.createSpawnentry({
-          spawnentry: {
-            spawngroup_id: this.addNpcTargetCard.spawngroupId,
-            npc_id: this.addNpcId,
-            chance: this.normalizeChance(this.addNpcChance),
-          }
-        });
+      const card = this.addNpcTargetCard;
 
-        this.editorSuccess = `Added NPC #${this.addNpcId} to spawngroup.`;
+      // Prevent duplicate (already in the list and not pending-delete)
+      const existing = card.entries.find(e => e.npc_id === this.addNpcId && !e._pendingDelete);
+      if (existing) {
+        this.editorError = `NPC #${this.addNpcId} is already in this spawngroup.`;
         this.$bvModal.hide('add-npc-modal');
-
-        // Reload this card's entries
-        const refreshed = await this.loadSpawnGroupCard(this.addNpcTargetCard.spawngroupId);
-        if (refreshed) {
-          const idx = this.spawnGroupCards.findIndex(c => c.spawngroupId === this.addNpcTargetCard.spawngroupId);
-          if (idx >= 0) {
-            refreshed.showSpawnPoints = this.spawnGroupCards[idx].showSpawnPoints;
-            this.$set(this.spawnGroupCards, idx, refreshed);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to add NPC to spawngroup", e);
-        this.editorError = "Failed to add NPC to spawngroup.";
+        return;
       }
 
-      this.saving = false;
+      // Extract display name from the search string
+      const rawName = (this.addNpcSearch || "").replace(/ \(#\d+\)$/, "");
+
+      card.entries.push({
+        npc_id: this.addNpcId,
+        npcName: rawName,
+        npcData: null,
+        chance: this.normalizeChance(this.addNpcChance),
+        content_flags: "",
+        content_flags_disabled: "",
+        min_expansion: -1,
+        max_expansion: -1,
+        min_time: 0,
+        max_time: 0,
+        condition_value_filter: 0,
+        spawngroup_id: card.spawngroupId,
+        _pendingAdd: true,
+        _pendingDelete: false,
+      });
+
+      this.$bvModal.hide('add-npc-modal');
     },
 
     // ========================
@@ -2011,5 +2267,64 @@ input[type=number]::-webkit-inner-spin-button {
 
 input[type=number] {
   -moz-appearance: textfield;
+}
+
+/* ========================
+   Queued changes visual diff
+   ======================== */
+
+/* Pending edit: orange highlight on changed inputs */
+.pending-edit-input {
+  border-color: rgba(255, 152, 0, 0.7) !important;
+  background: rgba(255, 152, 0, 0.06) !important;
+  box-shadow: 0 0 0 1px rgba(255, 152, 0, 0.25) !important;
+}
+
+/* Pending add: green tint on table rows */
+tr.pending-add-row td {
+  background: rgba(76, 175, 80, 0.1);
+  border-left: 3px solid rgba(76, 175, 80, 0.5);
+}
+
+/* Pending delete: red tint + strikethrough on table rows */
+tr.pending-delete-row td {
+  background: rgba(244, 67, 54, 0.08);
+  border-left: 3px solid rgba(244, 67, 54, 0.4);
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: line-through;
+}
+tr.pending-delete-row a {
+  text-decoration: line-through;
+  pointer-events: none;
+}
+tr.pending-delete-row input,
+tr.pending-delete-row select {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Pending add: green border on detail-section (spawn points) */
+.detail-section.pending-add-section {
+  border-color: rgba(76, 175, 80, 0.5);
+  background: rgba(76, 175, 80, 0.06);
+}
+.detail-section.pending-add-section .detail-section-title {
+  color: #4caf50;
+}
+
+/* Pending delete: red tint + faded on detail-section (spawn points) */
+.detail-section.pending-delete-section {
+  border-color: rgba(244, 67, 54, 0.45);
+  background: rgba(244, 67, 54, 0.06);
+  opacity: 0.65;
+}
+.detail-section.pending-delete-section .detail-section-title {
+  color: #f44336;
+}
+.detail-section.pending-delete-section input,
+.detail-section.pending-delete-section select,
+.detail-section.pending-delete-section button:not(.btn-outline-warning) {
+  pointer-events: none;
+  opacity: 0.5;
 }
 </style>
