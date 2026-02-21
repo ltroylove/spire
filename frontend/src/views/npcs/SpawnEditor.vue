@@ -688,51 +688,56 @@
     <!-- Add NPC Modal -->
     <b-modal
       id="add-npc-modal"
-      title="Add NPC to Spawngroup"
+      hide-header
       hide-footer
+      modal-class="eq-style-modal"
+      content-class="bg-transparent border-0 shadow-none"
+      body-class="p-0"
       @show="resetAddNpcForm"
     >
-      <div class="mb-3">
-        <label class="field-label">NPC Search</label>
-        <div class="position-relative">
-          <input
-            v-model="addNpcSearch"
-            class="form-control form-control-sm"
-            placeholder="Search NPC by name or ID..."
-            @input="onAddNpcSearch"
-            @focus="showAddNpcDropdown = true"
-            @blur="delayCloseAddNpcDropdown"
-            autocomplete="off"
-          />
-          <div v-if="showAddNpcDropdown && addNpcResults.length > 0" class="zone-dropdown">
-            <div
-              v-for="n in addNpcResults"
-              :key="n.id"
-              class="zone-option"
-              @mousedown.prevent="selectAddNpc(n)"
-            >
-              <span class="text-warning">{{ (n.name || '').replace(/_/g, ' ') }}</span>
-              <span class="text-muted ml-2">#{{ n.id }}</span>
+      <eq-window title="Add NPC to Spawngroup">
+        <div class="mb-3">
+          <label class="field-label">NPC Search</label>
+          <div class="position-relative">
+            <input
+              v-model="addNpcSearch"
+              class="form-control form-control-sm add-npc-input"
+              placeholder="Search NPC by name or ID..."
+              @input="onAddNpcSearch"
+              @focus="showAddNpcDropdown = true"
+              @blur="delayCloseAddNpcDropdown"
+              autocomplete="off"
+            />
+            <div v-if="showAddNpcDropdown && addNpcResults.length > 0" class="zone-dropdown">
+              <div
+                v-for="n in addNpcResults"
+                :key="n.id"
+                class="zone-option"
+                @mousedown.prevent="selectAddNpc(n)"
+              >
+                <span class="text-warning">{{ (n.name || '').replace(/_/g, ' ') }}</span>
+                <span class="text-muted ml-2">#{{ n.id }}</span>
+              </div>
             </div>
           </div>
+          <div v-if="addNpcId" class="text-muted mt-1" style="font-size: 0.8em;">
+            Selected: <span class="text-warning">{{ addNpcSearch }}</span>
+          </div>
         </div>
-        <div v-if="addNpcId" class="text-muted mt-1" style="font-size: 0.8em;">
-          Selected: <span class="text-warning">{{ addNpcSearch }}</span>
+        <div class="mb-3">
+          <label class="field-label">Chance %</label>
+          <div class="d-flex align-items-center">
+            <input v-model.number="addNpcChance" type="range" min="0" max="100" class="mr-2" style="flex: 1;" />
+            <input v-model.number="addNpcChance" type="number" min="0" max="100" class="form-control form-control-sm add-npc-input text-center" style="width: 70px;" />
+          </div>
         </div>
-      </div>
-      <div class="mb-3">
-        <label class="field-label">Chance %</label>
-        <div class="d-flex align-items-center">
-          <input v-model.number="addNpcChance" type="range" min="0" max="100" class="mr-2" style="flex: 1;" />
-          <input v-model.number="addNpcChance" type="number" min="0" max="100" class="form-control form-control-sm text-center" style="width: 70px;" />
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-sm btn-dark mr-2" @click="$bvModal.hide('add-npc-modal')">Cancel</button>
+          <button class="btn btn-sm btn-outline-success" @click="confirmAddNpc" :disabled="!addNpcId || saving">
+            <i class="fa fa-plus mr-1"></i> Add NPC
+          </button>
         </div>
-      </div>
-      <div class="d-flex justify-content-end">
-        <button class="btn btn-sm btn-secondary mr-2" @click="$bvModal.hide('add-npc-modal')">Cancel</button>
-        <button class="btn btn-sm btn-outline-success" @click="confirmAddNpc" :disabled="!addNpcId || saving">
-          <i class="fa fa-plus mr-1"></i> Add NPC
-        </button>
-      </div>
+      </eq-window>
     </b-modal>
   </content-area>
 </template>
@@ -1588,5 +1593,26 @@ export default {
 .npc-link:hover {
   color: #fcc721;
   text-decoration: underline;
+}
+
+/* EQ-styled modal: strip Bootstrap chrome, let eq-window provide the frame */
+.eq-style-modal .modal-dialog {
+  max-width: 500px;
+}
+
+/* Input text visibility fix */
+.add-npc-input {
+  background: rgba(0, 0, 0, 0.4) !important;
+  color: #e0e0e0 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.add-npc-input::placeholder {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+.add-npc-input:focus {
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: #fff !important;
+  border-color: rgba(252, 199, 33, 0.4) !important;
+  box-shadow: 0 0 0 0.15rem rgba(252, 199, 33, 0.15) !important;
 }
 </style>
