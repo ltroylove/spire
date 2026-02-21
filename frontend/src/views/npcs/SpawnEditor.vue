@@ -290,7 +290,7 @@
 
           <!-- Spawngroup Cards (scrollable EQ frame) -->
           <eq-window title="Spawn Groups" class="p-0 mt-3">
-            <div style="height: calc(100vh - 250px); overflow-y: auto; padding: 8px;">
+            <div style="height: calc(100vh - 181px); overflow-y: auto; padding: 8px;">
 
               <!-- Expand / Collapse All -->
               <div v-if="spawnGroupCards.length > 1" class="d-flex justify-content-end mb-2" style="gap: 4px;">
@@ -1041,10 +1041,22 @@ export default {
         builder.select(["id", "name", "level", "race", "class"]);
         builder.limit(this.npcPerPage);
         builder.page(this.npcCurrentPage);
-        builder.orderBy(["name"]);
+        builder.orderBy(["id"]);
 
         const result = await npcApi.listNpcTypes(builder.get());
-        const npcs = result.data || [];
+        let npcs = result.data || [];
+
+        if (!/^\d+$/.test(q)) {
+          const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const wordRe = new RegExp('(?:^|[^a-zA-Z0-9])' + escaped + '(?:[^a-zA-Z0-9]|$)', 'i');
+          npcs = npcs.slice().sort((a, b) => {
+            const aWord = wordRe.test(a.name);
+            const bWord = wordRe.test(b.name);
+            if (aWord && !bWord) return -1;
+            if (!aWord && bWord) return 1;
+            return 0;
+          });
+        }
 
         this.npcList = npcs.map(n => ({
           id: n.id,
@@ -1424,7 +1436,19 @@ export default {
         builder.select(["id", "name"]);
         builder.limit(15);
         const result = await npcApi.listNpcTypes(builder.get());
-        this.addNpcResults = result.data || [];
+        let addNpcs = result.data || [];
+        if (!/^\d+$/.test(q)) {
+          const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const wordRe = new RegExp('(?:^|[^a-zA-Z0-9])' + escaped + '(?:[^a-zA-Z0-9]|$)', 'i');
+          addNpcs = addNpcs.slice().sort((a, b) => {
+            const aWord = wordRe.test(a.name);
+            const bWord = wordRe.test(b.name);
+            if (aWord && !bWord) return -1;
+            if (!aWord && bWord) return 1;
+            return 0;
+          });
+        }
+        this.addNpcResults = addNpcs;
       } catch (e) {
         this.addNpcResults = [];
       }
@@ -1540,8 +1564,8 @@ export default {
             max_y: Number(card.spawngroup.max_y || 0),
           }
         });
-        const sg = (sgCreate.data && sgCreate.data[0]) ? sgCreate.data[0] : null;
-        const newSgId = sg && (sg.id || sg.ID);
+        const sg = sgCreate.data || null;
+        const newSgId = sg && sg.id;
         if (!newSgId) throw new Error("Unable to create cloned spawngroup");
 
         for (const entry of card.entries) {
@@ -1619,7 +1643,19 @@ export default {
         builder.select(["id", "name"]);
         builder.limit(15);
         const result = await npcApi.listNpcTypes(builder.get());
-        this.createNpcResults = result.data || [];
+        let createNpcs = result.data || [];
+        if (!/^\d+$/.test(q)) {
+          const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const wordRe = new RegExp('(?:^|[^a-zA-Z0-9])' + escaped + '(?:[^a-zA-Z0-9]|$)', 'i');
+          createNpcs = createNpcs.slice().sort((a, b) => {
+            const aWord = wordRe.test(a.name);
+            const bWord = wordRe.test(b.name);
+            if (aWord && !bWord) return -1;
+            if (!aWord && bWord) return 1;
+            return 0;
+          });
+        }
+        this.createNpcResults = createNpcs;
       } catch (e) {
         this.createNpcResults = [];
       }
@@ -1651,8 +1687,8 @@ export default {
           : `${zone}_${this.createForm.npcId}`;
 
         const sgCreate = await spawngroupApi.createSpawngroup({ spawngroup: { name: sgName, id: 0 } });
-        const sg = (sgCreate.data && sgCreate.data[0]) ? sgCreate.data[0] : null;
-        const spawngroupId = sg && (sg.id || sg.ID);
+        const sg = sgCreate.data || null;
+        const spawngroupId = sg && sg.id;
         if (!spawngroupId) throw new Error("Unable to create spawngroup");
 
         await spawn2Api.createSpawn2({
@@ -1965,5 +2001,15 @@ export default {
   color: #fff !important;
   border-color: rgba(252, 199, 33, 0.4) !important;
   box-shadow: 0 0 0 0.15rem rgba(252, 199, 33, 0.15) !important;
+}
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
 }
 </style>

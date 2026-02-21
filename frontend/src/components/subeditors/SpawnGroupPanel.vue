@@ -121,7 +121,9 @@ export default {
   watch: {
     spawn2: {
       immediate: true,
-      handler(val) {
+      handler(val, oldVal) {
+        const oldId = oldVal && oldVal.id
+        const newId = val && val.id
         if (val && val.spawngroup) {
           this.localDist = val.spawngroup.dist || 0
         }
@@ -130,7 +132,9 @@ export default {
         } else {
           this.localEntries = []
         }
-        this.rangeVisualizerActive = false
+        if (newId !== oldId) {
+          this.rangeVisualizerActive = false
+        }
       }
     }
   },
@@ -199,3 +203,15 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+</style>
