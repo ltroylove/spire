@@ -54,3 +54,4 @@ frontend/.env.production
 # Playwright test artifacts
 test-results/
 frontend/test-results/
+node_modules/
