@@ -1540,8 +1540,8 @@ export default {
             max_y: Number(card.spawngroup.max_y || 0),
           }
         });
-        const sg = (sgCreate.data && sgCreate.data[0]) ? sgCreate.data[0] : null;
-        const newSgId = sg && (sg.id || sg.ID);
+        const sg = sgCreate.data || null;
+        const newSgId = sg && sg.id;
         if (!newSgId) throw new Error("Unable to create cloned spawngroup");
 
         for (const entry of card.entries) {
@@ -1651,8 +1651,8 @@ export default {
           : `${zone}_${this.createForm.npcId}`;
 
         const sgCreate = await spawngroupApi.createSpawngroup({ spawngroup: { name: sgName, id: 0 } });
-        const sg = (sgCreate.data && sgCreate.data[0]) ? sgCreate.data[0] : null;
-        const spawngroupId = sg && (sg.id || sg.ID);
+        const sg = sgCreate.data || null;
+        const spawngroupId = sg && sg.id;
         if (!spawngroupId) throw new Error("Unable to create spawngroup");
 
         await spawn2Api.createSpawn2({
