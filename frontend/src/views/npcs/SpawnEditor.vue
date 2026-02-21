@@ -309,11 +309,15 @@
                 <div v-if="cardIdx > 0" class="spawn-group-separator"></div>
                 <eq-window>
               <!-- Spawngroup Header -->
-              <div class="d-flex justify-content-between align-items-center" :class="card.collapsed ? '' : 'mb-2'">
+              <div
+                class="d-flex justify-content-between align-items-center"
+                :class="card.collapsed ? '' : 'mb-2'"
+                style="cursor: pointer;"
+                @click="$set(card, 'collapsed', !card.collapsed)"
+              >
                 <div
                   class="d-flex align-items-center"
-                  style="cursor: pointer; flex: 1; min-width: 0;"
-                  @click="$set(card, 'collapsed', !card.collapsed)"
+                  style="flex: 1; min-width: 0;"
                 >
                   <i
                     class="fa mr-2"
@@ -470,11 +474,11 @@
                 <table class="eq-table eq-highlight-rows w-100 mt-2" style="font-size: 13px; table-layout: fixed;">
                   <thead class="eq-table-floating-header">
                     <tr>
-                      <th style="width: 22%;">NPC</th>
-                      <th class="text-center" style="width: 18%;">Chance %</th>
-                      <th style="width: 20%;">Content Flags</th>
-                      <th style="width: 20%;">Flags Disabled</th>
-                      <th style="width: 12%;">Exp. Range</th>
+                      <th style="width: 20%;">NPC</th>
+                      <th class="text-center" style="width: 26%;">Chance %</th>
+                      <th style="width: 18%;">Content Flags</th>
+                      <th style="width: 18%;">Flags Disabled</th>
+                      <th style="width: 10%;">Exp. Range</th>
                       <th class="text-center" style="width: 8%;"></th>
                     </tr>
                   </thead>
@@ -505,7 +509,7 @@
                       </td>
                       <td style="vertical-align: middle;">
                         <div class="d-flex align-items-center justify-content-center">
-                          <input v-model.number="entry.chance" type="range" min="0" max="100" class="mr-2" style="width: 70px;" />
+                          <input v-model.number="entry.chance" type="range" min="0" max="100" class="mr-2" style="width: 140px;" />
                           <input v-model.number="entry.chance" type="number" min="0" max="100" class="form-control form-control-sm text-center" style="width: 55px;" />
                         </div>
                       </td>
