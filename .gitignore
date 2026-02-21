@@ -50,3 +50,7 @@ frontend/.env.production
 .playwright-cli/
 
 *.bak
+
+# Playwright test artifacts
+test-results/
+frontend/test-results/
