@@ -2,12 +2,11 @@
   <content-area style="padding: 0 !important">
     <div class="row mt-3">
 
-      <!-- Left Panel: Search & Spawn List -->
+      <!-- Left Panel: NPC Search & Selection -->
       <div class="col-4">
-        <eq-window title="Spawn Points">
-          <!-- Search Controls -->
+        <eq-window title="NPCs">
           <div class="spawn-search-pane">
-            <!-- Row 1: NPC search + New button -->
+            <!-- Search input -->
             <div class="d-flex mb-2">
               <div class="input-group input-group-sm flex-grow-1">
                 <div class="input-group-prepend">
@@ -18,176 +17,102 @@
                 <input
                   type="text"
                   class="form-control"
-                  placeholder="NPC name, ID..."
-                  v-model="search"
-                  @keyup.enter="doSearch"
-                  @input="debouncedSearch"
+                  placeholder="Search NPC name or ID..."
+                  v-model="npcSearch"
+                  @keyup.enter="doNpcSearch"
+                  @input="debouncedNpcSearch"
                   autofocus
                 />
-                <div class="input-group-append" v-if="search">
-                  <button class="btn btn-sm spawn-clear-btn" @click="search = ''; doSearch()" title="Clear search">
+                <div class="input-group-append" v-if="npcSearch">
+                  <button class="btn btn-sm spawn-clear-btn" @click="npcSearch = ''; npcList = []; selectedNpc = null; spawnGroupCards = [];" title="Clear">
                     <i class="fa fa-times"></i>
                   </button>
                 </div>
               </div>
               <button
                 class="btn btn-sm btn-outline-warning ml-2 flex-shrink-0"
-                @click="showCreatePanel = !showCreatePanel"
-                title="Create a new spawn point"
+                @click="showCreatePanel = !showCreatePanel; selectedNpc = null; spawnGroupCards = [];"
+                title="Create a new spawn"
               >
                 <i class="fa fa-plus mr-1"></i> New
               </button>
             </div>
 
-            <!-- Row 2: Zone filter -->
-            <div class="input-group input-group-sm mb-2 position-relative">
-              <div class="input-group-prepend">
-                <span class="input-group-text spawn-input-icon">
-                  <i class="fa fa-map-marker"></i>
-                </span>
-              </div>
-              <input
-                type="text"
-                class="form-control"
-                placeholder="Filter by zone..."
-                v-model="zoneFilter"
-                @input="onZoneFilterInput"
-                @focus="showZoneFilterDropdown = true"
-                @blur="delayCloseZoneFilter"
-                autocomplete="off"
-              />
-              <div class="input-group-append" v-if="selectedZone">
-                <button class="btn btn-sm spawn-clear-btn" @click="zoneFilter = ''; selectedZone = ''; doSearch()" title="Clear zone filter">
-                  <i class="fa fa-times"></i>
-                </button>
-              </div>
-              <div v-if="showZoneFilterDropdown && filteredZoneOptions.length > 0" class="zone-dropdown">
-                <div
-                  class="zone-option"
-                  @mousedown.prevent="zoneFilter = ''; selectedZone = ''; doSearch()"
-                >
-                  <span class="text-muted">(All Zones)</span>
-                </div>
-                <div
-                  v-for="z in filteredZoneOptions"
-                  :key="z.short_name + '-' + z.version"
-                  class="zone-option"
-                  @mousedown.prevent="selectZoneFilter(z)"
-                >
-                  <span class="text-warning">{{ z.short_name }}</span>
-                  <span class="text-muted ml-2" style="font-size: 0.85em;">{{ z.long_name }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Row 3: Version + Respawn filters -->
-            <div class="d-flex mb-2" style="gap: 6px;">
-              <div class="spawn-filter-group flex-grow-1">
-                <label class="spawn-filter-label">Version</label>
-                <select class="form-control form-control-sm spawn-filter-select" v-model="selectedVersion" @change="currentPage = 1; doSearch()">
-                  <option value="">Any</option>
-                  <option value="0">0</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                </select>
-              </div>
-              <div class="spawn-filter-group flex-grow-1">
-                <label class="spawn-filter-label">Respawn</label>
-                <select class="form-control form-control-sm spawn-filter-select" v-model="selectedRespawnFilter" @change="currentPage = 1; doSearch()">
-                  <option value="">Any</option>
-                  <option value="short">Short (&lt;5m)</option>
-                  <option value="medium">Medium (5–30m)</option>
-                  <option value="long">Long (&gt;30m)</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Active filter chips -->
-            <div class="spawn-active-filters" v-if="activeFilterChips.length > 0">
-              <span
-                v-for="chip in activeFilterChips"
-                :key="chip.key"
-                class="spawn-filter-chip"
-              >
-                <i :class="chip.icon + ' mr-1'" style="font-size: 0.8em;"></i>{{ chip.label }}
-                <span class="spawn-chip-remove" @click="chip.clear()"><i class="fa fa-times"></i></span>
-              </span>
-            </div>
-
             <!-- Results count -->
-            <div class="spawn-results-meta" v-if="!listLoading">
+            <div class="spawn-results-meta" v-if="!npcListLoading && npcSearch">
               <i class="fa fa-database mr-1" style="opacity: 0.5;"></i>
-              <span v-if="totalResults === 0">No results</span>
-              <span v-else>{{ spawnList.length }} spawn{{ spawnList.length !== 1 ? 's' : '' }}<span v-if="totalResults > perPage"> &middot; page {{ currentPage }}</span></span>
+              <span v-if="npcList.length === 0">No NPCs found</span>
+              <span v-else>{{ npcList.length }} NPC{{ npcList.length !== 1 ? 's' : '' }}<span v-if="npcTotalResults > npcPerPage"> &middot; page {{ npcCurrentPage }}</span></span>
             </div>
           </div>
 
-          <!-- Spawn List -->
-          <div class="spawn-list" style="height: calc(100vh - 260px); overflow-y: auto;">
-            <div v-if="listLoading" class="text-center p-3">
-              <i class="fa fa-spinner fa-spin"></i> Loading...
+          <!-- NPC List -->
+          <div class="spawn-list" style="height: calc(100vh - 200px); overflow-y: auto;">
+            <div v-if="npcListLoading" class="text-center p-3">
+              <i class="fa fa-spinner fa-spin"></i> Searching...
             </div>
 
-            <div v-if="!listLoading && spawnList.length === 0" class="text-center p-3" style="opacity: .5;">
-              <i class="fa fa-map-marker fa-2x d-block mb-2"></i>
-              No spawn points found
+            <div v-if="!npcListLoading && npcList.length === 0 && npcSearch" class="text-center p-3" style="opacity: .5;">
+              <i class="ra ra-dragon fa-2x d-block mb-2"></i>
+              No NPCs found
+            </div>
+
+            <div v-if="!npcListLoading && !npcSearch && npcList.length === 0" class="text-center p-3" style="opacity: .4;">
+              <i class="ra ra-dragon" style="font-size: 3em;"></i>
+              <div class="mt-3">Search for an NPC to view its spawn groups</div>
             </div>
 
             <div
-              v-for="sp in spawnList"
-              :key="sp.id"
+              v-for="npc in npcList"
+              :key="npc.id"
               class="spawn-list-item"
-              :class="{ 'active': selectedSpawn && selectedSpawn.id === sp.id }"
-              @click="selectSpawn(sp)"
+              :class="{ 'active': selectedNpc && selectedNpc.id === npc.id }"
+              @click="selectNpc(npc)"
             >
               <div class="d-flex justify-content-between align-items-start">
                 <div style="min-width: 0; flex: 1;">
                   <div class="spawn-list-name text-truncate">
-                    {{ sp.npcName || ('NPC #' + sp.npcId) }}
+                    {{ npc.cleanName }}
                   </div>
                   <small class="text-muted">
-                    Spawn2 #{{ sp.id }} &middot; SG #{{ sp.spawngroupId }}
+                    NPC #{{ npc.id }}
                   </small>
                 </div>
                 <div class="text-right ml-2" style="flex-shrink: 0;">
-                  <span class="badge badge-pill" style="background: rgba(252,199,33,0.2); color: #fcc721;">
-                    {{ sp.zone }}
+                  <span class="badge badge-pill" style="background: rgba(252,199,33,0.15); color: #fcc721; font-size: 0.75em;">
+                    Level {{ npc.level || '?' }}
                   </span>
-                  <div style="font-size: 0.75em; opacity: 0.5; margin-top: 2px;">
-                    {{ sp.x.toFixed(0) }}, {{ sp.y.toFixed(0) }}, {{ sp.z.toFixed(0) }}
-                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Pagination -->
-            <div class="text-center mt-2 mb-2" v-if="totalResults > perPage">
+            <div class="text-center mt-2 mb-2" v-if="npcTotalResults > npcPerPage">
               <b-pagination
                 size="sm"
-                v-model="currentPage"
-                :total-rows="totalResults"
-                :per-page="perPage"
+                v-model="npcCurrentPage"
+                :total-rows="npcTotalResults"
+                :per-page="npcPerPage"
                 :hide-ellipsis="true"
-                @change="paginate"
+                @change="paginateNpcs"
               />
             </div>
           </div>
         </eq-window>
       </div>
 
-      <!-- Right Panel: Editor -->
+      <!-- Right Panel: Spawngroups for selected NPC -->
       <div class="col-8">
 
         <!-- Empty State -->
-        <eq-window v-if="!selectedSpawn && !showCreatePanel" title="Spawn Editor">
+        <eq-window v-if="!selectedNpc && !showCreatePanel" title="Spawn Editor">
           <div class="text-center p-5" style="opacity: .4;">
             <i class="fa fa-map-marker" style="font-size: 3em;"></i>
-            <div class="mt-3">Select a spawn point to edit, or create a new one</div>
+            <div class="mt-3">Select an NPC from the left panel to view its spawn groups</div>
           </div>
         </eq-window>
 
-        <!-- Create Panel -->
+        <!-- Create New Spawn Panel -->
         <eq-window v-if="showCreatePanel" title="Create New Spawn">
           <div class="create-form-container">
             <!-- NPC Selection -->
@@ -324,40 +249,27 @@
           </div>
         </eq-window>
 
-        <!-- Spawn Editor -->
-        <div v-if="selectedSpawn && !showCreatePanel">
-          <!-- Header -->
+        <!-- Loading -->
+        <div v-if="spawnGroupsLoading" class="text-center p-5">
+          <i class="fa fa-spinner fa-spin fa-2x"></i>
+          <div class="mt-2 text-muted">Loading spawn groups...</div>
+        </div>
+
+        <!-- Selected NPC header -->
+        <div v-if="selectedNpc && !showCreatePanel && !spawnGroupsLoading">
           <eq-window class="p-0">
             <div class="spawn-editor-header">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                   <h5 class="mb-0 mr-3" style="color: #fcc721;">
-                    <i class="fa fa-map-marker mr-2"></i>
-                    {{ selectedSpawnNpcName }}
+                    <i class="ra ra-dragon mr-2"></i>
+                    {{ selectedNpc.cleanName }}
                   </h5>
-                  <span class="badge badge-pill mr-2" style="background: rgba(252,199,33,0.2); color: #fcc721;">
-                    {{ selectedSpawn.zone }}
-                  </span>
-                  <small class="text-muted">
-                    Spawn2 #{{ selectedSpawn.id }} &middot; SG #{{ selectedSpawn.spawngroupId }}
-                  </small>
+                  <small class="text-muted">NPC #{{ selectedNpc.id }}</small>
                 </div>
-                <div>
-                  <button
-                    class="btn btn-sm btn-outline-success mr-1"
-                    @click="saveSelectedSpawn"
-                    :disabled="saving"
-                  >
-                    <i class="fa fa-save mr-1"></i> Save
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-danger"
-                    @click="deleteSelectedSpawn"
-                    :disabled="saving"
-                  >
-                    <i class="fa fa-trash mr-1"></i> Delete
-                  </button>
-                </div>
+                <span class="badge badge-pill" style="background: rgba(138,163,255,0.15); color: #8aa3ff;">
+                  {{ spawnGroupCards.length }} spawn group{{ spawnGroupCards.length !== 1 ? 's' : '' }}
+                </span>
               </div>
             </div>
           </eq-window>
@@ -370,350 +282,426 @@
             <i class="fa fa-check mr-1"></i>{{ editorSuccess }}
           </div>
 
-          <!-- Spawn2 Fields -->
-          <eq-window title="Spawn Point (spawn2)" class="mt-3">
-            <div class="row">
-              <div class="col-4 mb-3">
-                <label class="field-label">Zone</label>
-                <div class="position-relative">
-                  <input
-                    v-model="editData.zoneSearch"
-                    class="form-control form-control-sm"
-                    @input="onEditZoneSearch"
-                    @focus="showEditZoneDropdown = true"
-                    @blur="delayCloseEditZoneDropdown"
-                    autocomplete="off"
-                  />
-                  <div v-if="showEditZoneDropdown && editFilteredZones.length > 0" class="zone-dropdown">
-                    <div
-                      v-for="z in editFilteredZones"
-                      :key="z.short_name + '-' + z.version"
-                      class="zone-option"
-                      @mousedown.prevent="selectEditZone(z)"
-                    >
-                      <span class="text-warning">{{ z.short_name }}</span>
-                      <span class="text-muted ml-2" style="font-size: 0.85em;">{{ z.long_name }}</span>
+          <!-- No spawngroups message -->
+          <div v-if="spawnGroupCards.length === 0" class="text-center p-4 mt-3" style="opacity: .5;">
+            <i class="fa fa-map-marker fa-2x d-block mb-2"></i>
+            This NPC has no spawn groups.
+          </div>
+
+          <!-- Spawngroup Cards -->
+          <div
+            v-for="(card, cardIdx) in spawnGroupCards"
+            :key="card.spawngroupId"
+            class="mt-3"
+          >
+            <eq-window>
+              <!-- Spawngroup Header -->
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                  <span style="color: #fcc721; font-weight: bold;">
+                    <i class="fa fa-object-group mr-1"></i>
+                    {{ card.spawngroup.name || ('Spawngroup #' + card.spawngroupId) }}
+                  </span>
+                  <small class="text-muted ml-2">SG #{{ card.spawngroupId }}</small>
+                  <span
+                    v-for="sp in card.spawnPoints"
+                    :key="sp.id"
+                    class="badge badge-pill ml-2"
+                    style="background: rgba(252,199,33,0.2); color: #fcc721; font-size: 0.75em;"
+                  >
+                    {{ sp.zone }} ({{ sp.x.toFixed(0) }}, {{ sp.y.toFixed(0) }}, {{ sp.z.toFixed(0) }})
+                  </span>
+                </div>
+                <div>
+                  <button
+                    class="btn btn-sm btn-outline-success mr-1"
+                    @click="saveSpawnGroupCard(card)"
+                    :disabled="saving"
+                    title="Save all changes to this spawngroup"
+                  >
+                    <i class="fa fa-save mr-1"></i> Save
+                  </button>
+                </div>
+              </div>
+
+              <!-- Spawngroup Settings Row -->
+              <div class="detail-section mb-3">
+                <div class="detail-section-title">
+                  <i class="fa fa-cog mr-1"></i> Spawngroup Settings
+                </div>
+                <div class="row mt-2">
+                  <div class="col-4 mb-2">
+                    <label class="field-label">Group Name</label>
+                    <input v-model="card.spawngroup.name" class="form-control form-control-sm" />
+                  </div>
+                  <div class="col-2 mb-2">
+                    <label class="field-label">Spawn Limit</label>
+                    <input v-model.number="card.spawngroup.spawn_limit" type="number" class="form-control form-control-sm" />
+                  </div>
+                  <div class="col-3 mb-2">
+                    <label class="field-label">Roam Distance</label>
+                    <div class="d-flex align-items-center">
+                      <input v-model.number="card.spawngroup.dist" type="range" min="0" max="500" step="1" class="mr-2" style="flex: 1;" />
+                      <input v-model.number="card.spawngroup.dist" type="number" step="0.1" class="form-control form-control-sm text-center" style="width: 70px;" />
                     </div>
                   </div>
-                </div>
-              </div>
-              <div class="col-2 mb-3">
-                <label class="field-label">Version</label>
-                <input v-model.number="editData.version" type="number" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Respawn (sec)</label>
-                <div class="input-group input-group-sm">
-                  <input v-model.number="editData.respawntime" type="number" class="form-control" />
-                  <div class="input-group-append">
-                    <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(editData.respawntime) }}</span>
+                  <div class="col-3 mb-2">
+                    <label class="field-label">Despawn</label>
+                    <select v-model.number="card.spawngroup.despawn" class="form-control form-control-sm">
+                      <option :value="0">None</option>
+                      <option :value="1">On Death</option>
+                      <option :value="2">Depop</option>
+                      <option :value="3">Timer</option>
+                    </select>
                   </div>
                 </div>
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Variance (sec)</label>
-                <div class="input-group input-group-sm">
-                  <input v-model.number="editData.variance" type="number" class="form-control" />
-                  <div class="input-group-append">
-                    <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(editData.variance) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-3 mb-3">
-                <label class="field-label">X</label>
-                <input v-model.number="editData.x" type="number" step="0.01" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Y</label>
-                <input v-model.number="editData.y" type="number" step="0.01" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Z</label>
-                <input v-model.number="editData.z" type="number" step="0.01" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Heading</label>
-                <input v-model.number="editData.heading" type="number" step="0.01" class="form-control form-control-sm" />
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-3 mb-3">
-                <label class="field-label">Path Grid</label>
-                <input v-model.number="editData.pathgrid" type="number" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Animation</label>
-                <select v-model.number="editData.animation" class="form-control form-control-sm">
-                  <option :value="0">Standing</option>
-                  <option :value="64">Sitting</option>
-                  <option :value="100">Crouching</option>
-                  <option :value="110">Lying Down</option>
-                  <option :value="105">Kneeling</option>
-                </select>
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Condition</label>
-                <input v-model.number="editData.condition" type="number" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Cond Value</label>
-                <input v-model.number="editData.cond_value" type="number" class="form-control form-control-sm" />
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-3 mb-2">
-                <label class="field-label">Min Expansion</label>
-                <input v-model.number="editData.min_expansion" type="number" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-2">
-                <label class="field-label">Max Expansion</label>
-                <input v-model.number="editData.max_expansion" type="number" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-2">
-                <label class="field-label">Content Flags</label>
-                <content-flag-selector
-                  :value="editData.content_flags"
-                  @input="editData.content_flags = $event"
-                />
-              </div>
-              <div class="col-3 mb-2">
-                <label class="field-label">Flags Disabled</label>
-                <content-flag-selector
-                  :value="editData.content_flags_disabled"
-                  @input="editData.content_flags_disabled = $event"
-                />
-              </div>
-            </div>
-          </eq-window>
-
-          <!-- Spawngroup Fields -->
-          <eq-window title="Spawngroup" class="mt-3" v-if="editSpawngroup">
-            <div class="row">
-              <div class="col-6 mb-3">
-                <label class="field-label">Group Name</label>
-                <input v-model="editSpawngroup.name" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Spawn Limit</label>
-                <input v-model.number="editSpawngroup.spawn_limit" type="number" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Roam Distance</label>
-                <div class="d-flex align-items-center">
-                  <input v-model.number="editSpawngroup.dist" type="range" min="0" max="500" step="1" class="mr-2" style="flex: 1;" />
-                  <input
-                    v-model.number="editSpawngroup.dist"
-                    type="number"
-                    step="0.1"
-                    class="form-control form-control-sm text-center"
-                    style="width: 75px;"
-                    @focus="roamDistVisualizerActive = true"
-                    @blur="roamDistVisualizerActive = false"
-                  />
-                </div>
-              </div>
-            </div>
-            <!-- Roam Distance Range Visualizer -->
-            <div v-if="roamDistVisualizerActive && editSpawngroup.dist > 0" class="mt-2 mb-2">
-              <div class="field-label mb-1">Range Visualizer — {{ editSpawngroup.dist }} units</div>
-              <range-visualizer :unit-marker="editSpawngroup.dist" />
-            </div>
-            <div class="row">
-              <div class="col-3 mb-3">
-                <label class="field-label">Delay (ms)</label>
-                <div class="input-group input-group-sm">
-                  <input v-model.number="editSpawngroup.delay" type="number" class="form-control" />
-                  <div class="input-group-append">
-                    <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(Math.round((editSpawngroup.delay || 0) / 1000)) }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Min Delay (ms)</label>
-                <div class="input-group input-group-sm">
-                  <input v-model.number="editSpawngroup.mindelay" type="number" class="form-control" />
-                  <div class="input-group-append">
-                    <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(Math.round((editSpawngroup.mindelay || 0) / 1000)) }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Despawn</label>
-                <select v-model.number="editSpawngroup.despawn" class="form-control form-control-sm">
-                  <option :value="0">None</option>
-                  <option :value="1">Despawn on Death</option>
-                  <option :value="2">Depop on Death</option>
-                  <option :value="3">Despawn Timer</option>
-                </select>
-              </div>
-              <div class="col-3 mb-3">
-                <label class="field-label">Despawn Timer (sec)</label>
-                <div class="input-group input-group-sm">
-                  <input v-model.number="editSpawngroup.despawn_timer" type="number" class="form-control" />
-                  <div class="input-group-append">
-                    <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(editSpawngroup.despawn_timer) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-3 mb-2">
-                <label class="field-label">Min X</label>
-                <input v-model.number="editSpawngroup.min_x" type="number" step="0.1" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-2">
-                <label class="field-label">Max X</label>
-                <input v-model.number="editSpawngroup.max_x" type="number" step="0.1" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-2">
-                <label class="field-label">Min Y</label>
-                <input v-model.number="editSpawngroup.min_y" type="number" step="0.1" class="form-control form-control-sm" />
-              </div>
-              <div class="col-3 mb-2">
-                <label class="field-label">Max Y</label>
-                <input v-model.number="editSpawngroup.max_y" type="number" step="0.1" class="form-control form-control-sm" />
-              </div>
-            </div>
-          </eq-window>
-
-          <!-- Spawngroup Entries (NPCs in this group) -->
-          <eq-window title="NPCs in Spawngroup" class="mt-3" v-if="editSpawnEntries && editSpawnEntries.length > 0">
-            <table class="eq-table eq-highlight-rows w-100" style="font-size: 13px; table-layout: fixed;">
-              <thead class="eq-table-floating-header">
-                <tr>
-                  <th style="width: 45%;">NPC</th>
-                  <th class="text-center" style="width: 45%;">Chance %</th>
-                  <th class="text-center" style="width: 10%;"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="entry in editSpawnEntries" :key="entry.npc_id">
-                  <td style="vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    <npc-popover
-                      v-if="entry.npcData"
-                      :npc="entry.npcData"
-                      :show-image="false"
-                      :show-label="false"
-                    >
-                      <router-link
-                        :to="'/npc/' + entry.npc_id"
-                        target="_blank"
-                        class="npc-link"
-                      >
-                        {{ entry.npcName || ('NPC #' + entry.npc_id) }}
-                      </router-link>
-                      <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
-                    </npc-popover>
-                    <span v-else>
-                      <router-link
-                        :to="'/npc/' + entry.npc_id"
-                        target="_blank"
-                        class="npc-link"
-                      >
-                        {{ entry.npcName || ('NPC #' + entry.npc_id) }}
-                      </router-link>
-                      <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
-                    </span>
-                  </td>
-                  <td style="vertical-align: middle;">
-                    <div class="d-flex align-items-center justify-content-center">
-                      <input
-                        v-model.number="entry.chance"
-                        type="range"
-                        min="0"
-                        max="100"
-                        class="mr-2"
-                        style="width: 90px;"
-                      />
-                      <input
-                        v-model.number="entry.chance"
-                        type="number"
-                        min="0"
-                        max="100"
-                        class="form-control form-control-sm text-center"
-                        style="width: 60px; display: inline-block;"
-                      />
+                <div class="row">
+                  <div class="col-3 mb-2">
+                    <label class="field-label">Delay (ms)</label>
+                    <div class="input-group input-group-sm">
+                      <input v-model.number="card.spawngroup.delay" type="number" class="form-control" />
+                      <div class="input-group-append">
+                        <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(Math.round((card.spawngroup.delay || 0) / 1000)) }}</span>
+                      </div>
                     </div>
-                  </td>
-                  <td class="text-center" style="vertical-align: middle;">
-                    <button
-                      class="btn btn-xs btn-dark"
-                      @click="removeSpawnEntry(entry)"
-                      title="Remove NPC from spawngroup"
-                    >
-                      <i class="fa fa-times text-danger"></i>
+                  </div>
+                  <div class="col-3 mb-2">
+                    <label class="field-label">Min Delay (ms)</label>
+                    <div class="input-group input-group-sm">
+                      <input v-model.number="card.spawngroup.mindelay" type="number" class="form-control" />
+                      <div class="input-group-append">
+                        <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(Math.round((card.spawngroup.mindelay || 0) / 1000)) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-3 mb-2">
+                    <label class="field-label">Despawn Timer (sec)</label>
+                    <div class="input-group input-group-sm">
+                      <input v-model.number="card.spawngroup.despawn_timer" type="number" class="form-control" />
+                      <div class="input-group-append">
+                        <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(card.spawngroup.despawn_timer) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-3 mb-2">
+                    <label class="field-label">WP Spawns</label>
+                    <input v-model.number="card.spawngroup.wp_spawns" type="number" class="form-control form-control-sm" />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-3 mb-2">
+                    <label class="field-label">Min X</label>
+                    <input v-model.number="card.spawngroup.min_x" type="number" step="0.1" class="form-control form-control-sm" />
+                  </div>
+                  <div class="col-3 mb-2">
+                    <label class="field-label">Max X</label>
+                    <input v-model.number="card.spawngroup.max_x" type="number" step="0.1" class="form-control form-control-sm" />
+                  </div>
+                  <div class="col-3 mb-2">
+                    <label class="field-label">Min Y</label>
+                    <input v-model.number="card.spawngroup.min_y" type="number" step="0.1" class="form-control form-control-sm" />
+                  </div>
+                  <div class="col-3 mb-2">
+                    <label class="field-label">Max Y</label>
+                    <input v-model.number="card.spawngroup.max_y" type="number" step="0.1" class="form-control form-control-sm" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- NPCs in Spawngroup (Spawnentries) -->
+              <div class="detail-section mb-3">
+                <div class="detail-section-title d-flex justify-content-between align-items-center">
+                  <span><i class="ra ra-dragon mr-1"></i> NPCs in Spawngroup ({{ card.entries.length }})</span>
+                  <div>
+                    <button class="btn btn-xs btn-outline-warning mr-1" @click="openAddNpcModal(card)" title="Add NPC">
+                      <i class="fa fa-plus mr-1"></i> Add NPC
                     </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div class="d-flex justify-content-between align-items-center mt-2">
-              <button class="btn btn-xs btn-outline-warning" @click="$bvModal.show('add-npc-modal')" title="Add another NPC to this spawngroup">
-                <i class="fa fa-plus mr-1"></i> Add NPC
-              </button>
-              <button class="btn btn-xs btn-dark" @click="balanceChances" title="Equally distribute chances">
-                <i class="fa fa-balance-scale mr-1"></i> Balance
-              </button>
-            </div>
-
-            <!-- Add NPC Modal -->
-            <b-modal
-              id="add-npc-modal"
-              title="Add NPC to Spawngroup"
-              hide-footer
-              @show="resetAddNpcForm"
-            >
-              <div class="mb-3">
-                <label class="field-label">NPC Search</label>
-                <div class="position-relative">
-                  <input
-                    v-model="addNpcSearch"
-                    class="form-control form-control-sm"
-                    placeholder="Search NPC by name or ID..."
-                    @input="onAddNpcSearch"
-                    @focus="showAddNpcDropdown = true"
-                    @blur="delayCloseAddNpcDropdown"
-                    autocomplete="off"
-                  />
-                  <div v-if="showAddNpcDropdown && addNpcResults.length > 0" class="zone-dropdown">
-                    <div
-                      v-for="n in addNpcResults"
-                      :key="n.id"
-                      class="zone-option"
-                      @mousedown.prevent="selectAddNpc(n)"
-                    >
-                      <span class="text-warning">{{ (n.name || '').replace(/_/g, ' ') }}</span>
-                      <span class="text-muted ml-2">#{{ n.id }}</span>
-                    </div>
+                    <button class="btn btn-xs btn-dark" @click="balanceChances(card)" title="Balance chances equally">
+                      <i class="fa fa-balance-scale mr-1"></i> Balance
+                    </button>
                   </div>
                 </div>
-                <div v-if="addNpcId" class="text-muted mt-1" style="font-size: 0.8em;">
-                  Selected: <span class="text-warning">{{ addNpcSearch }}</span>
-                </div>
+                <table class="eq-table eq-highlight-rows w-100 mt-2" style="font-size: 13px; table-layout: fixed;">
+                  <thead class="eq-table-floating-header">
+                    <tr>
+                      <th style="width: 22%;">NPC</th>
+                      <th class="text-center" style="width: 18%;">Chance %</th>
+                      <th style="width: 20%;">Content Flags</th>
+                      <th style="width: 20%;">Flags Disabled</th>
+                      <th style="width: 12%;">Expansion</th>
+                      <th class="text-center" style="width: 8%;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="entry in card.entries"
+                      :key="entry.npc_id"
+                      :class="{ 'highlight-row': selectedNpc && entry.npc_id === selectedNpc.id }"
+                    >
+                      <td style="vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <npc-popover
+                          v-if="entry.npcData"
+                          :npc="entry.npcData"
+                          :show-image="false"
+                          :show-label="false"
+                        >
+                          <router-link :to="'/npc/' + entry.npc_id" target="_blank" class="npc-link">
+                            {{ entry.npcName || ('NPC #' + entry.npc_id) }}
+                          </router-link>
+                          <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
+                        </npc-popover>
+                        <span v-else>
+                          <router-link :to="'/npc/' + entry.npc_id" target="_blank" class="npc-link">
+                            {{ entry.npcName || ('NPC #' + entry.npc_id) }}
+                          </router-link>
+                          <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
+                        </span>
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <div class="d-flex align-items-center justify-content-center">
+                          <input v-model.number="entry.chance" type="range" min="0" max="100" class="mr-2" style="width: 70px;" />
+                          <input v-model.number="entry.chance" type="number" min="0" max="100" class="form-control form-control-sm text-center" style="width: 55px;" />
+                        </div>
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <content-flag-selector
+                          :value="entry.content_flags"
+                          @input="entry.content_flags = $event"
+                        />
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <content-flag-selector
+                          :value="entry.content_flags_disabled"
+                          @input="entry.content_flags_disabled = $event"
+                        />
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <div class="d-flex" style="gap: 4px;">
+                          <input v-model.number="entry.min_expansion" type="number" class="form-control form-control-sm text-center" style="width: 50px;" title="Min Expansion" placeholder="Min" />
+                          <input v-model.number="entry.max_expansion" type="number" class="form-control form-control-sm text-center" style="width: 50px;" title="Max Expansion" placeholder="Max" />
+                        </div>
+                      </td>
+                      <td class="text-center" style="vertical-align: middle;">
+                        <button class="btn btn-xs btn-dark" @click="removeSpawnEntry(card, entry)" title="Remove NPC">
+                          <i class="fa fa-times text-danger"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div class="mb-3">
-                <label class="field-label">Chance %</label>
-                <div class="d-flex align-items-center">
-                  <input v-model.number="addNpcChance" type="range" min="0" max="100" class="mr-2" style="flex: 1;" />
-                  <input v-model.number="addNpcChance" type="number" min="0" max="100" class="form-control form-control-sm text-center" style="width: 70px;" />
-                </div>
-              </div>
-              <div class="d-flex justify-content-end">
-                <button class="btn btn-sm btn-secondary mr-2" @click="$bvModal.hide('add-npc-modal')">Cancel</button>
-                <button class="btn btn-sm btn-outline-success" @click="confirmAddNpc" :disabled="!addNpcId || saving">
-                  <i class="fa fa-plus mr-1"></i> Add NPC
+
+              <!-- Spawn Point Toggle Button -->
+              <div class="mb-2" v-if="card.spawnPoints.length > 0">
+                <button
+                  class="btn btn-sm btn-block spawn-point-toggle"
+                  @click="$set(card, 'showSpawnPoints', !card.showSpawnPoints)"
+                >
+                  <i class="fa mr-1" :class="card.showSpawnPoints ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                  <i class="fa fa-map-marker mr-1"></i>
+                  Spawn Points ({{ card.spawnPoints.length }})
                 </button>
               </div>
-            </b-modal>
-          </eq-window>
+
+              <!-- Spawn Points (spawn2) Editor for this Spawngroup -->
+              <div v-if="card.showSpawnPoints && card.spawnPoints.length > 0">
+                <div
+                  v-for="(sp, spIdx) in card.spawnPoints"
+                  :key="sp.id"
+                  class="detail-section mb-3"
+                >
+                  <div class="detail-section-title d-flex justify-content-between align-items-center">
+                    <span>
+                      <i class="fa fa-map-marker mr-1"></i>
+                      Spawn Point #{{ sp.id }}
+                      <span class="text-muted ml-2" style="font-size: 0.85em;">
+                        {{ sp.zone }} ({{ Number(sp.x || 0).toFixed(1) }}, {{ Number(sp.y || 0).toFixed(1) }}, {{ Number(sp.z || 0).toFixed(1) }})
+                      </span>
+                    </span>
+                    <button
+                      class="btn btn-xs btn-outline-danger"
+                      @click="deleteSpawnPoint(card, sp)"
+                      :disabled="saving"
+                      title="Delete this spawn point"
+                    >
+                      <i class="fa fa-trash mr-1"></i> Delete
+                    </button>
+                  </div>
+
+                  <div class="row mt-2">
+                    <div class="col-4 mb-2">
+                      <label class="field-label">Zone</label>
+                      <div class="position-relative">
+                        <input
+                          v-model="sp.zoneSearch"
+                          class="form-control form-control-sm"
+                          @input="onSpEditZoneSearch(sp)"
+                          @focus="sp.showZoneDropdown = true"
+                          @blur="delayClose(sp, 'showZoneDropdown')"
+                          autocomplete="off"
+                        />
+                        <div v-if="sp.showZoneDropdown && sp.filteredZones && sp.filteredZones.length > 0" class="zone-dropdown">
+                          <div
+                            v-for="z in sp.filteredZones"
+                            :key="z.short_name"
+                            class="zone-option"
+                            @mousedown.prevent="selectSpEditZone(sp, z)"
+                          >
+                            <span class="text-warning">{{ z.short_name }}</span>
+                            <span class="text-muted ml-2" style="font-size: 0.85em;">{{ z.long_name }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-2 mb-2">
+                      <label class="field-label">Version</label>
+                      <input v-model.number="sp.version" type="number" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Respawn (sec)</label>
+                      <div class="input-group input-group-sm">
+                        <input v-model.number="sp.respawntime" type="number" class="form-control" />
+                        <div class="input-group-append">
+                          <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(sp.respawntime) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Variance (sec)</label>
+                      <div class="input-group input-group-sm">
+                        <input v-model.number="sp.variance" type="number" class="form-control" />
+                        <div class="input-group-append">
+                          <span class="input-group-text" style="font-size: 0.7em;">{{ formatTime(sp.variance) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-3 mb-2">
+                      <label class="field-label">X</label>
+                      <input v-model.number="sp.x" type="number" step="0.01" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Y</label>
+                      <input v-model.number="sp.y" type="number" step="0.01" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Z</label>
+                      <input v-model.number="sp.z" type="number" step="0.01" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Heading</label>
+                      <input v-model.number="sp.heading" type="number" step="0.01" class="form-control form-control-sm" />
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Path Grid</label>
+                      <input v-model.number="sp.pathgrid" type="number" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Animation</label>
+                      <select v-model.number="sp.animation" class="form-control form-control-sm">
+                        <option :value="0">Standing</option>
+                        <option :value="64">Sitting</option>
+                        <option :value="100">Crouching</option>
+                        <option :value="110">Lying Down</option>
+                        <option :value="105">Kneeling</option>
+                      </select>
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Condition</label>
+                      <input v-model.number="sp.condition" type="number" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Cond Value</label>
+                      <input v-model.number="sp.cond_value" type="number" class="form-control form-control-sm" />
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Min Expansion</label>
+                      <input v-model.number="sp.min_expansion" type="number" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Max Expansion</label>
+                      <input v-model.number="sp.max_expansion" type="number" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Content Flags</label>
+                      <content-flag-selector
+                        :value="sp.content_flags"
+                        @input="sp.content_flags = $event"
+                      />
+                    </div>
+                    <div class="col-3 mb-2">
+                      <label class="field-label">Flags Disabled</label>
+                      <content-flag-selector
+                        :value="sp.content_flags_disabled"
+                        @input="sp.content_flags_disabled = $event"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </eq-window>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Add NPC Modal -->
+    <b-modal
+      id="add-npc-modal"
+      title="Add NPC to Spawngroup"
+      hide-footer
+      @show="resetAddNpcForm"
+    >
+      <div class="mb-3">
+        <label class="field-label">NPC Search</label>
+        <div class="position-relative">
+          <input
+            v-model="addNpcSearch"
+            class="form-control form-control-sm"
+            placeholder="Search NPC by name or ID..."
+            @input="onAddNpcSearch"
+            @focus="showAddNpcDropdown = true"
+            @blur="delayCloseAddNpcDropdown"
+            autocomplete="off"
+          />
+          <div v-if="showAddNpcDropdown && addNpcResults.length > 0" class="zone-dropdown">
+            <div
+              v-for="n in addNpcResults"
+              :key="n.id"
+              class="zone-option"
+              @mousedown.prevent="selectAddNpc(n)"
+            >
+              <span class="text-warning">{{ (n.name || '').replace(/_/g, ' ') }}</span>
+              <span class="text-muted ml-2">#{{ n.id }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="addNpcId" class="text-muted mt-1" style="font-size: 0.8em;">
+          Selected: <span class="text-warning">{{ addNpcSearch }}</span>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="field-label">Chance %</label>
+        <div class="d-flex align-items-center">
+          <input v-model.number="addNpcChance" type="range" min="0" max="100" class="mr-2" style="flex: 1;" />
+          <input v-model.number="addNpcChance" type="number" min="0" max="100" class="form-control form-control-sm text-center" style="width: 70px;" />
+        </div>
+      </div>
+      <div class="d-flex justify-content-end">
+        <button class="btn btn-sm btn-secondary mr-2" @click="$bvModal.hide('add-npc-modal')">Cancel</button>
+        <button class="btn btn-sm btn-outline-success" @click="confirmAddNpc" :disabled="!addNpcId || saving">
+          <i class="fa fa-plus mr-1"></i> Add NPC
+        </button>
+      </div>
+    </b-modal>
   </content-area>
 </template>
 
@@ -728,8 +716,8 @@ import NpcPopover from "../../components/NpcPopover";
 import ContentFlagSelector from "../../components/selectors/ContentFlagSelector";
 import RangeVisualizer from "../../components/tools/RangeVisualizer";
 
-let searchTimeout = null;
 let npcSearchTimeout = null;
+let createNpcSearchTimeout = null;
 let addNpcSearchTimeout = null;
 
 export default {
@@ -737,31 +725,21 @@ export default {
   components: { EqWindow, ContentArea, NpcPopover, ContentFlagSelector, RangeVisualizer },
   data() {
     return {
-      // Search / list
-      search: "",
-      zoneFilter: "",
-      selectedZone: "",
-      selectedVersion: "",
-      selectedRespawnFilter: "",
-      showZoneFilterDropdown: false,
+      // NPC search / list (left panel)
+      npcSearch: "",
+      npcList: [],
+      npcListLoading: false,
+      npcCurrentPage: 1,
+      npcPerPage: 50,
+      npcTotalResults: 0,
+
+      // Selected NPC and its spawngroup cards (right panel)
+      selectedNpc: null,
+      spawnGroupCards: [],
+      spawnGroupsLoading: false,
+
+      // Zones
       zones: [],
-      spawnList: [],
-      listLoading: false,
-      currentPage: 1,
-      perPage: 50,
-      totalResults: 0,
-
-      // Selected spawn
-      selectedSpawn: null,
-      selectedSpawnNpcName: "",
-      editData: {},
-      editSpawngroup: null,
-      editSpawnEntries: [],
-      editLoading: false,
-
-      // Edit zone dropdown
-      showEditZoneDropdown: false,
-      editFilteredZones: [],
 
       // Create form
       showCreatePanel: false,
@@ -771,64 +749,36 @@ export default {
       createFilteredZones: [],
       createForm: this.getDefaultCreateForm(),
 
-      // Add NPC to spawngroup
+      // Add NPC to spawngroup modal
       addNpcSearch: "",
       addNpcId: 0,
       addNpcChance: 50,
       showAddNpcDropdown: false,
       addNpcResults: [],
+      addNpcTargetCard: null,
 
       // State
       saving: false,
       editorError: "",
       editorSuccess: "",
-      roamDistVisualizerActive: false,
     };
-  },
-
-  computed: {
-    filteredZoneOptions() {
-      if (!this.zoneFilter || this.zoneFilter.length < 1) return [];
-      const q = this.zoneFilter.toLowerCase();
-      return this.zones
-        .filter(z => z.short_name.includes(q) || (z.long_name && z.long_name.toLowerCase().includes(q)))
-        .slice(0, 15);
-    },
-    activeFilterChips() {
-      const chips = [];
-      if (this.search) {
-        chips.push({ key: "search", icon: "fa fa-search", label: this.search, clear: () => { this.search = ""; this.doSearch(); } });
-      }
-      if (this.selectedZone) {
-        chips.push({ key: "zone", icon: "fa fa-map-marker", label: this.selectedZone, clear: () => { this.zoneFilter = ""; this.selectedZone = ""; this.doSearch(); } });
-      }
-      if (this.selectedVersion !== "") {
-        chips.push({ key: "version", icon: "fa fa-code-fork", label: `v${this.selectedVersion}`, clear: () => { this.selectedVersion = ""; this.doSearch(); } });
-      }
-      if (this.selectedRespawnFilter) {
-        const labels = { short: "Short respawn", medium: "Medium respawn", long: "Long respawn" };
-        chips.push({ key: "respawn", icon: "fa fa-clock-o", label: labels[this.selectedRespawnFilter] || this.selectedRespawnFilter, clear: () => { this.selectedRespawnFilter = ""; this.doSearch(); } });
-      }
-      return chips;
-    },
   },
 
   async created() {
     this.zones = await Zones.getZones() || [];
 
-    // If navigated with NPC ID in route, pre-filter
+    // If navigated with NPC ID in route, pre-search
     if (this.$route.params.npcId) {
-      this.search = this.$route.params.npcId;
+      this.npcSearch = this.$route.params.npcId;
+      this.doNpcSearch();
     }
-
-    this.doSearch();
   },
 
   watch: {
     '$route'() {
       if (this.$route.params.npcId) {
-        this.search = this.$route.params.npcId;
-        this.doSearch();
+        this.npcSearch = this.$route.params.npcId;
+        this.doNpcSearch();
       }
     },
   },
@@ -875,272 +825,132 @@ export default {
     },
 
     // ========================
-    // Zone filter
+    // NPC Search (left panel)
     // ========================
-    onZoneFilterInput() {
-      this.showZoneFilterDropdown = true;
-    },
-    delayCloseZoneFilter() {
-      setTimeout(() => { this.showZoneFilterDropdown = false; }, 200);
-    },
-    selectZoneFilter(z) {
-      this.zoneFilter = z.short_name;
-      this.selectedZone = z.short_name;
-      this.showZoneFilterDropdown = false;
-      this.currentPage = 1;
-      this.doSearch();
+    debouncedNpcSearch() {
+      if (npcSearchTimeout) clearTimeout(npcSearchTimeout);
+      npcSearchTimeout = setTimeout(() => this.doNpcSearch(), 300);
     },
 
-    // ========================
-    // Search & List
-    // ========================
-    debouncedSearch() {
-      if (searchTimeout) clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => this.doSearch(), 300);
-    },
+    async doNpcSearch() {
+      const q = (this.npcSearch || "").trim();
+      if (!q) {
+        this.npcList = [];
+        this.npcTotalResults = 0;
+        return;
+      }
 
-    async doSearch() {
-      this.listLoading = true;
-      this.spawnList = [];
+      this.npcListLoading = true;
+      this.npcList = [];
 
       try {
-        const spawn2Api = new Spawn2Api(...SpireApi.cfg());
+        const npcApi = new NpcTypeApi(...SpireApi.cfg());
         const builder = new SpireQueryBuilder();
 
-        // Zone filter
-        if (this.selectedZone) {
-          builder.where("zone", "=", this.selectedZone);
+        if (/^\d+$/.test(q)) {
+          builder.where("id", "=", parseInt(q));
+        } else {
+          builder.where("name", "like", `%${q}%`);
         }
 
-        // Version filter
-        if (this.selectedVersion !== "" && this.selectedVersion !== null) {
-          builder.where("version", "=", Number(this.selectedVersion));
+        builder.select(["id", "name", "level", "race", "class"]);
+        builder.limit(this.npcPerPage);
+        builder.page(this.npcCurrentPage);
+        builder.orderBy(["name"]);
+
+        const result = await npcApi.listNpcTypes(builder.get());
+        const npcs = result.data || [];
+
+        this.npcList = npcs.map(n => ({
+          id: n.id,
+          name: n.name || "",
+          cleanName: (n.name || "").replace(/_/g, " "),
+          level: n.level || 0,
+          race: n.race || 0,
+          class: n.class || 0,
+        }));
+
+        this.npcTotalResults = this.npcList.length >= this.npcPerPage
+          ? (this.npcCurrentPage * this.npcPerPage) + 1
+          : this.npcList.length;
+      } catch (e) {
+        console.error("Failed to search NPCs", e);
+      }
+
+      this.npcListLoading = false;
+    },
+
+    paginateNpcs(page) {
+      this.npcCurrentPage = page;
+      this.doNpcSearch();
+    },
+
+    // ========================
+    // Select NPC & Load Spawngroups
+    // ========================
+    async selectNpc(npc) {
+      this.showCreatePanel = false;
+      this.selectedNpc = npc;
+      this.clearMessages();
+      this.spawnGroupCards = [];
+      this.spawnGroupsLoading = true;
+
+      try {
+        // Step 1: Find all spawnentries for this NPC
+        const entryApi = new SpawnentryApi(...SpireApi.cfg());
+        const entryBuilder = new SpireQueryBuilder();
+        entryBuilder.where("npcID", "=", npc.id);
+        entryBuilder.limit(200);
+        const entryResult = await entryApi.listSpawnentries(entryBuilder.get());
+        const entries = entryResult.data || [];
+
+        if (entries.length === 0) {
+          this.spawnGroupsLoading = false;
+          return;
         }
 
-        // Respawn time filter
-        if (this.selectedRespawnFilter === "short") {
-          builder.where("respawntime", "<", 300);
-        } else if (this.selectedRespawnFilter === "medium") {
-          builder.where("respawntime", ">=", 300);
-          builder.where("respawntime", "<=", 1800);
-        } else if (this.selectedRespawnFilter === "long") {
-          builder.where("respawntime", ">", 1800);
-        }
+        // Step 2: Get unique spawngroup IDs
+        const sgIds = [...new Set(entries.map(e => e.spawngroup_id || e.spawngroupID))];
 
-        // Text search - could be NPC ID or a zone name
-        const q = (this.search || "").trim();
-        if (q) {
-          const isNumeric = /^\d+$/.test(q);
-          if (isNumeric) {
-            // Search spawn entries for this NPC ID to find spawngroup IDs
-            const entryApi = new SpawnentryApi(...SpireApi.cfg());
-            const entryBuilder = new SpireQueryBuilder();
-            entryBuilder.where("npcID", "=", parseInt(q));
-            entryBuilder.limit(200);
-            const entryResult = await entryApi.listSpawnentries(entryBuilder.get());
-            const entries = entryResult.data || [];
-
-            if (entries.length > 0) {
-              const sgIds = [...new Set(entries.map(e => e.spawngroup_id || e.spawngroupID))];
-              for (const sgId of sgIds) {
-                builder.whereOr("spawngroupID", "=", sgId);
-              }
-            } else {
-              this.spawnList = [];
-              this.totalResults = 0;
-              this.listLoading = false;
-              return;
-            }
-          } else {
-            // Text search: try matching zone name first
-            const matchingZones = this.zones
-              .filter(z => z.short_name.includes(q.toLowerCase()) || (z.long_name && z.long_name.toLowerCase().includes(q.toLowerCase())))
-              .map(z => z.short_name);
-
-            if (matchingZones.length > 0 && matchingZones.length <= 20) {
-              for (const zn of matchingZones) {
-                builder.whereOr("zone", "=", zn);
-              }
-            } else {
-              // Try searching NPC names
-              const npcApi = new NpcTypeApi(...SpireApi.cfg());
-              const npcBuilder = new SpireQueryBuilder();
-              npcBuilder.where("name", "like", `%${q}%`);
-              npcBuilder.select(["id"]);
-              npcBuilder.limit(50);
-              const npcResult = await npcApi.listNpcTypes(npcBuilder.get());
-              const npcIds = (npcResult.data || []).map(n => n.id);
-
-              if (npcIds.length > 0) {
-                const entryApi = new SpawnentryApi(...SpireApi.cfg());
-                const entryBuilder = new SpireQueryBuilder();
-                for (const nid of npcIds.slice(0, 50)) {
-                  entryBuilder.whereOr("npcID", "=", nid);
-                }
-                entryBuilder.limit(500);
-                const entryResult = await entryApi.listSpawnentries(entryBuilder.get());
-                const entries = entryResult.data || [];
-                const sgIds = [...new Set(entries.map(e => e.spawngroup_id || e.spawngroupID))];
-
-                if (sgIds.length > 0) {
-                  for (const sgId of sgIds.slice(0, 100)) {
-                    builder.whereOr("spawngroupID", "=", sgId);
-                  }
-                } else {
-                  this.spawnList = [];
-                  this.totalResults = 0;
-                  this.listLoading = false;
-                  return;
-                }
-              } else {
-                this.spawnList = [];
-                this.totalResults = 0;
-                this.listLoading = false;
-                return;
-              }
-            }
+        // Step 3: For each spawngroup, load full data
+        const cards = [];
+        for (const sgId of sgIds) {
+          const card = await this.loadSpawnGroupCard(sgId);
+          if (card) {
+            cards.push(card);
           }
         }
 
-        builder.limit(this.perPage);
-        builder.page(this.currentPage);
-        builder.orderBy(["zone"]);
-
-        // Use includes to load spawnentries + NPC type in a single request
-        // (avoids N+1 queries that caused the list to appear empty)
-        builder.includes(["Spawnentries.NpcType"]);
-
-        const result = await spawn2Api.listSpawn2s(builder.get());
-        const spawn2s = result.data || [];
-
-        const enriched = spawn2s.map(s2 => {
-          const sgId = s2.spawngroup_id || s2.spawngroupID;
-          const firstEntry = s2.spawnentries && s2.spawnentries[0];
-          const npcType = firstEntry && (firstEntry.npc_type || firstEntry.NpcType);
-          const npcId = firstEntry ? (firstEntry.npc_id || firstEntry.npcID || 0) : 0;
-          const npcName = npcType ? (npcType.name || "").replace(/_/g, " ") : "";
-
-          return {
-            id: s2.id,
-            spawngroupId: sgId,
-            zone: s2.zone || "unknown",
-            x: Number(s2.x || 0),
-            y: Number(s2.y || 0),
-            z: Number(s2.z || 0),
-            heading: Number(s2.heading || 0),
-            respawntime: Number(s2.respawntime || 0),
-            npcId: npcId,
-            npcName: npcName,
-          };
-        });
-
-        this.spawnList = enriched;
-        this.totalResults = enriched.length >= this.perPage ? (this.currentPage * this.perPage) + 1 : enriched.length;
+        this.spawnGroupCards = cards;
       } catch (e) {
-        console.error("Failed to search spawns", e);
+        console.error("Failed to load spawn groups for NPC", e);
+        this.editorError = "Failed to load spawn groups.";
       }
 
-      this.listLoading = false;
+      this.spawnGroupsLoading = false;
     },
 
-    paginate(page) {
-      this.currentPage = page;
-      this.doSearch();
-    },
-
-    // ========================
-    // Select & Load Spawn
-    // ========================
-    async selectSpawn(sp) {
-      this.showCreatePanel = false;
-      this.selectedSpawn = sp;
-      this.selectedSpawnNpcName = sp.npcName || ('NPC #' + sp.npcId);
-      this.clearMessages();
-
-      // Load full spawn2 data
+    async loadSpawnGroupCard(sgId) {
       try {
-        const spawn2Api = new Spawn2Api(...SpireApi.cfg());
-        const builder = new SpireQueryBuilder();
-        builder.where("id", "=", sp.id);
-        const result = await spawn2Api.listSpawn2s(builder.get());
-        const s2 = (result.data && result.data[0]) || {};
-
-        const zoneData = this.zones.find(z => z.short_name === (s2.zone || sp.zone));
-
-        this.editData = {
-          zone: s2.zone || sp.zone,
-          zoneSearch: s2.zone || sp.zone,
-          zoneLongName: zoneData ? zoneData.long_name : "",
-          version: Number(s2.version || 0),
-          x: Number(s2.x || 0),
-          y: Number(s2.y || 0),
-          z: Number(s2.z || 0),
-          heading: Number(s2.heading || 0),
-          respawntime: Number(s2.respawntime || 0),
-          variance: Number(s2.variance || 0),
-          pathgrid: Number(s2.pathgrid || 0),
-          animation: Number(s2.animation || 0),
-          condition: Number(s2._condition || 0),
-          cond_value: Number(s2.cond_value || 1),
-          min_expansion: Number(s2.min_expansion != null ? s2.min_expansion : -1),
-          max_expansion: Number(s2.max_expansion != null ? s2.max_expansion : -1),
-          content_flags: s2.content_flags || "",
-          content_flags_disabled: s2.content_flags_disabled || "",
-        };
-
         // Load spawngroup
-        await this.loadSpawngroup(sp.spawngroupId);
-        // Load spawn entries
-        await this.loadSpawnEntries(sp.spawngroupId);
-      } catch (e) {
-        console.error("Failed to load spawn data", e);
-        this.editorError = "Failed to load spawn data.";
-      }
-    },
-
-    async loadSpawngroup(sgId) {
-      try {
         const sgApi = new SpawngroupApi(...SpireApi.cfg());
-        const builder = new SpireQueryBuilder();
-        builder.where("id", "=", sgId);
-        const result = await sgApi.listSpawngroups(builder.get());
-        const sg = (result.data && result.data[0]) || null;
+        const sgBuilder = new SpireQueryBuilder();
+        sgBuilder.where("id", "=", sgId);
+        const sgResult = await sgApi.listSpawngroups(sgBuilder.get());
+        const sg = (sgResult.data && sgResult.data[0]) || null;
+        if (!sg) return null;
 
-        if (sg) {
-          this.editSpawngroup = {
-            name: sg.name || "",
-            spawn_limit: Number(sg.spawn_limit || 0),
-            dist: Number(sg.dist || 0),
-            delay: Number(sg.delay || 45000),
-            mindelay: Number(sg.mindelay || 15000),
-            despawn: Number(sg.despawn || 0),
-            despawn_timer: Number(sg.despawn_timer || 100),
-            wp_spawns: Number(sg.wp_spawns || 0),
-            min_x: Number(sg.min_x || 0),
-            max_x: Number(sg.max_x || 0),
-            min_y: Number(sg.min_y || 0),
-            max_y: Number(sg.max_y || 0),
-          };
-        } else {
-          this.editSpawngroup = null;
-        }
-      } catch (e) {
-        console.error("Failed to load spawngroup", e);
-        this.editSpawngroup = null;
-      }
-    },
-
-    async loadSpawnEntries(sgId) {
-      try {
+        // Load all spawnentries for this group
         const entryApi = new SpawnentryApi(...SpireApi.cfg());
-        const builder = new SpireQueryBuilder();
-        builder.where("spawngroupID", "=", sgId);
-        builder.limit(100);
-        const result = await entryApi.listSpawnentries(builder.get());
-        const entries = result.data || [];
+        const eBuilder = new SpireQueryBuilder();
+        eBuilder.where("spawngroupID", "=", sgId);
+        eBuilder.limit(100);
+        const eResult = await entryApi.listSpawnentries(eBuilder.get());
+        const rawEntries = eResult.data || [];
 
-        const enriched = [];
-        for (const entry of entries) {
+        // Resolve NPC names for entries
+        const enrichedEntries = [];
+        for (const entry of rawEntries) {
           const npcId = entry.npc_id || entry.npcID;
           let npcName = "";
           let npcData = null;
@@ -1155,45 +965,342 @@ export default {
             }
           } catch (e) { /* ignore */ }
 
-          enriched.push({
+          enrichedEntries.push({
             npc_id: npcId,
             npcName: npcName,
             npcData: npcData,
             chance: Number(entry.chance || 0),
+            content_flags: entry.content_flags || "",
+            content_flags_disabled: entry.content_flags_disabled || "",
+            min_expansion: entry.min_expansion != null ? Number(entry.min_expansion) : -1,
+            max_expansion: entry.max_expansion != null ? Number(entry.max_expansion) : -1,
+            min_time: Number(entry.min_time || 0),
+            max_time: Number(entry.max_time || 0),
+            condition_value_filter: Number(entry.condition_value_filter || 0),
             spawngroup_id: entry.spawngroup_id || entry.spawngroupID,
           });
         }
 
-        this.editSpawnEntries = enriched;
+        // Load spawn2 records for this spawngroup
+        const sp2Api = new Spawn2Api(...SpireApi.cfg());
+        const sp2Builder = new SpireQueryBuilder();
+        sp2Builder.where("spawngroupID", "=", sgId);
+        sp2Builder.limit(50);
+        const sp2Result = await sp2Api.listSpawn2s(sp2Builder.get());
+        const spawn2s = sp2Result.data || [];
+
+        const spawnPoints = spawn2s.map(s2 => ({
+          id: s2.id,
+          spawngroupId: sgId,
+          zone: s2.zone || "",
+          zoneSearch: s2.zone || "",
+          version: Number(s2.version || 0),
+          x: Number(s2.x || 0),
+          y: Number(s2.y || 0),
+          z: Number(s2.z || 0),
+          heading: Number(s2.heading || 0),
+          respawntime: Number(s2.respawntime || 0),
+          variance: Number(s2.variance || 0),
+          pathgrid: Number(s2.pathgrid || 0),
+          animation: Number(s2.animation || 0),
+          condition: Number(s2._condition || 0),
+          cond_value: Number(s2.cond_value || 1),
+          min_expansion: s2.min_expansion != null ? Number(s2.min_expansion) : -1,
+          max_expansion: s2.max_expansion != null ? Number(s2.max_expansion) : -1,
+          content_flags: s2.content_flags || "",
+          content_flags_disabled: s2.content_flags_disabled || "",
+          // UI state for zone dropdown
+          showZoneDropdown: false,
+          filteredZones: [],
+        }));
+
+        return {
+          spawngroupId: sgId,
+          spawngroup: {
+            name: sg.name || "",
+            spawn_limit: Number(sg.spawn_limit || 0),
+            dist: Number(sg.dist || 0),
+            delay: Number(sg.delay || 45000),
+            mindelay: Number(sg.mindelay || 15000),
+            despawn: Number(sg.despawn || 0),
+            despawn_timer: Number(sg.despawn_timer || 100),
+            wp_spawns: Number(sg.wp_spawns || 0),
+            min_x: Number(sg.min_x || 0),
+            max_x: Number(sg.max_x || 0),
+            min_y: Number(sg.min_y || 0),
+            max_y: Number(sg.max_y || 0),
+          },
+          entries: enrichedEntries,
+          spawnPoints: spawnPoints,
+          showSpawnPoints: false,
+        };
       } catch (e) {
-        console.error("Failed to load spawn entries", e);
-        this.editSpawnEntries = [];
+        console.error("Failed to load spawngroup card", sgId, e);
+        return null;
       }
     },
 
     // ========================
-    // Edit zone dropdown
+    // Spawn Point zone dropdown helpers
     // ========================
-    onEditZoneSearch() {
-      this.showEditZoneDropdown = true;
-      const q = (this.editData.zoneSearch || "").toLowerCase();
-      this.editFilteredZones = this.zones
+    onSpEditZoneSearch(sp) {
+      sp.showZoneDropdown = true;
+      const q = (sp.zoneSearch || "").toLowerCase();
+      sp.filteredZones = this.zones
         .filter(z => z.short_name.includes(q) || (z.long_name && z.long_name.toLowerCase().includes(q)))
         .slice(0, 15);
-      this.editData.zone = this.editData.zoneSearch;
+      sp.zone = sp.zoneSearch;
     },
-    delayCloseEditZoneDropdown() {
-      setTimeout(() => { this.showEditZoneDropdown = false; }, 200);
+
+    selectSpEditZone(sp, z) {
+      sp.zone = z.short_name;
+      sp.zoneSearch = z.short_name;
+      sp.showZoneDropdown = false;
     },
-    selectEditZone(z) {
-      this.editData.zone = z.short_name;
-      this.editData.zoneSearch = z.short_name;
-      this.editData.zoneLongName = z.long_name || "";
-      this.showEditZoneDropdown = false;
+
+    delayClose(obj, key) {
+      setTimeout(() => { this.$set(obj, key, false); }, 200);
     },
 
     // ========================
-    // Create form zone & NPC dropdowns
+    // Save Spawngroup Card (all data in one card)
+    // ========================
+    async saveSpawnGroupCard(card) {
+      this.saving = true;
+      this.clearMessages();
+
+      try {
+        const spawngroupApi = new SpawngroupApi(...SpireApi.cfg());
+        const spawn2Api = new Spawn2Api(...SpireApi.cfg());
+        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
+
+        // Save spawngroup
+        await spawngroupApi.updateSpawngroup({
+          id: card.spawngroupId,
+          spawngroup: {
+            id: card.spawngroupId,
+            name: card.spawngroup.name || "",
+            spawn_limit: Number(card.spawngroup.spawn_limit || 0),
+            dist: Number(card.spawngroup.dist || 0),
+            delay: Number(card.spawngroup.delay || 45000),
+            mindelay: Number(card.spawngroup.mindelay || 15000),
+            despawn: Number(card.spawngroup.despawn || 0),
+            despawn_timer: Number(card.spawngroup.despawn_timer || 100),
+            wp_spawns: Number(card.spawngroup.wp_spawns || 0),
+            min_x: Number(card.spawngroup.min_x || 0),
+            max_x: Number(card.spawngroup.max_x || 0),
+            min_y: Number(card.spawngroup.min_y || 0),
+            max_y: Number(card.spawngroup.max_y || 0),
+          }
+        });
+
+        // Save spawn entries (chances, content flags, etc.)
+        for (const entry of card.entries) {
+          await spawnentryApi.updateSpawnentry({
+            id: card.spawngroupId,
+            spawnentry: {
+              spawngroup_id: card.spawngroupId,
+              npc_id: entry.npc_id,
+              chance: this.normalizeChance(entry.chance),
+              content_flags: entry.content_flags || "",
+              content_flags_disabled: entry.content_flags_disabled || "",
+              min_expansion: Number(entry.min_expansion != null ? entry.min_expansion : -1),
+              max_expansion: Number(entry.max_expansion != null ? entry.max_expansion : -1),
+              min_time: Number(entry.min_time || 0),
+              max_time: Number(entry.max_time || 0),
+              condition_value_filter: Number(entry.condition_value_filter || 0),
+            }
+          });
+        }
+
+        // Save spawn points (spawn2 records)
+        for (const sp of card.spawnPoints) {
+          await spawn2Api.updateSpawn2({
+            id: sp.id,
+            spawn2: {
+              id: sp.id,
+              spawngroup_id: card.spawngroupId,
+              zone: (sp.zone || "").toLowerCase(),
+              version: Number(sp.version || 0),
+              x: Number(sp.x || 0),
+              y: Number(sp.y || 0),
+              z: Number(sp.z || 0),
+              heading: Number(sp.heading || 0),
+              respawntime: Number(sp.respawntime || 0),
+              variance: Number(sp.variance || 0),
+              pathgrid: Number(sp.pathgrid || 0),
+              animation: Number(sp.animation || 0),
+              _condition: Number(sp.condition || 0),
+              cond_value: Number(sp.cond_value || 1),
+              min_expansion: Number(sp.min_expansion != null ? sp.min_expansion : -1),
+              max_expansion: Number(sp.max_expansion != null ? sp.max_expansion : -1),
+              content_flags: sp.content_flags || "",
+              content_flags_disabled: sp.content_flags_disabled || "",
+            }
+          });
+        }
+
+        this.editorSuccess = `Saved spawngroup #${card.spawngroupId} successfully.`;
+      } catch (e) {
+        console.error("Failed to save spawngroup card", e);
+        this.editorError = `Failed to save spawngroup #${card.spawngroupId}.`;
+      }
+
+      this.saving = false;
+    },
+
+    // ========================
+    // Delete spawn point
+    // ========================
+    async deleteSpawnPoint(card, sp) {
+      if (!confirm(`Delete spawn point #${sp.id} in ${sp.zone}?`)) return;
+      this.saving = true;
+      this.clearMessages();
+
+      try {
+        const spawn2Api = new Spawn2Api(...SpireApi.cfg());
+        await spawn2Api.deleteSpawn2({ id: sp.id });
+
+        card.spawnPoints = card.spawnPoints.filter(s => s.id !== sp.id);
+        this.editorSuccess = `Deleted spawn point #${sp.id}.`;
+
+        // If no more spawn points, remove the card
+        if (card.spawnPoints.length === 0) {
+          this.spawnGroupCards = this.spawnGroupCards.filter(c => c.spawngroupId !== card.spawngroupId);
+        }
+      } catch (e) {
+        console.error("Failed to delete spawn point", e);
+        this.editorError = `Failed to delete spawn point #${sp.id}.`;
+      }
+
+      this.saving = false;
+    },
+
+    // ========================
+    // Remove NPC from spawngroup
+    // ========================
+    async removeSpawnEntry(card, entry) {
+      if (!confirm(`Remove NPC #${entry.npc_id} from spawngroup #${card.spawngroupId}?`)) return;
+      this.saving = true;
+      this.clearMessages();
+
+      try {
+        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
+        await spawnentryApi.deleteSpawnentry({ id: entry.spawngroup_id });
+
+        card.entries = card.entries.filter(e => e.npc_id !== entry.npc_id);
+        this.editorSuccess = `Removed NPC #${entry.npc_id} from spawngroup.`;
+      } catch (e) {
+        console.error("Failed to remove spawn entry", e);
+        this.editorError = "Failed to remove NPC from spawngroup.";
+      }
+
+      this.saving = false;
+    },
+
+    // ========================
+    // Add NPC to spawngroup
+    // ========================
+    openAddNpcModal(card) {
+      this.addNpcTargetCard = card;
+      this.$bvModal.show('add-npc-modal');
+    },
+
+    resetAddNpcForm() {
+      this.addNpcSearch = "";
+      this.addNpcId = 0;
+      this.addNpcChance = 50;
+      this.addNpcResults = [];
+      this.showAddNpcDropdown = false;
+    },
+
+    onAddNpcSearch() {
+      this.showAddNpcDropdown = true;
+      if (addNpcSearchTimeout) clearTimeout(addNpcSearchTimeout);
+      addNpcSearchTimeout = setTimeout(() => this.searchAddNpc(), 300);
+    },
+    delayCloseAddNpcDropdown() {
+      setTimeout(() => { this.showAddNpcDropdown = false; }, 200);
+    },
+
+    async searchAddNpc() {
+      const q = (this.addNpcSearch || "").trim();
+      if (q.length < 2) { this.addNpcResults = []; return; }
+
+      try {
+        const npcApi = new NpcTypeApi(...SpireApi.cfg());
+        const builder = new SpireQueryBuilder();
+        if (/^\d+$/.test(q)) {
+          builder.where("id", "=", parseInt(q));
+        } else {
+          builder.where("name", "like", `%${q}%`);
+        }
+        builder.select(["id", "name"]);
+        builder.limit(15);
+        const result = await npcApi.listNpcTypes(builder.get());
+        this.addNpcResults = result.data || [];
+      } catch (e) {
+        this.addNpcResults = [];
+      }
+    },
+
+    selectAddNpc(n) {
+      this.addNpcId = n.id;
+      this.addNpcSearch = (n.name || "").replace(/_/g, " ") + " (#" + n.id + ")";
+      this.showAddNpcDropdown = false;
+    },
+
+    async confirmAddNpc() {
+      if (!this.addNpcId || !this.addNpcTargetCard) return;
+      this.saving = true;
+      this.clearMessages();
+
+      try {
+        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
+        await spawnentryApi.createSpawnentry({
+          spawnentry: {
+            spawngroup_id: this.addNpcTargetCard.spawngroupId,
+            npc_id: this.addNpcId,
+            chance: this.normalizeChance(this.addNpcChance),
+          }
+        });
+
+        this.editorSuccess = `Added NPC #${this.addNpcId} to spawngroup.`;
+        this.$bvModal.hide('add-npc-modal');
+
+        // Reload this card's entries
+        const refreshed = await this.loadSpawnGroupCard(this.addNpcTargetCard.spawngroupId);
+        if (refreshed) {
+          const idx = this.spawnGroupCards.findIndex(c => c.spawngroupId === this.addNpcTargetCard.spawngroupId);
+          if (idx >= 0) {
+            refreshed.showSpawnPoints = this.spawnGroupCards[idx].showSpawnPoints;
+            this.$set(this.spawnGroupCards, idx, refreshed);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to add NPC to spawngroup", e);
+        this.editorError = "Failed to add NPC to spawngroup.";
+      }
+
+      this.saving = false;
+    },
+
+    // ========================
+    // Balance chances
+    // ========================
+    balanceChances(card) {
+      if (!card.entries || card.entries.length === 0) return;
+      const count = card.entries.length;
+      const equalChance = Math.floor(100 / count);
+      const remainder = 100 - (equalChance * count);
+
+      for (let i = 0; i < card.entries.length; i++) {
+        card.entries[i].chance = equalChance + (i < remainder ? 1 : 0);
+      }
+    },
+
+    // ========================
+    // Create form helpers
     // ========================
     onCreateZoneSearch() {
       this.showCreateZoneDropdown = true;
@@ -1214,8 +1321,8 @@ export default {
 
     onCreateNpcSearch() {
       this.showCreateNpcDropdown = true;
-      if (npcSearchTimeout) clearTimeout(npcSearchTimeout);
-      npcSearchTimeout = setTimeout(() => this.searchCreateNpc(), 300);
+      if (createNpcSearchTimeout) clearTimeout(createNpcSearchTimeout);
+      createNpcSearchTimeout = setTimeout(() => this.searchCreateNpc(), 300);
     },
     delayCloseCreateNpcDropdown() {
       setTimeout(() => { this.showCreateNpcDropdown = false; }, 200);
@@ -1247,214 +1354,7 @@ export default {
     },
 
     // ========================
-    // Add NPC to spawngroup
-    // ========================
-    resetAddNpcForm() {
-      this.addNpcSearch = "";
-      this.addNpcId = 0;
-      this.addNpcChance = 50;
-      this.addNpcResults = [];
-      this.showAddNpcDropdown = false;
-    },
-
-    onAddNpcSearch() {
-      this.showAddNpcDropdown = true;
-      if (addNpcSearchTimeout) clearTimeout(addNpcSearchTimeout);
-      addNpcSearchTimeout = setTimeout(() => this.searchAddNpc(), 300);
-    },
-    delayCloseAddNpcDropdown() {
-      setTimeout(() => { this.showAddNpcDropdown = false; }, 200);
-    },
-    async searchAddNpc() {
-      const q = (this.addNpcSearch || "").trim();
-      if (q.length < 2) { this.addNpcResults = []; return; }
-
-      try {
-        const npcApi = new NpcTypeApi(...SpireApi.cfg());
-        const builder = new SpireQueryBuilder();
-        if (/^\d+$/.test(q)) {
-          builder.where("id", "=", parseInt(q));
-        } else {
-          builder.where("name", "like", `%${q}%`);
-        }
-        builder.select(["id", "name"]);
-        builder.limit(15);
-        const result = await npcApi.listNpcTypes(builder.get());
-        this.addNpcResults = result.data || [];
-      } catch (e) {
-        this.addNpcResults = [];
-      }
-    },
-    selectAddNpc(n) {
-      this.addNpcId = n.id;
-      this.addNpcSearch = (n.name || "").replace(/_/g, " ") + " (#" + n.id + ")";
-      this.showAddNpcDropdown = false;
-    },
-
-    async confirmAddNpc() {
-      if (!this.addNpcId || !this.selectedSpawn) return;
-      this.saving = true;
-      this.clearMessages();
-
-      try {
-        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
-        await spawnentryApi.createSpawnentry({
-          spawnentry: {
-            spawngroup_id: this.selectedSpawn.spawngroupId,
-            npc_id: this.addNpcId,
-            chance: this.normalizeChance(this.addNpcChance),
-          }
-        });
-
-        this.editorSuccess = `Added NPC #${this.addNpcId} to spawngroup.`;
-        this.$bvModal.hide('add-npc-modal');
-        await this.loadSpawnEntries(this.selectedSpawn.spawngroupId);
-      } catch (e) {
-        console.error("Failed to add NPC to spawngroup", e);
-        this.editorError = "Failed to add NPC to spawngroup.";
-      }
-
-      this.saving = false;
-    },
-
-    async removeSpawnEntry(entry) {
-      if (!confirm(`Remove NPC #${entry.npc_id} from this spawngroup?`)) return;
-      this.saving = true;
-      this.clearMessages();
-
-      try {
-        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
-        await spawnentryApi.deleteSpawnentry({ id: entry.spawngroup_id });
-
-        this.editorSuccess = `Removed NPC #${entry.npc_id} from spawngroup.`;
-        await this.loadSpawnEntries(this.selectedSpawn.spawngroupId);
-      } catch (e) {
-        console.error("Failed to remove spawn entry", e);
-        this.editorError = "Failed to remove NPC from spawngroup.";
-      }
-
-      this.saving = false;
-    },
-
-    // ========================
-    // Save
-    // ========================
-    async saveSelectedSpawn() {
-      if (!this.selectedSpawn) return;
-      this.saving = true;
-      this.clearMessages();
-
-      try {
-        const spawn2Api = new Spawn2Api(...SpireApi.cfg());
-        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
-        const spawngroupApi = new SpawngroupApi(...SpireApi.cfg());
-
-        // Save spawn2
-        await spawn2Api.updateSpawn2({
-          id: this.selectedSpawn.id,
-          spawn2: {
-            id: this.selectedSpawn.id,
-            spawngroup_id: this.selectedSpawn.spawngroupId,
-            zone: (this.editData.zone || "").toLowerCase(),
-            version: Number(this.editData.version || 0),
-            x: Number(this.editData.x || 0),
-            y: Number(this.editData.y || 0),
-            z: Number(this.editData.z || 0),
-            heading: Number(this.editData.heading || 0),
-            respawntime: Number(this.editData.respawntime || 0),
-            variance: Number(this.editData.variance || 0),
-            pathgrid: Number(this.editData.pathgrid || 0),
-            animation: Number(this.editData.animation || 0),
-            _condition: Number(this.editData.condition || 0),
-            cond_value: Number(this.editData.cond_value || 1),
-            min_expansion: Number(this.editData.min_expansion != null ? this.editData.min_expansion : -1),
-            max_expansion: Number(this.editData.max_expansion != null ? this.editData.max_expansion : -1),
-            content_flags: this.editData.content_flags || "",
-            content_flags_disabled: this.editData.content_flags_disabled || "",
-          }
-        });
-
-        // Save spawngroup
-        if (this.editSpawngroup) {
-          await spawngroupApi.updateSpawngroup({
-            id: this.selectedSpawn.spawngroupId,
-            spawngroup: {
-              id: this.selectedSpawn.spawngroupId,
-              name: this.editSpawngroup.name || "",
-              spawn_limit: Number(this.editSpawngroup.spawn_limit || 0),
-              dist: Number(this.editSpawngroup.dist || 0),
-              delay: Number(this.editSpawngroup.delay || 45000),
-              mindelay: Number(this.editSpawngroup.mindelay || 15000),
-              despawn: Number(this.editSpawngroup.despawn || 0),
-              despawn_timer: Number(this.editSpawngroup.despawn_timer || 100),
-              wp_spawns: Number(this.editSpawngroup.wp_spawns || 0),
-              min_x: Number(this.editSpawngroup.min_x || 0),
-              max_x: Number(this.editSpawngroup.max_x || 0),
-              min_y: Number(this.editSpawngroup.min_y || 0),
-              max_y: Number(this.editSpawngroup.max_y || 0),
-            }
-          });
-        }
-
-        // Save spawn entry chances
-        for (const entry of this.editSpawnEntries) {
-          await spawnentryApi.updateSpawnentry({
-            id: this.selectedSpawn.spawngroupId,
-            spawnentry: {
-              spawngroup_id: this.selectedSpawn.spawngroupId,
-              npc_id: entry.npc_id,
-              chance: this.normalizeChance(entry.chance),
-            }
-          });
-        }
-
-        this.editorSuccess = `Saved spawn2 #${this.selectedSpawn.id} successfully.`;
-
-        // Refresh list entry
-        const idx = this.spawnList.findIndex(s => s.id === this.selectedSpawn.id);
-        if (idx >= 0) {
-          this.spawnList[idx].zone = this.editData.zone;
-          this.spawnList[idx].x = this.editData.x;
-          this.spawnList[idx].y = this.editData.y;
-          this.spawnList[idx].z = this.editData.z;
-        }
-      } catch (e) {
-        console.error("Failed to save spawn", e);
-        this.editorError = `Failed to save spawn2 #${this.selectedSpawn.id}.`;
-      }
-
-      this.saving = false;
-    },
-
-    // ========================
-    // Delete
-    // ========================
-    async deleteSelectedSpawn() {
-      if (!this.selectedSpawn) return;
-      if (!confirm(`Delete spawn point #${this.selectedSpawn.id} in ${this.selectedSpawn.zone}?`)) return;
-
-      this.saving = true;
-      this.clearMessages();
-
-      try {
-        const spawn2Api = new Spawn2Api(...SpireApi.cfg());
-        await spawn2Api.deleteSpawn2({ id: this.selectedSpawn.id });
-
-        this.spawnList = this.spawnList.filter(s => s.id !== this.selectedSpawn.id);
-        this.selectedSpawn = null;
-        this.editData = {};
-        this.editSpawngroup = null;
-        this.editSpawnEntries = [];
-      } catch (e) {
-        console.error("Failed to delete spawn", e);
-        this.editorError = `Failed to delete spawn2 #${this.selectedSpawn.id}.`;
-      }
-
-      this.saving = false;
-    },
-
-    // ========================
-    // Create
+    // Create spawn
     // ========================
     async createSpawn() {
       this.saving = true;
@@ -1503,47 +1403,17 @@ export default {
         this.editorSuccess = `Created spawngroup #${spawngroupId} in ${zone}.`;
         this.showCreatePanel = false;
         this.createForm = this.getDefaultCreateForm();
-        await this.doSearch();
+
+        // If an NPC is selected, refresh its data
+        if (this.selectedNpc) {
+          await this.selectNpc(this.selectedNpc);
+        }
       } catch (e) {
         console.error("Failed to create spawn", e);
         this.editorError = "Failed to create spawn. Check values and try again.";
       }
 
       this.saving = false;
-    },
-
-    // ========================
-    // Balance chances
-    // ========================
-    async balanceChances() {
-      if (!this.editSpawnEntries || this.editSpawnEntries.length === 0) return;
-
-      const count = this.editSpawnEntries.length;
-      const equalChance = Math.floor(100 / count);
-      const remainder = 100 - (equalChance * count);
-
-      try {
-        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
-        for (let i = 0; i < this.editSpawnEntries.length; i++) {
-          const entry = this.editSpawnEntries[i];
-          const chance = equalChance + (i < remainder ? 1 : 0);
-          entry.chance = chance;
-
-          await spawnentryApi.updateSpawnentry({
-            id: this.selectedSpawn.spawngroupId,
-            spawnentry: {
-              spawngroup_id: this.selectedSpawn.spawngroupId,
-              npc_id: entry.npc_id,
-              chance: chance,
-            }
-          });
-        }
-
-        this.editorSuccess = `Balanced chances across ${count} NPCs (${equalChance}% each).`;
-      } catch (e) {
-        console.error("Failed to balance chances", e);
-        this.editorError = "Failed to balance chances.";
-      }
     },
   },
 };
@@ -1569,60 +1439,6 @@ export default {
 .spawn-clear-btn:hover {
   color: #fcc721;
   border-color: rgba(252, 199, 33, 0.4);
-}
-.spawn-filter-group {
-  display: flex;
-  flex-direction: column;
-}
-.spawn-filter-label {
-  font-size: 0.7em;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  color: rgba(255, 255, 255, 0.35);
-  margin-bottom: 2px;
-  font-weight: bold;
-}
-.spawn-filter-select {
-  background: rgba(0, 0, 0, 0.3);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #e0e0e0;
-  font-size: 0.8em;
-}
-.spawn-filter-select:focus {
-  border-color: rgba(138, 163, 255, 0.5);
-  box-shadow: 0 0 0 0.15rem rgba(138, 163, 255, 0.15);
-}
-.spawn-active-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 6px;
-}
-.spawn-filter-chip {
-  display: inline-flex;
-  align-items: center;
-  background: rgba(138, 163, 255, 0.12);
-  border: 1px solid rgba(138, 163, 255, 0.25);
-  border-radius: 12px;
-  padding: 2px 8px 2px 8px;
-  font-size: 0.78em;
-  color: #8aa3ff;
-  cursor: default;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.spawn-chip-remove {
-  margin-left: 5px;
-  cursor: pointer;
-  opacity: 0.6;
-  font-size: 0.9em;
-  flex-shrink: 0;
-}
-.spawn-chip-remove:hover {
-  opacity: 1;
-  color: #fcc721;
 }
 .spawn-results-meta {
   font-size: 0.75em;
@@ -1681,6 +1497,27 @@ export default {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* Spawn point toggle button */
+.spawn-point-toggle {
+  background: rgba(138, 163, 255, 0.08);
+  border: 1px solid rgba(138, 163, 255, 0.2);
+  color: #8aa3ff;
+  font-size: 0.85em;
+  font-weight: 600;
+  padding: 6px 12px;
+  transition: all 0.15s;
+}
+.spawn-point-toggle:hover {
+  background: rgba(138, 163, 255, 0.15);
+  border-color: rgba(138, 163, 255, 0.35);
+  color: #a0b8ff;
+}
+
+/* Highlight row for the selected NPC */
+.highlight-row {
+  background: rgba(252, 199, 33, 0.06);
+}
+
 /* Zone dropdown */
 .zone-dropdown {
   position: absolute;
@@ -1717,13 +1554,5 @@ export default {
 .npc-link:hover {
   color: #fcc721;
   text-decoration: underline;
-}
-
-/* Add NPC panel */
-.add-npc-panel {
-  padding: 10px;
-  border: 1px solid rgba(138, 163, 255, 0.2);
-  border-radius: 3px;
-  background: rgba(0, 0, 0, 0.15);
 }
 </style>
