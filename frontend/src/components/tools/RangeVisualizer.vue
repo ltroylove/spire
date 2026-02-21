@@ -24,6 +24,8 @@
         :step="1"
         :value="localValue"
         @input="onSliderInput"
+        @blur="$emit('slider-blur', $event)"
+        @mousedown.stop
       >
       <span class="rv-slider-value">{{ localValue }}</span>
     </div>
