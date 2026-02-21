@@ -239,6 +239,16 @@ const router = new Router({
           meta: {title: "NPC Spells List Editor"},
         },
         {
+          path: ROUTE.SPAWN_EDITOR_NPC,
+          component: () => import('./views/npcs/SpawnEditor.vue'),
+          meta: {title: "Spawn Editor"},
+        },
+        {
+          path: ROUTE.SPAWN_EDITOR,
+          component: () => import('./views/npcs/SpawnEditor.vue'),
+          meta: {title: "Spawn Editor"},
+        },
+        {
           path: '/zone/:zone',
           component: () => import('./views/zone/Zone.vue'),
           meta: {title: "Zone"},

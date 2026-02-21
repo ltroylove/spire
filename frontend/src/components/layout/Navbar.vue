@@ -346,7 +346,7 @@ export default {
       npcNav: {
         label: "NPCs",
         labelIcon: "ra ra-dragon mr-1",
-        routePrefixMatches: ["npc", "merchant", "loot"],
+        routePrefixMatches: ["npc", "merchant", "loot", "spawn"],
         navs: [
           {
             title: "NPC Editor",
@@ -355,6 +355,14 @@ export default {
             isNew: true,
             isAlpha: true,
             routes: ['npc']
+          },
+          {
+            title: "Spawns",
+            to: ROUTE.SPAWN_EDITOR,
+            icon: "fa fa-map-marker mr-1",
+            isNew: true,
+            isAlpha: true,
+            routes: ['spawns']
           },
           {
             title: "Emotes",

@@ -12,6 +12,7 @@
           :version="version"
           @npc-marker-hover="processNpcMarkerHover"
           @spell-marker-hover="processSpellMarkerHover"
+          @spawn2-selected="processSpawn2Selected"
         />
 
         <!-- Arrow overlay -->
@@ -97,29 +98,41 @@
           </b-button>
         </eq-window>
 
-        <!-- NPC Preview -->
-        <eq-window
-          class="fade-in"
-          id="preview-pane"
-          :style="'max-height: ' + (isZoneCardActive() ? '91' : '83') + 'vh; overflow-y: scroll; overflow-x: hidden'"
-          v-if="selectorActive['npc-hover'] && npc"
-        >
-          <eq-npc-card-preview
-            :npc="npc"
-          />
-        </eq-window>
+        <!-- Scrollable preview area: NPC card + SpawnGroupPanel + Spell preview share one scroll container -->
+        <div class="sidebar-preview-scroll">
+          <!-- NPC Preview -->
+          <eq-window
+            class="fade-in"
+            id="preview-pane"
+            v-if="selectorActive['npc-hover'] && npc"
+          >
+            <eq-npc-card-preview
+              :npc="npc"
+            />
+          </eq-window>
 
-        <!-- Spell Preview -->
-        <eq-window
-          class="fade-in"
-          id="preview-pane"
-          :style="'max-height: ' + (isZoneCardActive() ? '91' : '83') + 'vh; overflow-y: scroll; overflow-x: hidden'"
-          v-if="selectorActive['spell-hover'] && spell"
-        >
-          <eq-spell-preview
-            :spell-data="spell"
-          />
-        </eq-window>
+          <!-- Spawn Group Panel -->
+          <eq-window
+            class="fade-in mt-2"
+            v-if="selectorActive['npc-hover'] && selectedSpawn2"
+          >
+            <spawn-group-panel
+              :spawn2="selectedSpawn2"
+              @spawn2-updated="onSpawn2Updated"
+            />
+          </eq-window>
+
+          <!-- Spell Preview -->
+          <eq-window
+            class="fade-in"
+            id="preview-pane"
+            v-if="selectorActive['spell-hover'] && spell"
+          >
+            <eq-spell-preview
+              :spell-data="spell"
+            />
+          </eq-window>
+        </div>
       </div>
     </div>
   </div>
@@ -138,12 +151,13 @@ import {EventBus}        from "../../app/event-bus/event-bus";
 import {NpcTypeApi}      from "../../app/api";
 import {SpireApi}        from "../../app/api/spire-api";
 import {SpireQueryBuilder} from "../../app/api/spire-query-builder";
+import SpawnGroupPanel   from "../../components/subeditors/SpawnGroupPanel";
 
 const MILLISECONDS_BEFORE_WINDOW_RESET = 5000;
 
 export default {
   name: "Zone",
-  components: { EqZoneCardPreview, EqSpellPreview, EqNpcCardPreview, EqZoneMap, EqWindow, ContentArea },
+  components: { SpawnGroupPanel, EqZoneCardPreview, EqSpellPreview, EqNpcCardPreview, EqZoneMap, EqWindow, ContentArea },
   data() {
     return {
       zone: "",
@@ -154,6 +168,7 @@ export default {
       mapWidth: 0,
       isDragging: false,
       arrowLine: null,
+      selectedSpawn2: null,
     }
   },
   beforeDestroy() {
@@ -392,6 +407,14 @@ export default {
       if (t) {
         t.scrollTop = 0;
       }
+    },
+
+    processSpawn2Selected(spawn2) {
+      this.selectedSpawn2 = spawn2
+    },
+
+    onSpawn2Updated(updatedSpawn2) {
+      this.selectedSpawn2 = Object.assign({}, updatedSpawn2)
     }
   }
 }
@@ -489,6 +512,13 @@ export default {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.sidebar-preview-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .zone-sidebar-header {
