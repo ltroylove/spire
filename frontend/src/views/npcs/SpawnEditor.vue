@@ -374,11 +374,6 @@
                     </select>
                   </div>
                 </div>
-                <!-- Roam Distance Range Visualizer -->
-                <div v-if="card.roamDistVisualizerActive" class="mt-1 mb-2">
-                  <div class="field-label mb-1">Range Visualizer — {{ card.spawngroup.dist }} units</div>
-                  <range-visualizer :unit-marker="card.spawngroup.dist || 0" />
-                </div>
                 <div class="row">
                   <div class="col-3 mb-2">
                     <label class="field-label">Delay (ms)</label>
@@ -431,6 +426,15 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Range Visualizer -->
+              <eq-window-simple
+                class="fade-in text-center mt-2 mb-3"
+                title="Range Visualizer"
+                v-if="card.roamDistVisualizerActive"
+              >
+                <range-visualizer :unit-marker="card.spawngroup.dist || 0" />
+              </eq-window-simple>
 
               <!-- NPCs in Spawngroup (Spawnentries) -->
               <div class="detail-section mb-3">
@@ -739,6 +743,7 @@ import { SpireApi } from "../../app/api/spire-api";
 import { SpireQueryBuilder } from "@/app/api/spire-query-builder";
 import { Zones } from "@/app/zones";
 import EqWindow from "../../components/eq-ui/EQWindow";
+import EqWindowSimple from "../../components/eq-ui/EQWindowSimple";
 import ContentArea from "../../components/layout/ContentArea";
 import NpcPopover from "../../components/NpcPopover";
 import ContentFlagSelector from "../../components/selectors/ContentFlagSelector";
@@ -750,7 +755,7 @@ let addNpcSearchTimeout = null;
 
 export default {
   name: "SpawnEditor",
-  components: { EqWindow, ContentArea, NpcPopover, ContentFlagSelector, RangeVisualizer },
+  components: { EqWindow, EqWindowSimple, ContentArea, NpcPopover, ContentFlagSelector, RangeVisualizer },
   data() {
     return {
       // NPC search / list (left panel)
