@@ -504,9 +504,19 @@
                         />
                       </td>
                       <td style="vertical-align: middle;">
-                        <div class="d-flex" style="gap: 4px;">
-                          <input v-model.number="entry.min_expansion" type="number" class="form-control form-control-sm text-center" style="width: 50px;" title="Min Expansion" placeholder="Min" />
-                          <input v-model.number="entry.max_expansion" type="number" class="form-control form-control-sm text-center" style="width: 50px;" title="Max Expansion" placeholder="Max" />
+                        <div class="d-flex flex-column" style="gap: 3px;">
+                          <button
+                            class="btn expansion-pick-btn"
+                            :class="entry.min_expansion === -1 ? 'expansion-pick-btn-all' : 'expansion-pick-btn-set'"
+                            :title="'Min Expansion: ' + expansionName(entry.min_expansion)"
+                            @click="openExpansionPicker(entry, 'min_expansion', 'Min Expansion')"
+                          >Min: {{ expansionName(entry.min_expansion) }}</button>
+                          <button
+                            class="btn expansion-pick-btn"
+                            :class="entry.max_expansion === -1 ? 'expansion-pick-btn-all' : 'expansion-pick-btn-set'"
+                            :title="'Max Expansion: ' + expansionName(entry.max_expansion)"
+                            @click="openExpansionPicker(entry, 'max_expansion', 'Max Expansion')"
+                          >Max: {{ expansionName(entry.max_expansion) }}</button>
                         </div>
                       </td>
                       <td class="text-center" style="vertical-align: middle;">
@@ -652,11 +662,19 @@
                   <div class="row">
                     <div class="col-3 mb-2">
                       <label class="field-label">Min Expansion</label>
-                      <input v-model.number="sp.min_expansion" type="number" class="form-control form-control-sm" />
+                      <button
+                        class="btn btn-sm btn-block expansion-pick-btn"
+                        :class="sp.min_expansion === -1 ? 'expansion-pick-btn-all' : 'expansion-pick-btn-set'"
+                        @click="openExpansionPicker(sp, 'min_expansion', 'Min Expansion')"
+                      >{{ expansionName(sp.min_expansion) }}</button>
                     </div>
                     <div class="col-3 mb-2">
                       <label class="field-label">Max Expansion</label>
-                      <input v-model.number="sp.max_expansion" type="number" class="form-control form-control-sm" />
+                      <button
+                        class="btn btn-sm btn-block expansion-pick-btn"
+                        :class="sp.max_expansion === -1 ? 'expansion-pick-btn-all' : 'expansion-pick-btn-set'"
+                        @click="openExpansionPicker(sp, 'max_expansion', 'Max Expansion')"
+                      >{{ expansionName(sp.max_expansion) }}</button>
                     </div>
                     <div class="col-3 mb-2">
                       <label class="field-label">Content Flags</label>
@@ -684,6 +702,28 @@
         </div>
       </div>
     </div>
+
+    <!-- Expansion Picker Modal -->
+    <b-modal
+      id="expansion-picker-modal"
+      hide-header
+      hide-footer
+      modal-class="eq-expansion-modal"
+      content-class="bg-transparent border-0 shadow-none"
+      body-class="p-0"
+    >
+      <eq-window :title="expansionPickerLabel || 'Select Expansion'">
+        <content-expansion-selector
+          :value="expansionPickerValue"
+          @input="applyExpansionPick($event)"
+        />
+        <div class="d-flex justify-content-end mt-3">
+          <button class="btn btn-sm btn-dark" @click="$bvModal.hide('expansion-picker-modal')">
+            Cancel
+          </button>
+        </div>
+      </eq-window>
+    </b-modal>
 
     <!-- Add NPC Modal -->
     <b-modal
@@ -752,7 +792,9 @@ import EqWindowSimple from "../../components/eq-ui/EQWindowSimple";
 import ContentArea from "../../components/layout/ContentArea";
 import NpcPopover from "../../components/NpcPopover";
 import ContentFlagSelector from "../../components/selectors/ContentFlagSelector";
+import ContentExpansionSelector from "../../components/selectors/ContentExpansionSelector";
 import RangeVisualizer from "../../components/tools/RangeVisualizer";
+import Expansions from "../../app/utility/expansions";
 
 let npcSearchTimeout = null;
 let createNpcSearchTimeout = null;
@@ -760,7 +802,7 @@ let addNpcSearchTimeout = null;
 
 export default {
   name: "SpawnEditor",
-  components: { EqWindow, EqWindowSimple, ContentArea, NpcPopover, ContentFlagSelector, RangeVisualizer },
+  components: { EqWindow, EqWindowSimple, ContentArea, NpcPopover, ContentFlagSelector, ContentExpansionSelector, RangeVisualizer },
   data() {
     return {
       // NPC search / list (left panel)
@@ -794,6 +836,12 @@ export default {
       showAddNpcDropdown: false,
       addNpcResults: [],
       addNpcTargetCard: null,
+
+      // Expansion picker modal
+      expansionPickerTarget: null,
+      expansionPickerField: "",
+      expansionPickerLabel: "",
+      expansionPickerValue: -1,
 
       // State
       saving: false,
@@ -1454,6 +1502,28 @@ export default {
 
       this.saving = false;
     },
+
+    // ========================
+    // Expansion Picker
+    // ========================
+    expansionName(id) {
+      return Expansions.getExpansionName(parseInt(id));
+    },
+
+    openExpansionPicker(target, field, label) {
+      this.expansionPickerTarget = target;
+      this.expansionPickerField  = field;
+      this.expansionPickerLabel  = label;
+      this.expansionPickerValue  = parseInt(target[field]);
+      this.$bvModal.show('expansion-picker-modal');
+    },
+
+    applyExpansionPick(value) {
+      if (this.expansionPickerTarget && this.expansionPickerField) {
+        this.$set(this.expansionPickerTarget, this.expansionPickerField, parseInt(value));
+      }
+      this.$bvModal.hide('expansion-picker-modal');
+    },
   },
 };
 </script>
@@ -1606,6 +1676,38 @@ export default {
 /* EQ-styled modal: strip Bootstrap chrome, let eq-window provide the frame */
 .eq-style-modal .modal-dialog {
   max-width: 500px;
+}
+
+/* Expansion picker modal — wider to fit icon grid */
+.eq-expansion-modal .modal-dialog {
+  max-width: 700px;
+}
+
+/* Expansion picker trigger buttons */
+.expansion-pick-btn {
+  font-size: 10px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s;
+}
+.expansion-pick-btn:hover {
+  border-color: rgba(252, 199, 33, 0.45);
+  color: #fcc721;
+}
+.expansion-pick-btn-set {
+  border-color: rgba(138, 163, 255, 0.4);
+  color: #8aa3ff;
+}
+.expansion-pick-btn-set:hover {
+  border-color: rgba(252, 199, 33, 0.45);
+  color: #fcc721;
 }
 
 /* Input text visibility fix */
