@@ -290,7 +290,7 @@
 
           <!-- Spawngroup Cards (scrollable EQ frame) -->
           <eq-window title="Spawn Groups" class="p-0 mt-3">
-            <div style="height: calc(100vh - 250px); overflow-y: auto; padding: 8px;">
+            <div style="height: calc(100vh - 181px); overflow-y: auto; padding: 8px;">
 
               <!-- Expand / Collapse All -->
               <div v-if="spawnGroupCards.length > 1" class="d-flex justify-content-end mb-2" style="gap: 4px;">
