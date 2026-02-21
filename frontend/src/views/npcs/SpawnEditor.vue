@@ -282,19 +282,22 @@
             <i class="fa fa-check mr-1"></i>{{ editorSuccess }}
           </div>
 
-          <!-- No spawngroups message -->
-          <div v-if="spawnGroupCards.length === 0" class="text-center p-4 mt-3" style="opacity: .5;">
-            <i class="fa fa-map-marker fa-2x d-block mb-2"></i>
-            This NPC has no spawn groups.
-          </div>
+          <!-- Spawngroup Cards (scrollable EQ frame) -->
+          <eq-window title="Spawn Groups" class="p-0 mt-3">
+            <div style="height: calc(100vh - 250px); overflow-y: auto; padding: 8px;">
 
-          <!-- Spawngroup Cards -->
-          <div
-            v-for="(card, cardIdx) in spawnGroupCards"
-            :key="card.spawngroupId"
-            class="mt-3"
-          >
-            <eq-window>
+              <!-- No spawngroups message -->
+              <div v-if="spawnGroupCards.length === 0" class="text-center p-4" style="opacity: .5;">
+                <i class="fa fa-map-marker fa-2x d-block mb-2"></i>
+                This NPC has no spawn groups.
+              </div>
+
+              <div
+                v-for="(card, cardIdx) in spawnGroupCards"
+                :key="card.spawngroupId"
+                class="mt-2"
+              >
+                <eq-window>
               <!-- Spawngroup Header -->
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <div>
@@ -340,10 +343,14 @@
                   </div>
                   <div class="col-3 mb-2">
                     <label class="field-label">Roam Distance</label>
-                    <div class="d-flex align-items-center">
-                      <input v-model.number="card.spawngroup.dist" type="range" min="0" max="500" step="1" class="mr-2" style="flex: 1;" />
-                      <input v-model.number="card.spawngroup.dist" type="number" step="0.1" class="form-control form-control-sm text-center" style="width: 70px;" />
-                    </div>
+                    <input
+                      v-model.number="card.spawngroup.dist"
+                      type="number"
+                      step="0.1"
+                      class="form-control form-control-sm"
+                      @focus="$set(card, 'roamDistVisualizerActive', true)"
+                      @blur="$set(card, 'roamDistVisualizerActive', false)"
+                    />
                   </div>
                   <div class="col-3 mb-2">
                     <label class="field-label">Despawn</label>
@@ -354,6 +361,11 @@
                       <option :value="3">Timer</option>
                     </select>
                   </div>
+                </div>
+                <!-- Roam Distance Range Visualizer -->
+                <div v-if="card.roamDistVisualizerActive" class="mt-1 mb-2">
+                  <div class="field-label mb-1">Range Visualizer — {{ card.spawngroup.dist }} units</div>
+                  <range-visualizer :unit-marker="card.spawngroup.dist || 0" />
                 </div>
                 <div class="row">
                   <div class="col-3 mb-2">
@@ -647,8 +659,10 @@
                   </div>
                 </div>
               </div>
-            </eq-window>
-          </div>
+                </eq-window>
+              </div>
+            </div>
+          </eq-window>
         </div>
       </div>
     </div>

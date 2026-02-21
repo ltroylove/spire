@@ -473,6 +473,20 @@ export default {
         });
 
         this.npcs = result.data || [];
+
+        // When searching by name, sort full-word matches before partial matches.
+        // e.g. searching "orc" shows "Orc Oracle" before "Sorcerer".
+        if (this.npcName && isNaN(this.npcName)) {
+          const escaped = this.npcName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const wordRe = new RegExp('(?:^|[^a-zA-Z0-9])' + escaped + '(?:[^a-zA-Z0-9]|$)', 'i');
+          this.npcs = this.npcs.slice().sort((a, b) => {
+            const aWord = wordRe.test(a.name);
+            const bWord = wordRe.test(b.name);
+            if (aWord && !bWord) return -1;
+            if (!aWord && bWord) return 1;
+            return 0;
+          });
+        }
       } catch (e) {
         this.npcs = [];
         console.error("NPC search error:", e);
