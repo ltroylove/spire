@@ -576,7 +576,7 @@
                         <button
                           v-if="!entry._pendingDelete"
                           class="btn btn-xs btn-dark"
-                          @click="queueRemoveSpawnEntry(entry)"
+                          @click="queueRemoveSpawnEntry(card, entry)"
                           title="Remove NPC"
                         >
                           <i class="fa fa-times text-danger"></i>
@@ -654,7 +654,7 @@
                       <button
                         v-if="!sp._pendingDelete"
                         class="btn btn-xs btn-outline-danger"
-                        @click="queueDeleteSpawnPoint(sp)"
+                        @click="queueDeleteSpawnPoint(card, sp)"
                         :disabled="saving"
                         title="Delete this spawn point"
                       >
@@ -1070,16 +1070,28 @@ export default {
       return card.spawngroup[field] !== card._originalSpawngroup[field];
     },
 
-    queueRemoveSpawnEntry(entry) {
-      this.$set(entry, '_pendingDelete', true);
+    queueRemoveSpawnEntry(card, entry) {
+      if (entry._pendingAdd) {
+        // Never persisted – just remove it from the list entirely (no pending deletion needed)
+        const idx = card.entries.indexOf(entry);
+        if (idx !== -1) card.entries.splice(idx, 1);
+      } else {
+        this.$set(entry, '_pendingDelete', true);
+      }
     },
 
     restoreSpawnEntry(entry) {
       this.$set(entry, '_pendingDelete', false);
     },
 
-    queueDeleteSpawnPoint(sp) {
-      this.$set(sp, '_pendingDelete', true);
+    queueDeleteSpawnPoint(card, sp) {
+      if (sp._pendingAdd) {
+        // Never persisted – just remove it from the list entirely (no pending deletion needed)
+        const idx = card.spawnPoints.indexOf(sp);
+        if (idx !== -1) card.spawnPoints.splice(idx, 1);
+      } else {
+        this.$set(sp, '_pendingDelete', true);
+      }
     },
 
     restoreSpawnPoint(sp) {
@@ -1641,14 +1653,14 @@ export default {
     // Delete spawn point (legacy – kept for any external refs; now uses queue)
     // ========================
     deleteSpawnPoint(card, sp) {
-      this.queueDeleteSpawnPoint(sp);
+      this.queueDeleteSpawnPoint(card, sp);
     },
 
     // ========================
     // Remove NPC from spawngroup (legacy – redirects to queue)
     // ========================
     removeSpawnEntry(card, entry) {
-      this.queueRemoveSpawnEntry(entry);
+      this.queueRemoveSpawnEntry(card, entry);
     },
 
     // ========================
