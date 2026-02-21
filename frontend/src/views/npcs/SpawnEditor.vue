@@ -1966,4 +1966,14 @@ export default {
   border-color: rgba(252, 199, 33, 0.4) !important;
   box-shadow: 0 0 0 0.15rem rgba(252, 199, 33, 0.15) !important;
 }
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
 </style>
