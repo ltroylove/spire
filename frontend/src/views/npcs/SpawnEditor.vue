@@ -1565,7 +1565,7 @@ export default {
         for (const zone of this.zoneFilter) {
           s2Builder.whereOr("zone", "=", zone);
         }
-        s2Builder.select(["spawngroup_id"]);
+        s2Builder.select(["spawngroupID"]);
         s2Builder.limit(5000);
         const s2Result = await spawn2Api.listSpawn2s(s2Builder.get());
         const sgIds = [...new Set((s2Result.data || []).map(r => r.spawngroup_id).filter(Boolean))];
@@ -1583,9 +1583,9 @@ export default {
           const batch = sgIds.slice(i, i + batchSize);
           const seBuilder = new SpireQueryBuilder();
           for (const sgId of batch) {
-            seBuilder.whereOr("spawngroup_id", "=", sgId);
+            seBuilder.whereOr("spawngroupID", "=", sgId);
           }
-          seBuilder.select(["npc_id"]);
+          seBuilder.select(["npcID"]);
           seBuilder.limit(batchSize * 10);
           const seResult = await spawnentryApi.listSpawnentries(seBuilder.get());
           (seResult.data || []).forEach(e => { if (e.npc_id) npcIds.add(e.npc_id); });
