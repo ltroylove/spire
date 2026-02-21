@@ -317,7 +317,7 @@
               <!-- Spawngroup Header -->
               <div
                 class="d-flex justify-content-between align-items-center"
-                :class="card.collapsed ? '' : 'mb-2'"
+                :class="[card.collapsed ? '' : 'mb-2', card._pendingNew ? 'spawn-group-header-new' : '']"
                 style="cursor: pointer;"
                 @click="$set(card, 'collapsed', !card.collapsed)"
               >
@@ -330,11 +330,12 @@
                     :class="card.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"
                     style="color: #888; font-size: 11px; flex-shrink: 0;"
                   ></i>
-                  <span style="color: #fcc721; font-weight: bold; white-space: nowrap;">
+                  <span class="spawn-group-name-text" :style="{color: card._pendingNew ? '#4caf50' : '#fcc721', fontWeight: 'bold', whiteSpace: 'nowrap'}">
                     <i class="fa fa-object-group mr-1"></i>
                     {{ card.spawngroup.name || ('Spawngroup #' + card.spawngroupId) }}
                   </span>
                   <small class="text-muted ml-2" style="white-space: nowrap;">SG #{{ card.spawngroupId }}</small>
+                  <span v-if="card._pendingNew" class="badge ml-2" style="background: rgba(76,175,80,0.25); color: #4caf50; font-size: 0.75em;">New</span>
                   <!-- Collapsed summary: NPC count + spawn point count -->
                   <small v-if="card.collapsed" class="text-muted ml-3" style="font-size: 10px; white-space: nowrap; opacity: 0.7;">
                     {{ card.entries.length }} NPC{{ card.entries.length !== 1 ? 's' : '' }}
@@ -371,6 +372,7 @@
                   </button>
                   <button
                     class="btn btn-sm btn-outline-success mr-1"
+                    :class="{'save-btn-pulse': cardHasPendingChanges(card)}"
                     @click.stop="saveSpawnGroupCard(card)"
                     :disabled="saving"
                     title="Save all queued changes to this spawngroup"
@@ -1070,6 +1072,13 @@ export default {
       return card.spawngroup[field] !== card._originalSpawngroup[field];
     },
 
+    cardHasPendingChanges(card) {
+      if (card.entries && card.entries.some(e => e._pendingAdd || e._pendingDelete)) return true;
+      if (card.spawnPoints && card.spawnPoints.some(sp => sp._pendingAdd || sp._pendingDelete)) return true;
+      const fields = ['name', 'spawn_limit', 'dist', 'delay', 'mindelay', 'despawn', 'despawn_timer', 'wp_spawns', 'min_x', 'max_x', 'min_y', 'max_y'];
+      return fields.some(f => this.isFieldEdited(card, f));
+    },
+
     queueRemoveSpawnEntry(card, entry) {
       if (entry._pendingAdd) {
         // Never persisted – just remove it from the list entirely (no pending deletion needed)
@@ -1640,6 +1649,9 @@ export default {
         // Update the original snapshot so edit highlighting resets
         card._originalSpawngroup = Object.assign({}, card.spawngroup);
 
+        // Clear the new-card indicator now that the card has been saved
+        this.$set(card, '_pendingNew', false);
+
         this.editorSuccess = `Saved spawngroup #${card.spawngroupId} successfully.`;
       } catch (e) {
         console.error("Failed to save spawngroup card", e);
@@ -1856,6 +1868,7 @@ export default {
         const newCard = await this.loadSpawnGroupCard(newSgId);
         if (newCard) {
           newCard.collapsed = false;
+          newCard._pendingNew = true;
           this.spawnGroupCards.push(newCard);
         }
 
@@ -1988,6 +2001,11 @@ export default {
         // If an NPC is selected, refresh its data
         if (this.selectedNpc) {
           await this.selectNpc(this.selectedNpc);
+          // Mark the newly created spawn group card as new for visual feedback
+          const newCard = this.spawnGroupCards.find(c => c.spawngroupId === spawngroupId);
+          if (newCard) {
+            this.$set(newCard, '_pendingNew', true);
+          }
         }
       } catch (e) {
         console.error("Failed to create spawn", e);
@@ -2339,4 +2357,14 @@ tr.pending-delete-row select {
   pointer-events: none;
   opacity: 0.5;
 }
+
+/* Save button subtle pulse when there are pending changes */
+@keyframes pending-save-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(40, 167, 69, 0); }
+}
+.save-btn-pulse {
+  animation: pending-save-pulse 2s ease-in-out infinite;
+}
+
 </style>
