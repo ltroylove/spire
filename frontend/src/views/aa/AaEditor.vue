@@ -169,6 +169,22 @@
                         </div>
                       </div>
                     </div>
+
+                    <!-- Rank 1 Title & Description (resolved from dbstr) -->
+                    <div v-if="chainRanks.length" class="mt-3">
+                      <div class="row">
+                        <div class="col-12">
+                          Title
+                          <b-form-input :value="rankTitleText(chainRanks[0].title_sid)" disabled placeholder="(no title)"/>
+                        </div>
+                      </div>
+                      <div class="row mt-2">
+                        <div class="col-12">
+                          Description
+                          <b-form-textarea :value="rankDescText(chainRanks[0].desc_sid)" disabled placeholder="(no description)" rows="3"/>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </eq-tab>
 
@@ -496,6 +512,7 @@ import {AaAbilityApi} from "@/app/api/api/aa-ability-api";
 import {AaRankApi} from "@/app/api/api/aa-rank-api";
 import {AaRankEffectApi} from "@/app/api/api/aa-rank-effect-api";
 import {AaRankPrereqApi} from "@/app/api/api/aa-rank-prereq-api";
+import {DbStrApi} from "@/app/api/api/db-str-api";
 import {DB_SPA, DB_SPA_DESCRIPTIONS, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
 import {EXPANSION_NAMES} from "@/app/constants/eq-expansions";
 
@@ -503,6 +520,7 @@ const AaAbilityClient = new AaAbilityApi(...SpireApi.cfg())
 const AaRankClient = new AaRankApi(...SpireApi.cfg())
 const AaRankEffectClient = new AaRankEffectApi(...SpireApi.cfg())
 const AaRankPrereqClient = new AaRankPrereqApi(...SpireApi.cfg())
+const DbStrClient = new DbStrApi(...SpireApi.cfg())
 
 const DEFAULT_ABILITY = () => ({ id: 0, name: "", first_rank_id: 0, category: 0, charges: 0, classes: 0, deities: 0, drakkin_heritage: 0, enabled: 1, grant_only: 0, auto_grant_enabled: 0, races: 0, reset_on_death: 0, status: 0, type: 0 })
 const DEFAULT_RANK = (id = 0) => ({ id, cost: 0, desc_sid: 0, expansion: 0, level_req: 0, lower_hotkey_sid: 0, next_id: 0, prev_id: 0, recast_time: 0, spell: 0, spell_type: 0, title_sid: 0, upper_hotkey_sid: 0, effects: [], prereqs: [], _dirty: true, _isNew: true, _expanded: true })
@@ -529,6 +547,8 @@ export default {
       filteredRows: [],
       allRanks: [],
       allSpells: {},
+      dbStrs: [],
+      dbStrsDesc: [],
       selected: null,
       selectedOriginal: null,
       chainRanks: [],
@@ -636,12 +656,16 @@ export default {
       this.error = ""
       try {
         const builder = new SpireQueryBuilder().limit(100000)
-        const [abilitiesResponse, ranksResponse] = await Promise.all([
+        const [abilitiesResponse, ranksResponse, dbStrResponse] = await Promise.all([
           AaAbilityClient.listAaAbilities(builder.get()),
           AaRankClient.listAaRanks(builder.get()),
+          DbStrClient.listDbStrs(builder.get()),
         ])
         this.rows = abilitiesResponse.data || []
         this.allRanks = (ranksResponse.data || []).sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
+        const allDbStrs = dbStrResponse.data || []
+        this.dbStrs = allDbStrs.filter(e => Number(e.type) === 1)
+        this.dbStrsDesc = allDbStrs.filter(e => Number(e.type) === 4)
         this.typeOptions = [{value: -1, text: "All"}].concat([...new Set(this.rows.map(r => Number(r.type || 0)))].sort((a, b) => a - b).map(v => ({value: v, text: this.aaTypeLabel(v)})))
         this.applyFilters()
       } catch (e) {
@@ -679,6 +703,18 @@ export default {
       const id = Number(spellId || 0)
       if (!id) return ''
       return `Spell #${id}`
+    },
+    rankTitleText(titleSid) {
+      const id = Number(titleSid || 0)
+      if (!id) return ''
+      const entry = this.dbStrs.find(e => Number(e.id) === id)
+      return entry ? entry.value : ''
+    },
+    rankDescText(descSid) {
+      const id = Number(descSid || 0)
+      if (!id) return ''
+      const entry = this.dbStrsDesc.find(e => Number(e.id) === id)
+      return entry ? entry.value : ''
     },
     expansionName(expansionId) {
       const id = Number(expansionId)
