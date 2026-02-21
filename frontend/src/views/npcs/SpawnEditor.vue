@@ -53,7 +53,7 @@
             </div>
 
             <div v-if="!npcListLoading && npcList.length === 0 && npcSearch" class="text-center p-3" style="opacity: .5;">
-              <i class="ra ra-dragon fa-2x d-block mb-2"></i>
+              <i class="ra ra-dragon d-block mb-2" style="font-size: 2em;"></i>
               No NPCs found
             </div>
 
@@ -286,6 +286,16 @@
           <eq-window title="Spawn Groups" class="p-0 mt-3">
             <div style="height: calc(100vh - 250px); overflow-y: auto; padding: 8px;">
 
+              <!-- Expand / Collapse All -->
+              <div v-if="spawnGroupCards.length > 1" class="d-flex justify-content-end mb-2" style="gap: 4px;">
+                <button class="btn btn-xs btn-dark" @click="spawnGroupCards.forEach((c,i) => $set(spawnGroupCards[i], 'collapsed', false))">
+                  <i class="fa fa-expand mr-1"></i> Expand All
+                </button>
+                <button class="btn btn-xs btn-dark" @click="spawnGroupCards.forEach((c,i) => $set(spawnGroupCards[i], 'collapsed', true))">
+                  <i class="fa fa-compress mr-1"></i> Collapse All
+                </button>
+              </div>
+
               <!-- No spawngroups message -->
               <div v-if="spawnGroupCards.length === 0" class="text-center p-4" style="opacity: .5;">
                 <i class="fa fa-map-marker fa-2x d-block mb-2"></i>
@@ -295,30 +305,47 @@
               <div
                 v-for="(card, cardIdx) in spawnGroupCards"
                 :key="card.spawngroupId"
-                class="mt-2"
               >
+                <div v-if="cardIdx > 0" class="spawn-group-separator"></div>
                 <eq-window>
               <!-- Spawngroup Header -->
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <div>
-                  <span style="color: #fcc721; font-weight: bold;">
+              <div class="d-flex justify-content-between align-items-center" :class="card.collapsed ? '' : 'mb-2'">
+                <div
+                  class="d-flex align-items-center"
+                  style="cursor: pointer; flex: 1; min-width: 0;"
+                  @click="$set(card, 'collapsed', !card.collapsed)"
+                >
+                  <i
+                    class="fa mr-2"
+                    :class="card.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"
+                    style="color: #888; font-size: 11px; flex-shrink: 0;"
+                  ></i>
+                  <span style="color: #fcc721; font-weight: bold; white-space: nowrap;">
                     <i class="fa fa-object-group mr-1"></i>
                     {{ card.spawngroup.name || ('Spawngroup #' + card.spawngroupId) }}
                   </span>
-                  <small class="text-muted ml-2">SG #{{ card.spawngroupId }}</small>
-                  <span
-                    v-for="sp in card.spawnPoints"
-                    :key="sp.id"
-                    class="badge badge-pill ml-2"
-                    style="background: rgba(252,199,33,0.2); color: #fcc721; font-size: 0.75em;"
-                  >
-                    {{ sp.zone }} ({{ sp.x.toFixed(0) }}, {{ sp.y.toFixed(0) }}, {{ sp.z.toFixed(0) }})
-                  </span>
+                  <small class="text-muted ml-2" style="white-space: nowrap;">SG #{{ card.spawngroupId }}</small>
+                  <!-- Collapsed summary: NPC count + spawn point count -->
+                  <small v-if="card.collapsed" class="text-muted ml-3" style="font-size: 10px; white-space: nowrap; opacity: 0.7;">
+                    {{ card.entries.length }} NPC{{ card.entries.length !== 1 ? 's' : '' }}
+                    <template v-if="card.spawnPoints.length > 0"> &middot; {{ card.spawnPoints.length }} point{{ card.spawnPoints.length !== 1 ? 's' : '' }}</template>
+                  </small>
+                  <!-- Expanded: zone badges -->
+                  <template v-if="!card.collapsed">
+                    <span
+                      v-for="sp in card.spawnPoints"
+                      :key="sp.id"
+                      class="badge badge-pill ml-2"
+                      style="background: rgba(252,199,33,0.2); color: #fcc721; font-size: 0.75em;"
+                    >
+                      {{ sp.zone }} ({{ sp.x.toFixed(0) }}, {{ sp.y.toFixed(0) }}, {{ sp.z.toFixed(0) }})
+                    </span>
+                  </template>
                 </div>
-                <div>
+                <div class="ml-2" style="flex-shrink: 0;">
                   <button
                     class="btn btn-sm btn-outline-success mr-1"
-                    @click="saveSpawnGroupCard(card)"
+                    @click.stop="saveSpawnGroupCard(card)"
                     :disabled="saving"
                     title="Save all changes to this spawngroup"
                   >
@@ -326,6 +353,9 @@
                   </button>
                 </div>
               </div>
+
+              <!-- Spawngroup body (collapsible) -->
+              <div v-if="!card.collapsed">
 
               <!-- Spawngroup Settings Row -->
               <div class="detail-section mb-3">
@@ -361,11 +391,6 @@
                       <option :value="3">Timer</option>
                     </select>
                   </div>
-                </div>
-                <!-- Roam Distance Range Visualizer -->
-                <div v-if="card.roamDistVisualizerActive" class="mt-1 mb-2">
-                  <div class="field-label mb-1">Range Visualizer — {{ card.spawngroup.dist }} units</div>
-                  <range-visualizer :unit-marker="card.spawngroup.dist || 0" />
                 </div>
                 <div class="row">
                   <div class="col-3 mb-2">
@@ -420,6 +445,15 @@
                 </div>
               </div>
 
+              <!-- Range Visualizer -->
+              <eq-window-simple
+                class="fade-in text-center mt-2 mb-3"
+                title="Range Visualizer"
+                v-if="card.roamDistVisualizerActive"
+              >
+                <range-visualizer :unit-marker="card.spawngroup.dist || 0" />
+              </eq-window-simple>
+
               <!-- NPCs in Spawngroup (Spawnentries) -->
               <div class="detail-section mb-3">
                 <div class="detail-section-title d-flex justify-content-between align-items-center">
@@ -440,7 +474,7 @@
                       <th class="text-center" style="width: 18%;">Chance %</th>
                       <th style="width: 20%;">Content Flags</th>
                       <th style="width: 20%;">Flags Disabled</th>
-                      <th style="width: 12%;">Expansion</th>
+                      <th style="width: 12%;">Exp. Range</th>
                       <th class="text-center" style="width: 8%;"></th>
                     </tr>
                   </thead>
@@ -488,9 +522,19 @@
                         />
                       </td>
                       <td style="vertical-align: middle;">
-                        <div class="d-flex" style="gap: 4px;">
-                          <input v-model.number="entry.min_expansion" type="number" class="form-control form-control-sm text-center" style="width: 50px;" title="Min Expansion" placeholder="Min" />
-                          <input v-model.number="entry.max_expansion" type="number" class="form-control form-control-sm text-center" style="width: 50px;" title="Max Expansion" placeholder="Max" />
+                        <div class="d-flex flex-column" style="gap: 3px;">
+                          <button
+                            class="btn expansion-pick-btn"
+                            :class="entry.min_expansion === -1 ? 'expansion-pick-btn-all' : 'expansion-pick-btn-set'"
+                            :title="'Min Expansion: ' + expansionName(entry.min_expansion)"
+                            @click="openExpansionPicker(entry, 'min_expansion', 'Min Expansion')"
+                          >Min: {{ expansionName(entry.min_expansion) }}</button>
+                          <button
+                            class="btn expansion-pick-btn"
+                            :class="entry.max_expansion === -1 ? 'expansion-pick-btn-all' : 'expansion-pick-btn-set'"
+                            :title="'Max Expansion: ' + expansionName(entry.max_expansion)"
+                            @click="openExpansionPicker(entry, 'max_expansion', 'Max Expansion')"
+                          >Max: {{ expansionName(entry.max_expansion) }}</button>
                         </div>
                       </td>
                       <td class="text-center" style="vertical-align: middle;">
@@ -636,11 +680,19 @@
                   <div class="row">
                     <div class="col-3 mb-2">
                       <label class="field-label">Min Expansion</label>
-                      <input v-model.number="sp.min_expansion" type="number" class="form-control form-control-sm" />
+                      <button
+                        class="btn btn-sm btn-block expansion-pick-btn"
+                        :class="sp.min_expansion === -1 ? 'expansion-pick-btn-all' : 'expansion-pick-btn-set'"
+                        @click="openExpansionPicker(sp, 'min_expansion', 'Min Expansion')"
+                      >{{ expansionName(sp.min_expansion) }}</button>
                     </div>
                     <div class="col-3 mb-2">
                       <label class="field-label">Max Expansion</label>
-                      <input v-model.number="sp.max_expansion" type="number" class="form-control form-control-sm" />
+                      <button
+                        class="btn btn-sm btn-block expansion-pick-btn"
+                        :class="sp.max_expansion === -1 ? 'expansion-pick-btn-all' : 'expansion-pick-btn-set'"
+                        @click="openExpansionPicker(sp, 'max_expansion', 'Max Expansion')"
+                      >{{ expansionName(sp.max_expansion) }}</button>
                     </div>
                     <div class="col-3 mb-2">
                       <label class="field-label">Content Flags</label>
@@ -659,6 +711,8 @@
                   </div>
                 </div>
               </div>
+
+              </div><!-- end collapsible body -->
                 </eq-window>
               </div>
             </div>
@@ -667,54 +721,81 @@
       </div>
     </div>
 
+    <!-- Expansion Picker Modal -->
+    <b-modal
+      id="expansion-picker-modal"
+      hide-header
+      hide-footer
+      modal-class="eq-expansion-modal"
+      content-class="bg-transparent border-0 shadow-none"
+      body-class="p-0"
+    >
+      <eq-window :title="expansionPickerLabel || 'Select Expansion'">
+        <content-expansion-selector
+          :value="expansionPickerValue"
+          @input="applyExpansionPick($event)"
+        />
+        <div class="d-flex justify-content-end mt-3">
+          <button class="btn btn-sm btn-dark" @click="$bvModal.hide('expansion-picker-modal')">
+            Cancel
+          </button>
+        </div>
+      </eq-window>
+    </b-modal>
+
     <!-- Add NPC Modal -->
     <b-modal
       id="add-npc-modal"
-      title="Add NPC to Spawngroup"
+      hide-header
       hide-footer
+      modal-class="eq-style-modal"
+      content-class="bg-transparent border-0 shadow-none"
+      body-class="p-0"
       @show="resetAddNpcForm"
     >
-      <div class="mb-3">
-        <label class="field-label">NPC Search</label>
-        <div class="position-relative">
-          <input
-            v-model="addNpcSearch"
-            class="form-control form-control-sm"
-            placeholder="Search NPC by name or ID..."
-            @input="onAddNpcSearch"
-            @focus="showAddNpcDropdown = true"
-            @blur="delayCloseAddNpcDropdown"
-            autocomplete="off"
-          />
-          <div v-if="showAddNpcDropdown && addNpcResults.length > 0" class="zone-dropdown">
-            <div
-              v-for="n in addNpcResults"
-              :key="n.id"
-              class="zone-option"
-              @mousedown.prevent="selectAddNpc(n)"
-            >
-              <span class="text-warning">{{ (n.name || '').replace(/_/g, ' ') }}</span>
-              <span class="text-muted ml-2">#{{ n.id }}</span>
+      <eq-window title="Add NPC to Spawngroup">
+        <div class="mb-3">
+          <label class="field-label">NPC Search</label>
+          <div class="position-relative">
+            <input
+              v-model="addNpcSearch"
+              class="form-control form-control-sm add-npc-input"
+              placeholder="Search NPC by name or ID..."
+              @input="onAddNpcSearch"
+              @focus="showAddNpcDropdown = true"
+              @blur="delayCloseAddNpcDropdown"
+              autocomplete="off"
+            />
+            <div v-if="showAddNpcDropdown && addNpcResults.length > 0" class="zone-dropdown">
+              <div
+                v-for="n in addNpcResults"
+                :key="n.id"
+                class="zone-option"
+                @mousedown.prevent="selectAddNpc(n)"
+              >
+                <span class="text-warning">{{ (n.name || '').replace(/_/g, ' ') }}</span>
+                <span class="text-muted ml-2">#{{ n.id }}</span>
+              </div>
             </div>
           </div>
+          <div v-if="addNpcId" class="text-muted mt-1" style="font-size: 0.8em;">
+            Selected: <span class="text-warning">{{ addNpcSearch }}</span>
+          </div>
         </div>
-        <div v-if="addNpcId" class="text-muted mt-1" style="font-size: 0.8em;">
-          Selected: <span class="text-warning">{{ addNpcSearch }}</span>
+        <div class="mb-3">
+          <label class="field-label">Chance %</label>
+          <div class="d-flex align-items-center">
+            <input v-model.number="addNpcChance" type="range" min="0" max="100" class="mr-2" style="flex: 1;" />
+            <input v-model.number="addNpcChance" type="number" min="0" max="100" class="form-control form-control-sm add-npc-input text-center" style="width: 70px;" />
+          </div>
         </div>
-      </div>
-      <div class="mb-3">
-        <label class="field-label">Chance %</label>
-        <div class="d-flex align-items-center">
-          <input v-model.number="addNpcChance" type="range" min="0" max="100" class="mr-2" style="flex: 1;" />
-          <input v-model.number="addNpcChance" type="number" min="0" max="100" class="form-control form-control-sm text-center" style="width: 70px;" />
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-sm btn-dark mr-2" @click="$bvModal.hide('add-npc-modal')">Cancel</button>
+          <button class="btn btn-sm btn-outline-success" @click="confirmAddNpc" :disabled="!addNpcId || saving">
+            <i class="fa fa-plus mr-1"></i> Add NPC
+          </button>
         </div>
-      </div>
-      <div class="d-flex justify-content-end">
-        <button class="btn btn-sm btn-secondary mr-2" @click="$bvModal.hide('add-npc-modal')">Cancel</button>
-        <button class="btn btn-sm btn-outline-success" @click="confirmAddNpc" :disabled="!addNpcId || saving">
-          <i class="fa fa-plus mr-1"></i> Add NPC
-        </button>
-      </div>
+      </eq-window>
     </b-modal>
   </content-area>
 </template>
@@ -725,10 +806,13 @@ import { SpireApi } from "../../app/api/spire-api";
 import { SpireQueryBuilder } from "@/app/api/spire-query-builder";
 import { Zones } from "@/app/zones";
 import EqWindow from "../../components/eq-ui/EQWindow";
+import EqWindowSimple from "../../components/eq-ui/EQWindowSimple";
 import ContentArea from "../../components/layout/ContentArea";
 import NpcPopover from "../../components/NpcPopover";
 import ContentFlagSelector from "../../components/selectors/ContentFlagSelector";
+import ContentExpansionSelector from "../../components/selectors/ContentExpansionSelector";
 import RangeVisualizer from "../../components/tools/RangeVisualizer";
+import Expansions from "../../app/utility/expansions";
 
 let npcSearchTimeout = null;
 let createNpcSearchTimeout = null;
@@ -736,7 +820,7 @@ let addNpcSearchTimeout = null;
 
 export default {
   name: "SpawnEditor",
-  components: { EqWindow, ContentArea, NpcPopover, ContentFlagSelector, RangeVisualizer },
+  components: { EqWindow, EqWindowSimple, ContentArea, NpcPopover, ContentFlagSelector, ContentExpansionSelector, RangeVisualizer },
   data() {
     return {
       // NPC search / list (left panel)
@@ -771,6 +855,12 @@ export default {
       addNpcResults: [],
       addNpcTargetCard: null,
 
+      // Expansion picker modal
+      expansionPickerTarget: null,
+      expansionPickerField: "",
+      expansionPickerLabel: "",
+      expansionPickerValue: -1,
+
       // State
       saving: false,
       editorError: "",
@@ -793,6 +883,11 @@ export default {
       if (this.$route.params.npcId) {
         this.npcSearch = this.$route.params.npcId;
         this.doNpcSearch();
+      }
+    },
+    editorSuccess(val) {
+      if (val) {
+        setTimeout(() => { this.editorSuccess = ''; }, 4000);
       }
     },
   },
@@ -1047,6 +1142,7 @@ export default {
           entries: enrichedEntries,
           spawnPoints: spawnPoints,
           showSpawnPoints: false,
+          collapsed: true,
         };
       } catch (e) {
         console.error("Failed to load spawngroup card", sgId, e);
@@ -1429,6 +1525,28 @@ export default {
 
       this.saving = false;
     },
+
+    // ========================
+    // Expansion Picker
+    // ========================
+    expansionName(id) {
+      return Expansions.getExpansionName(parseInt(id));
+    },
+
+    openExpansionPicker(target, field, label) {
+      this.expansionPickerTarget = target;
+      this.expansionPickerField  = field;
+      this.expansionPickerLabel  = label;
+      this.expansionPickerValue  = parseInt(target[field]);
+      this.$bvModal.show('expansion-picker-modal');
+    },
+
+    applyExpansionPick(value) {
+      if (this.expansionPickerTarget && this.expansionPickerField) {
+        this.$set(this.expansionPickerTarget, this.expansionPickerField, parseInt(value));
+      }
+      this.$bvModal.hide('expansion-picker-modal');
+    },
   },
 };
 </script>
@@ -1437,6 +1555,21 @@ export default {
 /* Search pane */
 .spawn-search-pane {
   margin-bottom: 8px;
+}
+.spawn-search-pane .form-control {
+  background: rgba(0, 0, 0, 0.3);
+  color: #e0e0e0;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.spawn-search-pane .form-control:focus {
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  border-color: rgba(252, 199, 33, 0.4);
+  box-shadow: 0 0 0 0.15rem rgba(252, 199, 33, 0.15);
+  outline: none;
+}
+.spawn-search-pane .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.3);
 }
 .spawn-input-icon {
   background: rgba(0, 0, 0, 0.3);
@@ -1568,5 +1701,102 @@ export default {
 .npc-link:hover {
   color: #fcc721;
   text-decoration: underline;
+}
+
+/* Dark-theme overrides for form controls throughout the editor */
+.create-form-container .form-control,
+.detail-section .form-control {
+  background: rgba(0, 0, 0, 0.3);
+  color: #e0e0e0;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.create-form-container .form-control:focus,
+.detail-section .form-control:focus {
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  border-color: rgba(252, 199, 33, 0.4);
+  box-shadow: 0 0 0 0.15rem rgba(252, 199, 33, 0.15);
+  outline: none;
+}
+.create-form-container .form-control::placeholder,
+.detail-section .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+.create-form-container .input-group-text,
+.detail-section .input-group-text {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #999;
+}
+.create-form-container select.form-control option,
+.detail-section select.form-control option {
+  background: #1a1a2e;
+  color: #e0e0e0;
+}
+
+/* Expand/collapse all buttons */
+.spawn-group-controls {
+  gap: 4px;
+}
+
+/* Separator between spawn group cards */
+.spawn-group-separator {
+  height: 2px;
+  margin: 12px 0;
+  background: linear-gradient(to right, transparent, rgba(252, 199, 33, 0.35), transparent);
+  border-radius: 1px;
+}
+
+/* EQ-styled modal: strip Bootstrap chrome, let eq-window provide the frame */
+.eq-style-modal .modal-dialog {
+  max-width: 500px;
+}
+
+/* Expansion picker modal — wider to fit icon grid */
+.eq-expansion-modal .modal-dialog {
+  max-width: 700px;
+}
+
+/* Expansion picker trigger buttons */
+.expansion-pick-btn {
+  font-size: 10px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s;
+}
+.expansion-pick-btn:hover {
+  border-color: rgba(252, 199, 33, 0.45);
+  color: #fcc721;
+}
+.expansion-pick-btn-set {
+  border-color: rgba(138, 163, 255, 0.4);
+  color: #8aa3ff;
+}
+.expansion-pick-btn-set:hover {
+  border-color: rgba(252, 199, 33, 0.45);
+  color: #fcc721;
+}
+
+/* Input text visibility fix */
+.add-npc-input {
+  background: rgba(0, 0, 0, 0.4) !important;
+  color: #e0e0e0 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.add-npc-input::placeholder {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+.add-npc-input:focus {
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: #fff !important;
+  border-color: rgba(252, 199, 33, 0.4) !important;
+  box-shadow: 0 0 0 0.15rem rgba(252, 199, 33, 0.15) !important;
 }
 </style>
