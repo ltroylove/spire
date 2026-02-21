@@ -340,8 +340,20 @@
                         </div>
                         <div class="col-3 mb-2">
                           <label class="field-label">Roam Dist</label>
-                          <input v-model.number="row.spawngroup.dist" type="number" step="0.1" class="form-control form-control-sm" />
+                          <input
+                            v-model.number="row.spawngroup.dist"
+                            type="number"
+                            step="0.1"
+                            class="form-control form-control-sm"
+                            @focus="$set(row, 'roamDistVisualizerActive', true)"
+                            @blur="$set(row, 'roamDistVisualizerActive', false)"
+                          />
                         </div>
+                      </div>
+                      <!-- Roam Distance Range Visualizer -->
+                      <div v-if="row.roamDistVisualizerActive && row.spawngroup.dist > 0" class="mt-1 mb-2">
+                        <div class="field-label mb-1">Range Visualizer — {{ row.spawngroup.dist }} units</div>
+                        <range-visualizer :unit-marker="row.spawngroup.dist" />
                       </div>
                       <div class="row">
                         <div class="col-3 mb-2">
@@ -469,9 +481,11 @@ import { Spawn2Api, SpawnentryApi, SpawngroupApi, NpcTypeApi } from "../../app/a
 import { SpireApi } from "../../app/api/spire-api";
 import { SpireQueryBuilder } from "@/app/api/spire-query-builder";
 import { Zones } from "@/app/zones";
+import RangeVisualizer from "../tools/RangeVisualizer";
 
 export default {
   name: "NpcSpawnLocations",
+  components: { RangeVisualizer },
   props: {
     npcId: { type: Number, required: true },
   },
