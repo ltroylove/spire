@@ -299,13 +299,22 @@
               >
                 <eq-window>
               <!-- Spawngroup Header -->
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <div>
-                  <span style="color: #fcc721; font-weight: bold;">
+              <div class="d-flex justify-content-between align-items-center" :class="card.collapsed ? '' : 'mb-2'">
+                <div
+                  class="d-flex align-items-center"
+                  style="cursor: pointer; flex: 1; min-width: 0;"
+                  @click="$set(card, 'collapsed', !card.collapsed)"
+                >
+                  <i
+                    class="fa mr-2"
+                    :class="card.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"
+                    style="color: #888; font-size: 11px; flex-shrink: 0;"
+                  ></i>
+                  <span style="color: #fcc721; font-weight: bold; white-space: nowrap;">
                     <i class="fa fa-object-group mr-1"></i>
                     {{ card.spawngroup.name || ('Spawngroup #' + card.spawngroupId) }}
                   </span>
-                  <small class="text-muted ml-2">SG #{{ card.spawngroupId }}</small>
+                  <small class="text-muted ml-2" style="white-space: nowrap;">SG #{{ card.spawngroupId }}</small>
                   <span
                     v-for="sp in card.spawnPoints"
                     :key="sp.id"
@@ -315,10 +324,10 @@
                     {{ sp.zone }} ({{ sp.x.toFixed(0) }}, {{ sp.y.toFixed(0) }}, {{ sp.z.toFixed(0) }})
                   </span>
                 </div>
-                <div>
+                <div class="ml-2" style="flex-shrink: 0;">
                   <button
                     class="btn btn-sm btn-outline-success mr-1"
-                    @click="saveSpawnGroupCard(card)"
+                    @click.stop="saveSpawnGroupCard(card)"
                     :disabled="saving"
                     title="Save all changes to this spawngroup"
                   >
@@ -326,6 +335,9 @@
                   </button>
                 </div>
               </div>
+
+              <!-- Spawngroup body (collapsible) -->
+              <div v-if="!card.collapsed">
 
               <!-- Spawngroup Settings Row -->
               <div class="detail-section mb-3">
@@ -659,6 +671,8 @@
                   </div>
                 </div>
               </div>
+
+              </div><!-- end collapsible body -->
                 </eq-window>
               </div>
             </div>
@@ -1047,6 +1061,7 @@ export default {
           entries: enrichedEntries,
           spawnPoints: spawnPoints,
           showSpawnPoints: false,
+          collapsed: true,
         };
       } catch (e) {
         console.error("Failed to load spawngroup card", sgId, e);
