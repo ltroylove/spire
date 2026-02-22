@@ -53,10 +53,27 @@
     .minified-inputs input, .minified-inputs select {
       margin-top: 6px; margin-bottom: 6px; height: 30px;
     }
-    .minified-inputs .input-group .btn,
-    .minified-inputs .d-flex > .btn {
+    /* Inputs inside input-groups must not carry row margin — resets the
+       container back to 30px so buttons align flush with the input. */
+    .minified-inputs .input-group .form-control {
+      margin-top: 0; margin-bottom: 0;
+    }
+    .minified-inputs .input-group .btn {
       height: 30px;
       box-sizing: border-box;
+    }
+
+    /* EQ theming for <a class="btn"> link-buttons */
+    [class|="eq-window"] a.btn:not(.close) {
+      display: inline-flex; align-items: center; justify-content: center;
+      text-align: center; text-decoration: none;
+      background: linear-gradient(180deg, #4b4b63, #1f1f31);
+      border: 1px solid #000000; border-radius: 4px;
+      color: #ffffff; cursor: pointer;
+    }
+    [class|="eq-window"] a.btn-warning {
+      background: linear-gradient(180deg, #f6c343, #785911);
+      color: #0c1a23; border-color: #4d3d23;
     }
 
     /* Bootstrap global box-sizing reset (matches Bootstrap 4 behaviour in the real app) */
@@ -97,14 +114,21 @@
       </div>
     </div>
 
-    <!-- Input-group height test -->
-    <div class="minified-inputs">
+    <!-- Input-group: BEFORE fix label -->
+    <div style="color:#888;font-size:11px;margin-bottom:4px;">Input-group with Editor link button (fixed)</div>
+    <div class="minified-inputs" style="margin-bottom:16px;">
       <div class="input-group" id="input-group-row">
-        <input type="text" placeholder="Title SID"/>
+        <input type="text" class="form-control" placeholder="Title SID"/>
         <div class="input-group-append">
-          <a class="btn btn-warning btn-sm" id="editor-link" href="#">Editor</a>
+          <a class="btn btn-warning btn-sm" id="editor-link" href="#">&#x1F4DC; Editor</a>
         </div>
       </div>
+    </div>
+
+    <!-- Standalone input (minified-inputs margins still apply here) -->
+    <div style="color:#888;font-size:11px;margin-bottom:4px;">Standalone input (margins intact)</div>
+    <div class="minified-inputs">
+      <input type="text" placeholder="Standalone field" style="width:100%;"/>
     </div>
 
   </div>
