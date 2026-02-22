@@ -1,4 +1,68 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Locator } from '@playwright/test';
+
+// ---------------------------------------------------------------------------
+// Colour-contrast helpers
+// ---------------------------------------------------------------------------
+
+/** Parse "rgb(r, g, b)" or "rgba(r, g, b, a)" into [r, g, b] (0-255). */
+function parseRgb(css: string): [number, number, number] {
+  const m = css.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!m) throw new Error(`Cannot parse colour: ${css}`);
+  return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
+}
+
+/** WCAG relative luminance (0–1) for a single 8-bit channel. */
+function channelLuminance(c: number): number {
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+
+/** WCAG relative luminance of an [r, g, b] triple. */
+function relativeLuminance([r, g, b]: [number, number, number]): number {
+  return 0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
+}
+
+/** WCAG contrast ratio between two colours. */
+function contrastRatio(fg: [number, number, number], bg: [number, number, number]): number {
+  const l1 = relativeLuminance(fg);
+  const l2 = relativeLuminance(bg);
+  const lighter = Math.max(l1, l2);
+  const darker  = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * Return the computed foreground colour and the effective background colour
+ * (walking up to the first opaque ancestor if the element itself is transparent).
+ */
+async function getButtonColours(
+  locator: Locator,
+): Promise<{ fg: [number, number, number]; bg: [number, number, number] }> {
+  return locator.evaluate((el: HTMLElement) => {
+    const style = window.getComputedStyle(el);
+    const fgCss = style.color;
+
+    // Walk up to find first opaque background
+    let node: HTMLElement | null = el;
+    let bgCss = 'rgb(0, 0, 0)';
+    while (node) {
+      const bg = window.getComputedStyle(node).backgroundColor;
+      if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+        bgCss = bg;
+        break;
+      }
+      node = node.parentElement;
+    }
+    return { fgCss, bgCss };
+  }).then(({ fgCss, bgCss }) => {
+    const parseRgbLocal = (css: string): [number, number, number] => {
+      const m = css.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (!m) throw new Error(`Cannot parse colour: ${css}`);
+      return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
+    };
+    return { fg: parseRgbLocal(fgCss), bg: parseRgbLocal(bgCss) };
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Mock data
@@ -177,6 +241,106 @@ test.describe('AA Editor — Basic Tab Title & Description', () => {
 
     await expect(page.locator('input[placeholder="(no title)"]')).toHaveCount(0);
     await expect(page.locator('textarea[placeholder="(no description)"]')).toHaveCount(0);
+  });
+
+});
+
+// ---------------------------------------------------------------------------
+// Button contrast & height tests (use isolated fixture — no live backend needed)
+// ---------------------------------------------------------------------------
+
+test.describe('AA Editor — Button contrast and height', () => {
+
+  // WCAG AA minimum for UI components / large text
+  const MIN_CONTRAST = 3.0;
+
+  /** Load the self-contained fixture HTML directly via file:// */
+  async function gotoFixture(page: Page) {
+    const path = require('path');
+    const fixturePath = path.resolve(__dirname, 'fixtures/button-contrast.html');
+    await page.goto(`file://${fixturePath}`);
+    // Fixture is static HTML — no async loading needed
+    await page.waitForSelector('#action-bar');
+  }
+
+  test('outline-warning button has sufficient contrast on dark background', async ({ page }) => {
+    await gotoFixture(page);
+    const btn = page.locator('#btn-warning');
+    const { fg, bg } = await getButtonColours(btn);
+    const ratio = contrastRatio(fg, bg);
+    console.log(`outline-warning: fg=rgb(${fg}) bg=rgb(${bg}) ratio=${ratio.toFixed(2)}`);
+    expect(ratio, `contrast ${ratio.toFixed(2)}:1 below ${MIN_CONTRAST}:1`).toBeGreaterThanOrEqual(MIN_CONTRAST);
+  });
+
+  test('outline-secondary button has sufficient contrast on dark background', async ({ page }) => {
+    await gotoFixture(page);
+    const btn = page.locator('#btn-secondary');
+    const { fg, bg } = await getButtonColours(btn);
+    const ratio = contrastRatio(fg, bg);
+    console.log(`outline-secondary: fg=rgb(${fg}) bg=rgb(${bg}) ratio=${ratio.toFixed(2)}`);
+    expect(ratio, `contrast ${ratio.toFixed(2)}:1 below ${MIN_CONTRAST}:1`).toBeGreaterThanOrEqual(MIN_CONTRAST);
+  });
+
+  test('outline-info button has sufficient contrast on dark background', async ({ page }) => {
+    await gotoFixture(page);
+    const btn = page.locator('#btn-info');
+    const { fg, bg } = await getButtonColours(btn);
+    const ratio = contrastRatio(fg, bg);
+    console.log(`outline-info: fg=rgb(${fg}) bg=rgb(${bg}) ratio=${ratio.toFixed(2)}`);
+    expect(ratio, `contrast ${ratio.toFixed(2)}:1 below ${MIN_CONTRAST}:1`).toBeGreaterThanOrEqual(MIN_CONTRAST);
+  });
+
+  test('outline-danger button has sufficient contrast on dark background', async ({ page }) => {
+    await gotoFixture(page);
+    const btn = page.locator('#btn-danger');
+    const { fg, bg } = await getButtonColours(btn);
+    const ratio = contrastRatio(fg, bg);
+    console.log(`outline-danger: fg=rgb(${fg}) bg=rgb(${bg}) ratio=${ratio.toFixed(2)}`);
+    expect(ratio, `contrast ${ratio.toFixed(2)}:1 below ${MIN_CONTRAST}:1`).toBeGreaterThanOrEqual(MIN_CONTRAST);
+  });
+
+  test('outline-success button has sufficient contrast on dark background', async ({ page }) => {
+    await gotoFixture(page);
+    const btn = page.locator('#btn-success');
+    const { fg, bg } = await getButtonColours(btn);
+    const ratio = contrastRatio(fg, bg);
+    console.log(`outline-success: fg=rgb(${fg}) bg=rgb(${bg}) ratio=${ratio.toFixed(2)}`);
+    expect(ratio, `contrast ${ratio.toFixed(2)}:1 below ${MIN_CONTRAST}:1`).toBeGreaterThanOrEqual(MIN_CONTRAST);
+  });
+
+  test('outline-primary button has sufficient contrast on dark background', async ({ page }) => {
+    await gotoFixture(page);
+    const btn = page.locator('#btn-primary');
+    const { fg, bg } = await getButtonColours(btn);
+    const ratio = contrastRatio(fg, bg);
+    console.log(`outline-primary: fg=rgb(${fg}) bg=rgb(${bg}) ratio=${ratio.toFixed(2)}`);
+    expect(ratio, `contrast ${ratio.toFixed(2)}:1 below ${MIN_CONTRAST}:1`).toBeGreaterThanOrEqual(MIN_CONTRAST);
+  });
+
+  test('search button in d-flex row matches input height (minified-inputs)', async ({ page }) => {
+    await gotoFixture(page);
+    const input  = page.locator('#flex-row input');
+    const button = page.locator('#search-btn');
+    const inputBox  = await input.boundingBox();
+    const buttonBox = await button.boundingBox();
+    expect(inputBox).not.toBeNull();
+    expect(buttonBox).not.toBeNull();
+    const diff = Math.abs(inputBox!.height - buttonBox!.height);
+    console.log(`d-flex: input=${inputBox!.height}px btn=${buttonBox!.height}px diff=${diff}px`);
+    expect(diff, `height diff ${diff}px exceeds 2px tolerance`).toBeLessThanOrEqual(2);
+  });
+
+  test('Editor link button in input-group matches input height (minified-inputs)', async ({ page }) => {
+    await gotoFixture(page);
+    const input  = page.locator('#input-group-row input');
+    const button = page.locator('#editor-link');
+    const inputBox  = await input.boundingBox();
+    const buttonBox = await button.boundingBox();
+    expect(inputBox).not.toBeNull();
+    expect(buttonBox).not.toBeNull();
+    const diff = Math.abs(inputBox!.height - buttonBox!.height);
+    console.log(`input-group: input=${inputBox!.height}px btn=${buttonBox!.height}px diff=${diff}px`);
+    expect(diff, `height diff ${diff}px exceeds 2px tolerance`).toBeLessThanOrEqual(2);
   });
 
 });

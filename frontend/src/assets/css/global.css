@@ -280,6 +280,13 @@
     height: 30px;
 }
 
+/* Buttons inside minified-inputs rows must match the input height */
+.minified-inputs .input-group .btn,
+.minified-inputs .d-flex > .btn {
+    height: 30px;
+    box-sizing: border-box;
+}
+
 .tooltip-inner {
     font-size: 15px;
     max-width: 600px;
