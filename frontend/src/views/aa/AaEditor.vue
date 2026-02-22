@@ -340,7 +340,7 @@
                             <b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)"/>
                             <a
                               class="btn btn-warning btn-sm mt-1"
-                              :href="DB_STRING_EDITOR_URL + '?type=28&selectedId=' + rank.lower_hotkey_sid"
+                              :href="DB_STRING_EDITOR_URL + '?type=2&selectedId=' + rank.lower_hotkey_sid"
                               target="_blank"
                             >
                               <i class="ra ra-scroll-unfurled mr-1"></i> Editor
@@ -351,7 +351,7 @@
                             <b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)"/>
                             <a
                               class="btn btn-warning btn-sm mt-1"
-                              :href="DB_STRING_EDITOR_URL + '?type=30&selectedId=' + rank.upper_hotkey_sid"
+                              :href="DB_STRING_EDITOR_URL + '?type=3&selectedId=' + rank.upper_hotkey_sid"
                               target="_blank"
                             >
                               <i class="ra ra-scroll-unfurled mr-1"></i> Editor
