@@ -280,9 +280,16 @@
     height: 30px;
 }
 
-/* Buttons inside minified-inputs rows must match the input height */
-.minified-inputs .input-group .btn,
-.minified-inputs .d-flex > .btn {
+/* Inputs inside an input-group must not carry the row margin — the group's
+   flexbox handles vertical alignment, and margins expand the container beyond
+   30px, causing the adjacent button to appear shorter than the input. */
+.minified-inputs .input-group .form-control {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Buttons inside input-groups match the 30px input height */
+.minified-inputs .input-group .btn {
     height: 30px;
     box-sizing: border-box;
 }
