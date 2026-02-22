@@ -95,8 +95,8 @@ const DB_STRS = [
   // type 1 — AA Name
   { id: 300, type: 1, value: 'Combat Agility' },
   { id: 301, type: 1, value: 'Combat Stability' },
-  // type 4 — AA Desc
-  { id: 400, type: 4, value: 'Increases your ability to avoid melee attacks.' },
+  // type 4 — AA Desc  (include one very long description to exercise width constraint)
+  { id: 400, type: 4, value: 'Increases your ability to avoid melee attacks. This ability raises your avoidance skill by a significant amount, allowing you to dodge, parry, and riposte incoming blows with greater frequency. Each successive rank grants a progressively larger bonus.' },
   { id: 402, type: 4, value: 'Increases your ability to absorb damage from melee attacks.' },
 ];
 
@@ -204,7 +204,7 @@ test.describe('AA Editor — Basic Tab Title & Description', () => {
 
     const descTextarea = page.locator('textarea[placeholder="(no description)"]');
     await expect(descTextarea).toBeVisible({ timeout: 10000 });
-    await expect(descTextarea).toHaveValue('Increases your ability to avoid melee attacks.');
+    await expect(descTextarea).toHaveValue('Increases your ability to avoid melee attacks. This ability raises your avoidance skill by a significant amount, allowing you to dodge, parry, and riposte incoming blows with greater frequency. Each successive rank grants a progressively larger bonus.');
   });
 
   test('Title and Description update when a different AA is selected', async ({ page }) => {
@@ -387,6 +387,45 @@ test.describe('AA Editor — Desc SID dropdown width', () => {
     expect(descSidWidth, 'Desc SID column was not found in rank body').not.toBeNull();
     console.log(`Desc SID column width on 5760px viewport: ${descSidWidth}px`);
     expect(descSidWidth!, `Desc SID column width ${descSidWidth}px exceeds 350px cap`).toBeLessThanOrEqual(350);
+  });
+
+  test('Desc SID column does not break grid layout on normal viewport', async ({ page }) => {
+    // Regression: flex: 0 0 350px forced the column wider than col-3 on normal viewports
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await gotoAaEditor(page);
+
+    await page.locator('#aa-editor-table tbody tr').nth(0).click();
+    await page.locator('.eq-tab-box-fancy a', { hasText: 'Ranks' }).click();
+
+    const rankHeader = page.locator('.rank-card-header').first();
+    await expect(rankHeader).toBeVisible({ timeout: 10000 });
+    await rankHeader.click();
+
+    const rankBody = page.locator('.rank-card-body').first();
+    await expect(rankBody).toBeVisible({ timeout: 5000 });
+
+    // Measure the row width and Desc SID column width
+    const { rowWidth, descSidWidth } = await rankBody.evaluate((body: HTMLElement) => {
+      const rows = body.querySelectorAll('.row');
+      // The Desc SID is in the second row (index 1)
+      const row = rows[1] as HTMLElement;
+      if (!row) return { rowWidth: null, descSidWidth: null };
+      const rowW = row.getBoundingClientRect().width;
+      for (const el of Array.from(row.querySelectorAll('[style*="max-width"]'))) {
+        if ((el as HTMLElement).textContent?.includes('Desc SID')) {
+          return { rowWidth: rowW, descSidWidth: (el as HTMLElement).getBoundingClientRect().width };
+        }
+      }
+      return { rowWidth: rowW, descSidWidth: null };
+    });
+
+    expect(rowWidth, 'Row not found').not.toBeNull();
+    expect(descSidWidth, 'Desc SID column not found').not.toBeNull();
+    // On a 1280px viewport, col-3 = 25% of the row, which should be well under 350px.
+    // The column must NOT exceed 25% of the row (the grid proportion).
+    const maxExpected = rowWidth! * 0.25 + 2; // small tolerance for rounding
+    console.log(`Normal viewport: row=${rowWidth}px  descSid=${descSidWidth}px  col-3 max=${maxExpected.toFixed(0)}px`);
+    expect(descSidWidth!, `Desc SID column ${descSidWidth}px exceeds col-3 proportion`).toBeLessThanOrEqual(maxExpected);
   });
 
   test('Desc SID select element width does not exceed its container', async ({ page }) => {
