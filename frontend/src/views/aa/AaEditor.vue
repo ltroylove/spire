@@ -317,7 +317,14 @@
                           <div class="col-2">
                             Title SID
                             <div class="input-group input-group-sm">
-                              <b-form-input v-model.number="rank.title_sid" @input="markRankDirty(rank)" :title="rankTitleText(rank.title_sid) || '(no title)'"/>
+                              <select
+                                v-model.number="rank.title_sid"
+                                @change="markRankDirty(rank)"
+                                class="form-control form-control-sm"
+                                :style="(rank.title_sid <= 0 ? 'opacity: .5' : '')"
+                              >
+                                <option v-for="(text, id) in dbStrSelectTitle" :key="id" :value="parseInt(id)">{{ id }}) {{ text }}</option>
+                              </select>
                               <div class="input-group-append">
                                 <a
                                   class="btn btn-warning btn-sm"
@@ -332,7 +339,14 @@
                           <div class="col-3">
                             Desc SID
                             <div class="input-group input-group-sm">
-                              <b-form-input v-model.number="rank.desc_sid" @input="markRankDirty(rank)" :title="rankDescText(rank.desc_sid) || '(no description)'"/>
+                              <select
+                                v-model.number="rank.desc_sid"
+                                @change="markRankDirty(rank)"
+                                class="form-control form-control-sm"
+                                :style="(rank.desc_sid <= 0 ? 'opacity: .5' : '')"
+                              >
+                                <option v-for="(text, id) in dbStrSelectDesc" :key="id" :value="parseInt(id)">{{ id }}) {{ text }}</option>
+                              </select>
                               <div class="input-group-append">
                                 <a
                                   class="btn btn-warning btn-sm"
@@ -350,7 +364,14 @@
                           <div class="col-3">
                             Lower Hotkey SID
                             <div class="input-group input-group-sm">
-                              <b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyLowerText(rank.lower_hotkey_sid) || '(no hotkey)'"/>
+                              <select
+                                v-model.number="rank.lower_hotkey_sid"
+                                @change="markRankDirty(rank)"
+                                class="form-control form-control-sm"
+                                :style="(rank.lower_hotkey_sid <= 0 ? 'opacity: .5' : '')"
+                              >
+                                <option v-for="(text, id) in dbStrSelectHotkeyLower" :key="id" :value="parseInt(id)">{{ id }}) {{ text }}</option>
+                              </select>
                               <div class="input-group-append">
                                 <a
                                   class="btn btn-warning btn-sm"
@@ -365,7 +386,14 @@
                           <div class="col-3">
                             Upper Hotkey SID
                             <div class="input-group input-group-sm">
-                              <b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyUpperText(rank.upper_hotkey_sid) || '(no hotkey)'"/>
+                              <select
+                                v-model.number="rank.upper_hotkey_sid"
+                                @change="markRankDirty(rank)"
+                                class="form-control form-control-sm"
+                                :style="(rank.upper_hotkey_sid <= 0 ? 'opacity: .5' : '')"
+                              >
+                                <option v-for="(text, id) in dbStrSelectHotkeyUpper" :key="id" :value="parseInt(id)">{{ id }}) {{ text }}</option>
+                              </select>
                               <div class="input-group-append">
                                 <a
                                   class="btn btn-warning btn-sm"
@@ -700,6 +728,26 @@ export default {
         .filter(r => !q || String(r.id).includes(q) || String(r.name || "").toLowerCase().includes(q))
         .sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
         .slice(0, 500)
+    },
+    dbStrSelectTitle() {
+      const result = {'0': 'None'}
+      this.dbStrs.forEach(e => { result[e.id] = e.value })
+      return result
+    },
+    dbStrSelectHotkeyLower() {
+      const result = {'0': 'None'}
+      this.dbStrsHotkeyLower.forEach(e => { result[e.id] = e.value })
+      return result
+    },
+    dbStrSelectHotkeyUpper() {
+      const result = {'0': 'None'}
+      this.dbStrsHotkeyUpper.forEach(e => { result[e.id] = e.value })
+      return result
+    },
+    dbStrSelectDesc() {
+      const result = {'0': 'None'}
+      this.dbStrsDesc.forEach(e => { result[e.id] = e.value })
+      return result
     },
   },
   async mounted() {
