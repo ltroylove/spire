@@ -336,13 +336,14 @@
                               </div>
                             </div>
                           </div>
-                          <div class="col-3" style="max-width: 350px">
+                          <div class="col-3" style="flex: 0 0 350px; max-width: 350px; overflow: hidden">
                             Desc SID
                             <div class="input-group input-group-sm">
                               <select
                                 v-model.number="rank.desc_sid"
                                 @change="markRankDirty(rank)"
                                 class="form-control form-control-sm"
+                                style="min-width: 0; max-width: 100%"
                                 :style="(rank.desc_sid <= 0 ? 'opacity: .5' : '')"
                               >
                                 <option v-for="(text, id) in dbStrSelectDesc" :key="id" :value="parseInt(id)">{{ id }}) {{ text }}</option>
