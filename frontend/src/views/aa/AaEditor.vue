@@ -284,7 +284,11 @@
                         <div class="row">
                           <div class="col-2">Cost<b-form-input v-model.number="rank.cost" @input="markRankDirty(rank)"/></div>
                           <div class="col-2">Level Req<b-form-input v-model.number="rank.level_req" @input="markRankDirty(rank)"/></div>
-                          <div class="col-2">Recast Time<b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/></div>
+                          <div class="col-2">
+                            Recast Time
+                            <b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/>
+                            <small class="text-muted">{{ formatTime(rank.recast_time) }}</small>
+                          </div>
                           <div class="col-3">
                             Spell
                             <div class="d-flex gap-2 align-items-center">
@@ -773,6 +777,18 @@ export default {
       if (!id) return ''
       const entry = this.dbStrsHotkeyUpper.find(e => Number(e.id) === id)
       return entry ? entry.value : ''
+    },
+    formatTime(seconds) {
+      if (!seconds || seconds <= 0) return '0s'
+      const s = Math.abs(Number(seconds))
+      const h = Math.floor(s / 3600)
+      const m = Math.floor((s % 3600) / 60)
+      const sec = s % 60
+      const parts = []
+      if (h > 0) parts.push(h + 'h')
+      if (m > 0) parts.push(m + 'm')
+      if (sec > 0) parts.push(sec + 's')
+      return parts.join(' ') || '0s'
     },
     expansionName(expansionId) {
       const id = Number(expansionId)
