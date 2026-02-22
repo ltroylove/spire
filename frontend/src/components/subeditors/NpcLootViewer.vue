@@ -1,8 +1,18 @@
 <template>
   <div class="npc-loot-viewer">
-    <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between mb-2">
+    <!-- Header (always visible, click to collapse/expand) -->
+    <div
+      class="d-flex align-items-center justify-content-between"
+      :class="{ 'mb-2': !collapsed }"
+      @click="collapsed = !collapsed"
+      style="cursor: pointer; user-select: none;"
+    >
       <div>
+        <i
+          class="fa mr-1"
+          :class="collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"
+          style="font-size: 10px; opacity: 0.5;"
+        ></i>
         <i class="fa fa-gem text-warning mr-1"></i>
         <span class="font-weight-bold" style="color: #fcc721;">Loot</span>
         <small v-if="loaded && entries.length > 0" class="ml-1 text-muted">({{ entries.length }} drop{{ entries.length !== 1 ? 's' : '' }})</small>
@@ -10,7 +20,7 @@
       <div>
         <button
           v-if="loottableId > 0"
-          @click="openFullEditor"
+          @click.stop="openFullEditor"
           class="btn btn-xs btn-outline-warning"
           title="Open the full-featured Loot Editor for this NPC"
         >
@@ -19,65 +29,68 @@
       </div>
     </div>
 
-    <!-- No loottable assigned -->
-    <div v-if="!loottableId || loottableId <= 0" class="text-center py-3">
-      <i class="fa fa-gem fa-2x d-block mb-2" style="opacity: 0.2;"></i>
-      <div class="text-muted small">No loot table assigned to this NPC.</div>
-    </div>
-
-    <!-- Loading -->
-    <div v-else-if="loading" class="text-center py-3">
-      <i class="fa fa-spinner fa-spin fa-2x text-warning"></i>
-      <div class="mt-2 small text-muted">Loading loot data...</div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-else-if="loaded && entries.length === 0" class="text-center py-3">
-      <i class="fa fa-gem fa-2x d-block mb-2" style="opacity: 0.2;"></i>
-      <div class="text-muted small">Loottable #{{ loottableId }} has no loot drops.</div>
-    </div>
-
-    <!-- Loot Table -->
-    <div v-else-if="loaded && entries.length > 0">
-      <!-- Loottable name -->
-      <div v-if="loottable" class="mb-2" style="font-size: 0.85em;">
-        <i class="fa fa-table mr-1" style="opacity: 0.5;"></i>
-        <span class="text-warning">{{ loottable.name || 'Loottable #' + loottable.id }}</span>
-        <span class="text-muted ml-1" style="opacity: 0.5;">#{{ loottable.id }}</span>
+    <!-- Body (hidden when collapsed) -->
+    <div v-if="!collapsed">
+      <!-- No loottable assigned -->
+      <div v-if="!loottableId || loottableId <= 0" class="text-center py-3">
+        <i class="fa fa-gem fa-2x d-block mb-2" style="opacity: 0.2;"></i>
+        <div class="text-muted small">No loot table assigned to this NPC.</div>
       </div>
 
-      <div style="max-height: 40vh; overflow-y: auto;">
-        <table class="eq-table eq-highlight-rows w-100" style="font-size: 12px;">
-          <thead class="eq-table-floating-header">
-            <tr>
-              <th style="width: 50%;">Lootdrop</th>
-              <th class="text-center" style="width: 20%;">Prob</th>
-              <th class="text-center" style="width: 15%;">Multi</th>
-              <th class="text-center" style="width: 15%;">Limit</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(entry, i) in entries" :key="i" class="loot-row">
-              <td style="vertical-align: middle;">
-                <span class="text-warning font-weight-bold">
-                  {{ entry.lootdrop ? (entry.lootdrop.name || 'Lootdrop #' + entry.lootdrop_id) : 'Lootdrop #' + entry.lootdrop_id }}
-                </span>
-                <div style="font-size: 0.8em; opacity: 0.5;">
-                  drop #{{ entry.lootdrop_id }}
-                </div>
-              </td>
-              <td class="text-center" style="vertical-align: middle;">
-                <span :class="getProbBadgeClass(entry.probability)">{{ entry.probability }}%</span>
-              </td>
-              <td class="text-center" style="vertical-align: middle;">
-                <span style="opacity: 0.7;">{{ entry.multiplier > 1 ? '×' + entry.multiplier : '—' }}</span>
-              </td>
-              <td class="text-center" style="vertical-align: middle;">
-                <span style="opacity: 0.7;">{{ entry.droplimit > 0 ? entry.droplimit : '—' }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Loading -->
+      <div v-else-if="loading" class="text-center py-3">
+        <i class="fa fa-spinner fa-spin fa-2x text-warning"></i>
+        <div class="mt-2 small text-muted">Loading loot data...</div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="loaded && entries.length === 0" class="text-center py-3">
+        <i class="fa fa-gem fa-2x d-block mb-2" style="opacity: 0.2;"></i>
+        <div class="text-muted small">Loottable #{{ loottableId }} has no loot drops.</div>
+      </div>
+
+      <!-- Loot Table -->
+      <div v-else-if="loaded && entries.length > 0">
+        <!-- Loottable name -->
+        <div v-if="loottable" class="mb-2" style="font-size: 0.85em;">
+          <i class="fa fa-table mr-1" style="opacity: 0.5;"></i>
+          <span class="text-warning">{{ loottable.name || 'Loottable #' + loottable.id }}</span>
+          <span class="text-muted ml-1" style="opacity: 0.5;">#{{ loottable.id }}</span>
+        </div>
+
+        <div style="max-height: 40vh; overflow-y: auto;">
+          <table class="eq-table eq-highlight-rows w-100" style="font-size: 12px;">
+            <thead class="eq-table-floating-header">
+              <tr>
+                <th style="width: 50%;">Lootdrop</th>
+                <th class="text-center" style="width: 20%;">Prob</th>
+                <th class="text-center" style="width: 15%;">Multi</th>
+                <th class="text-center" style="width: 15%;">Limit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(entry, i) in entries" :key="i" class="loot-row">
+                <td style="vertical-align: middle;">
+                  <span class="text-warning font-weight-bold">
+                    {{ entry.lootdrop ? (entry.lootdrop.name || 'Lootdrop #' + entry.lootdrop_id) : 'Lootdrop #' + entry.lootdrop_id }}
+                  </span>
+                  <div style="font-size: 0.8em; opacity: 0.5;">
+                    drop #{{ entry.lootdrop_id }}
+                  </div>
+                </td>
+                <td class="text-center" style="vertical-align: middle;">
+                  <span :class="getProbBadgeClass(entry.probability)">{{ entry.probability }}%</span>
+                </td>
+                <td class="text-center" style="vertical-align: middle;">
+                  <span style="opacity: 0.7;">{{ entry.multiplier > 1 ? '×' + entry.multiplier : '—' }}</span>
+                </td>
+                <td class="text-center" style="vertical-align: middle;">
+                  <span style="opacity: 0.7;">{{ entry.droplimit > 0 ? entry.droplimit : '—' }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -96,6 +109,7 @@ export default {
   },
   data() {
     return {
+      collapsed: true,
       loading: false,
       loaded: false,
       loottable: null,
