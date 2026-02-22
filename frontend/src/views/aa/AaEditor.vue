@@ -336,7 +336,7 @@
                               </div>
                             </div>
                           </div>
-                          <div class="col-3">
+                          <div class="col-3" style="max-width: 350px">
                             Desc SID
                             <div class="input-group input-group-sm">
                               <select
@@ -368,7 +368,7 @@
                                 v-model.number="rank.lower_hotkey_sid"
                                 @change="markRankDirty(rank)"
                                 class="form-control form-control-sm"
-                                :style="(rank.lower_hotkey_sid <= 0 ? 'opacity: .5' : '')"
+                                :style="(rank.lower_hotkey_sid < 0 ? 'opacity: .5' : '')"
                               >
                                 <option v-for="(text, id) in dbStrSelectHotkeyLower" :key="id" :value="parseInt(id)">{{ id }}) {{ text }}</option>
                               </select>
@@ -390,7 +390,7 @@
                                 v-model.number="rank.upper_hotkey_sid"
                                 @change="markRankDirty(rank)"
                                 class="form-control form-control-sm"
-                                :style="(rank.upper_hotkey_sid <= 0 ? 'opacity: .5' : '')"
+                                :style="(rank.upper_hotkey_sid < 0 ? 'opacity: .5' : '')"
                               >
                                 <option v-for="(text, id) in dbStrSelectHotkeyUpper" :key="id" :value="parseInt(id)">{{ id }}) {{ text }}</option>
                               </select>
@@ -735,12 +735,12 @@ export default {
       return result
     },
     dbStrSelectHotkeyLower() {
-      const result = {'0': 'None'}
+      const result = {'-1': 'None'}
       this.dbStrsHotkeyLower.forEach(e => { result[e.id] = e.value })
       return result
     },
     dbStrSelectHotkeyUpper() {
-      const result = {'0': 'None'}
+      const result = {'-1': 'None'}
       this.dbStrsHotkeyUpper.forEach(e => { result[e.id] = e.value })
       return result
     },
