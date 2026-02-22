@@ -162,91 +162,91 @@
 /* Outline Primary */
 [class|="eq-window"] button.btn-outline-primary {
     background: none;
-    color: #5a5a78;
-    border: 1px solid #5a5a78;
+    color: #8888c0;
+    border: 1px solid #8888c0;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-primary:hover:not(:disabled) {
-    background: rgba(90, 90, 120, 0.2); /* Subtle background on hover */
+    background: rgba(136, 136, 192, 0.2); /* Subtle background on hover */
     color: #ffffff;
-    border-color: #6b6b90;
-    box-shadow: inset 0 0 8px rgba(90, 90, 120, 0.5); /* Internal glow */
+    border-color: #a0a0d0;
+    box-shadow: inset 0 0 8px rgba(136, 136, 192, 0.5); /* Internal glow */
 }
 
 /* Outline Secondary */
 [class|="eq-window"] button.btn-outline-secondary {
     background: none;
-    color: #7a7a7a;
-    border: 1px solid #7a7a7a;
+    color: #9aacbe;
+    border: 1px solid #9aacbe;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-secondary:hover:not(:disabled) {
-    background: rgba(122, 122, 122, 0.2);
+    background: rgba(154, 172, 190, 0.2);
     color: #ffffff;
-    border-color: #8c8c8c;
-    box-shadow: inset 0 0 8px rgba(122, 122, 122, 0.5);
+    border-color: #b0bece;
+    box-shadow: inset 0 0 8px rgba(154, 172, 190, 0.5);
 }
 
 /* Outline Success */
 [class|="eq-window"] button.btn-outline-success {
     background: none;
-    color: #4a754a;
-    border: 1px solid #4a754a;
+    color: #5aaa5a;
+    border: 1px solid #5aaa5a;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-success:hover:not(:disabled) {
-    background: rgba(74, 117, 74, 0.2);
+    background: rgba(90, 170, 90, 0.2);
     color: #ffffff;
-    border-color: #5b8c5b;
-    box-shadow: inset 0 0 8px rgba(74, 117, 74, 0.5);
+    border-color: #70c070;
+    box-shadow: inset 0 0 8px rgba(90, 170, 90, 0.5);
 }
 
 /* Outline Danger */
 [class|="eq-window"] button.btn-outline-danger {
     background: none;
-    color: #8b4646;
-    border: 1px solid #8b4646;
+    color: #cc5555;
+    border: 1px solid #cc5555;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-danger:hover:not(:disabled) {
-    background: rgba(139, 70, 70, 0.2);
+    background: rgba(204, 85, 85, 0.2);
     color: #ffffff;
-    border-color: #a25454;
-    box-shadow: inset 0 0 8px rgba(139, 70, 70, 0.5);
+    border-color: #e06868;
+    box-shadow: inset 0 0 8px rgba(204, 85, 85, 0.5);
 }
 
 /* Outline Warning */
 [class|="eq-window"] button.btn-outline-warning {
     background: none;
-    color: #8a7946;
-    border: 1px solid #8a7946;
+    color: #d4a830;
+    border: 1px solid #d4a830;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-warning:hover:not(:disabled) {
-    background: rgba(138, 121, 70, 0.2);
+    background: rgba(212, 168, 48, 0.2);
     color: #ffffff;
-    border-color: #a68e50;
-    box-shadow: inset 0 0 8px rgba(138, 121, 70, 0.5);
+    border-color: #e8c048;
+    box-shadow: inset 0 0 8px rgba(212, 168, 48, 0.5);
 }
 
 /* Outline Info */
 [class|="eq-window"] button.btn-outline-info {
     background: none;
-    color: #46788b;
-    border: 1px solid #46788b;
+    color: #4aa8c8;
+    border: 1px solid #4aa8c8;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-info:hover:not(:disabled) {
-    background: rgba(70, 120, 139, 0.2);
+    background: rgba(74, 168, 200, 0.2);
     color: #ffffff;
-    border-color: #5698a2;
-    box-shadow: inset 0 0 8px rgba(70, 120, 139, 0.5);
+    border-color: #60c0e0;
+    box-shadow: inset 0 0 8px rgba(74, 168, 200, 0.5);
 }
 
 /* Outline Light */
