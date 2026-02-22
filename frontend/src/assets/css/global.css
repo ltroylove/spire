@@ -284,6 +284,7 @@
 .minified-inputs .input-group .btn,
 .minified-inputs .d-flex > .btn {
     height: 30px;
+    box-sizing: border-box;
 }
 
 .tooltip-inner {
