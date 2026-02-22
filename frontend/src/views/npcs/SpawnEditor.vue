@@ -342,69 +342,78 @@
                 <eq-window>
               <!-- Spawngroup Header -->
               <div
-                class="d-flex justify-content-between align-items-center"
-                :class="[card.collapsed ? '' : 'mb-2', card._pendingNew ? 'spawn-group-header-new' : '']"
+                :class="[card._pendingNew ? 'spawn-group-header-new' : '']"
                 style="cursor: pointer;"
                 @click="$set(card, 'collapsed', !card.collapsed)"
               >
+                <!-- Header row: title + buttons -->
                 <div
-                  class="d-flex align-items-center"
-                  style="flex: 1; min-width: 0;"
+                  class="d-flex justify-content-between align-items-center"
+                  :class="[card.collapsed ? '' : (card.spawnPoints.length > 0 ? 'mb-1' : 'mb-2')]"
                 >
-                  <i
-                    class="fa mr-2"
-                    :class="card.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"
-                    style="color: #888; font-size: 11px; flex-shrink: 0;"
-                  ></i>
-                  <span class="spawn-group-name-text" :style="{color: card._pendingNew ? '#4caf50' : '#fcc721', fontWeight: 'bold', whiteSpace: 'nowrap'}">
-                    <i class="fa fa-object-group mr-1"></i>
-                    {{ card.spawngroup.name || ('Spawngroup #' + card.spawngroupId) }}
-                  </span>
-                  <small class="text-muted ml-2" style="white-space: nowrap;">SG #{{ card.spawngroupId }}</small>
-                  <span v-if="card._pendingNew" class="badge ml-2" style="background: rgba(76,175,80,0.25); color: #4caf50; font-size: 0.75em;">New</span>
-                  <!-- Collapsed summary: NPC count + spawn point count -->
-                  <small v-if="card.collapsed" class="text-muted ml-3" style="font-size: 10px; white-space: nowrap; opacity: 0.7;">
-                    {{ card.entries.length }} NPC{{ card.entries.length !== 1 ? 's' : '' }}
-                    <template v-if="card.spawnPoints.length > 0"> &middot; {{ card.spawnPoints.length }} point{{ card.spawnPoints.length !== 1 ? 's' : '' }}</template>
-                  </small>
-                  <!-- Expanded: zone badges -->
-                  <template v-if="!card.collapsed">
-                    <span
-                      v-for="sp in card.spawnPoints"
-                      :key="sp.id"
-                      class="badge badge-pill ml-2"
-                      style="background: rgba(252,199,33,0.2); color: #fcc721; font-size: 0.75em;"
-                    >
-                      {{ sp.zone }} ({{ sp.x.toFixed(0) }}, {{ sp.y.toFixed(0) }}, {{ sp.z.toFixed(0) }})
+                  <div
+                    class="d-flex align-items-center"
+                    style="flex: 1; min-width: 0; overflow: hidden;"
+                  >
+                    <i
+                      class="fa mr-2"
+                      :class="card.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"
+                      style="color: #888; font-size: 11px; flex-shrink: 0;"
+                    ></i>
+                    <span class="spawn-group-name-text" :style="{color: card._pendingNew ? '#4caf50' : '#fcc721', fontWeight: 'bold', whiteSpace: 'nowrap'}">
+                      <i class="fa fa-object-group mr-1"></i>
+                      {{ card.spawngroup.name || ('Spawngroup #' + card.spawngroupId) }}
                     </span>
-                  </template>
+                    <small class="text-muted ml-2" style="white-space: nowrap;">SG #{{ card.spawngroupId }}</small>
+                    <span v-if="card._pendingNew" class="badge ml-2" style="background: rgba(76,175,80,0.25); color: #4caf50; font-size: 0.75em;">New</span>
+                    <!-- Collapsed summary: NPC count + spawn point count -->
+                    <small v-if="card.collapsed" class="text-muted ml-3" style="font-size: 10px; white-space: nowrap; opacity: 0.7;">
+                      {{ card.entries.length }} NPC{{ card.entries.length !== 1 ? 's' : '' }}
+                      <template v-if="card.spawnPoints.length > 0"> &middot; {{ card.spawnPoints.length }} point{{ card.spawnPoints.length !== 1 ? 's' : '' }}</template>
+                    </small>
+                  </div>
+                  <div class="ml-2" style="flex-shrink: 0;">
+                    <button
+                      class="btn btn-sm btn-outline-danger mr-1"
+                      @click.stop="deleteSpawnGroupCard(card)"
+                      :disabled="saving"
+                      title="Permanently delete this entire spawngroup"
+                    >
+                      <i class="fa fa-trash mr-1"></i> Delete
+                    </button>
+                    <button
+                      class="btn btn-sm btn-outline-info mr-1"
+                      @click.stop="cloneSpawnGroupCard(card)"
+                      :disabled="saving"
+                      title="Clone this spawngroup"
+                    >
+                      <i class="fa fa-copy mr-1"></i> Clone
+                    </button>
+                    <button
+                      class="btn btn-sm btn-outline-success mr-1"
+                      :class="{'save-btn-pulse': cardHasPendingChanges(card)}"
+                      @click.stop="saveSpawnGroupCard(card)"
+                      :disabled="saving"
+                      title="Save all queued changes to this spawngroup"
+                    >
+                      <i class="fa fa-save mr-1"></i> Save
+                    </button>
+                  </div>
                 </div>
-                <div class="ml-2" style="flex-shrink: 0;">
-                  <button
-                    class="btn btn-sm btn-outline-danger mr-1"
-                    @click.stop="deleteSpawnGroupCard(card)"
-                    :disabled="saving"
-                    title="Permanently delete this entire spawngroup"
+                <!-- Expanded: zone badges on their own row below the header -->
+                <div
+                  v-if="!card.collapsed && card.spawnPoints.length > 0"
+                  class="mb-2"
+                  style="display: flex; flex-wrap: wrap; gap: 4px; padding-left: 20px;"
+                >
+                  <span
+                    v-for="sp in card.spawnPoints"
+                    :key="sp.id"
+                    class="badge badge-pill"
+                    style="background: rgba(252,199,33,0.2); color: #fcc721; font-size: 0.75em;"
                   >
-                    <i class="fa fa-trash mr-1"></i> Delete
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-info mr-1"
-                    @click.stop="cloneSpawnGroupCard(card)"
-                    :disabled="saving"
-                    title="Clone this spawngroup"
-                  >
-                    <i class="fa fa-copy mr-1"></i> Clone
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-success mr-1"
-                    :class="{'save-btn-pulse': cardHasPendingChanges(card)}"
-                    @click.stop="saveSpawnGroupCard(card)"
-                    :disabled="saving"
-                    title="Save all queued changes to this spawngroup"
-                  >
-                    <i class="fa fa-save mr-1"></i> Save
-                  </button>
+                    {{ sp.zone }} ({{ sp.x.toFixed(0) }}, {{ sp.y.toFixed(0) }}, {{ sp.z.toFixed(0) }})
+                  </span>
                 </div>
               </div>
 
