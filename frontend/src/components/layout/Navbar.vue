@@ -470,7 +470,7 @@ export default {
           {
             title: "AA Editor",
             to: ROUTE.AA_EDITOR,
-            icon: "ra ra-player-upgrade mr-1",
+            icon: "ra ra-book mr-1",
             isNew: true,
             routes: ['aa']
           },

@@ -344,3 +344,87 @@ test.describe('AA Editor — Button contrast and height', () => {
   });
 
 });
+
+// ---------------------------------------------------------------------------
+// Desc SID dropdown width constraint tests
+// ---------------------------------------------------------------------------
+
+test.describe('AA Editor — Desc SID dropdown width', () => {
+
+  test('Desc SID column is constrained to 350px on a very wide viewport', async ({ page }) => {
+    // Simulate a very wide layout (e.g. triple-monitor spanning ~5760px)
+    await page.setViewportSize({ width: 5760, height: 900 });
+    await gotoAaEditor(page);
+
+    // Select first AA to load the right panel
+    await page.locator('#aa-editor-table tbody tr').nth(0).click();
+
+    // Click the Ranks tab
+    await page.locator('.eq-tab-box-fancy a', { hasText: 'Ranks' }).click();
+
+    // Wait for the first rank card header to appear
+    const rankHeader = page.locator('.rank-card-header').first();
+    await expect(rankHeader).toBeVisible({ timeout: 10000 });
+
+    // Expand the rank card by clicking its header
+    await rankHeader.click();
+
+    // Wait for the rank body (expanded content) to be visible
+    const rankBody = page.locator('.rank-card-body').first();
+    await expect(rankBody).toBeVisible({ timeout: 5000 });
+
+    // Measure the Desc SID column — it is identified by its enforced max-width inline style
+    const descSidWidth = await rankBody.evaluate((body: HTMLElement) => {
+      // Walk child elements to find the one that directly contains the text "Desc SID"
+      for (const el of Array.from(body.querySelectorAll('[style*="max-width: 350px"]'))) {
+        if ((el as HTMLElement).textContent?.includes('Desc SID')) {
+          return (el as HTMLElement).getBoundingClientRect().width;
+        }
+      }
+      return null;
+    });
+
+    expect(descSidWidth, 'Desc SID column was not found in rank body').not.toBeNull();
+    console.log(`Desc SID column width on 5760px viewport: ${descSidWidth}px`);
+    expect(descSidWidth!, `Desc SID column width ${descSidWidth}px exceeds 350px cap`).toBeLessThanOrEqual(350);
+  });
+
+  test('Desc SID select element width does not exceed its container', async ({ page }) => {
+    await page.setViewportSize({ width: 5760, height: 900 });
+    await gotoAaEditor(page);
+
+    await page.locator('#aa-editor-table tbody tr').nth(0).click();
+    await page.locator('.eq-tab-box-fancy a', { hasText: 'Ranks' }).click();
+
+    const rankHeader = page.locator('.rank-card-header').first();
+    await expect(rankHeader).toBeVisible({ timeout: 10000 });
+    await rankHeader.click();
+
+    const rankBody = page.locator('.rank-card-body').first();
+    await expect(rankBody).toBeVisible({ timeout: 5000 });
+
+    // The Desc SID select is the select whose model is rank.desc_sid.
+    // It sits inside the column div that has max-width:350px.
+    // We identify it as the select inside the only [style*="max-width: 350px"] div
+    // that contains "Desc SID" text.
+    const { colWidth, selectWidth } = await rankBody.evaluate((body: HTMLElement) => {
+      for (const el of Array.from(body.querySelectorAll('[style*="max-width: 350px"]'))) {
+        if ((el as HTMLElement).textContent?.includes('Desc SID')) {
+          const sel = el.querySelector('select');
+          return {
+            colWidth: (el as HTMLElement).getBoundingClientRect().width,
+            selectWidth: sel ? sel.getBoundingClientRect().width : null,
+          };
+        }
+      }
+      return { colWidth: null, selectWidth: null };
+    });
+
+    expect(colWidth, 'Desc SID column not found').not.toBeNull();
+    expect(selectWidth, 'Desc SID select not found').not.toBeNull();
+    console.log(`Desc SID col=${colWidth}px  select=${selectWidth}px`);
+    expect(colWidth!).toBeLessThanOrEqual(350);
+    expect(selectWidth!).toBeLessThanOrEqual(350);
+  });
+
+});
