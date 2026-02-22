@@ -335,9 +335,10 @@
                 <button
                   v-if="selectedNpc"
                   class="btn btn-sm btn-outline-warning"
-                  @click="openCreateForSelectedNpc"
+                  @click="addSpawnGroupForSelectedNpc"
+                  :disabled="saving"
                 >
-                  <i class="fa fa-plus mr-1"></i> Add New Spawn
+                  <i class="fa fa-plus mr-1"></i> Add Spawn Group
                 </button>
               </div>
 
@@ -2287,11 +2288,35 @@ export default {
       this.createForm.npcSearch = (n.name || "").replace(/_/g, " ") + " (#" + n.id + ")";
       this.showCreateNpcDropdown = false;
     },
-    openCreateForSelectedNpc() {
-      this.createForm = this.getDefaultCreateForm();
-      this.createForm.npcId = this.selectedNpc.id;
-      this.createForm.npcSearch = this.selectedNpc.cleanName + " (#" + this.selectedNpc.id + ")";
-      this.showCreatePanel = true;
+    async addSpawnGroupForSelectedNpc() {
+      if (!this.selectedNpc) return;
+      this.saving = true;
+      this.clearMessages();
+      try {
+        const spawngroupApi = new SpawngroupApi(...SpireApi.cfg());
+        const spawnentryApi = new SpawnentryApi(...SpireApi.cfg());
+
+        const sgCreate = await spawngroupApi.createSpawngroup({
+          spawngroup: { name: this.selectedNpc.name || ('npc_' + this.selectedNpc.id), id: 0 }
+        });
+        const spawngroupId = sgCreate.data && sgCreate.data.id;
+        if (!spawngroupId) throw new Error("Unable to create spawngroup");
+
+        await spawnentryApi.createSpawnentry({
+          spawnentry: { spawngroup_id: spawngroupId, npc_id: this.selectedNpc.id, chance: 100 }
+        });
+
+        const card = await this.loadSpawnGroupCard(spawngroupId);
+        if (card) {
+          this.$set(card, '_pendingNew', true);
+          this.spawnGroupCards.push(card);
+        }
+        this.editorSuccess = `Created spawngroup #${spawngroupId}.`;
+      } catch (e) {
+        console.error("Failed to create spawn group", e);
+        this.editorError = "Failed to create spawn group.";
+      }
+      this.saving = false;
     },
 
     // ========================
