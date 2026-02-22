@@ -279,17 +279,25 @@
           <div class="mt-2 text-muted">Loading spawn groups...</div>
         </div>
 
-        <!-- Selected NPC header -->
-        <div v-if="selectedNpc && !showCreatePanel && !spawnGroupsLoading">
+        <!-- Selected NPC header / Direct spawn group header -->
+        <div v-if="(selectedNpc || directSpawnGroupId) && !showCreatePanel && !spawnGroupsLoading">
           <eq-window class="p-0">
             <div class="spawn-editor-header">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                  <h5 class="mb-0 mr-3" style="color: #fcc721;">
-                    <i class="ra ra-dragon mr-2"></i>
-                    {{ selectedNpc.cleanName }}
-                  </h5>
-                  <small class="text-muted">NPC #{{ selectedNpc.id }}</small>
+                  <template v-if="selectedNpc">
+                    <h5 class="mb-0 mr-3" style="color: #fcc721;">
+                      <i class="ra ra-dragon mr-2"></i>
+                      {{ selectedNpc.cleanName }}
+                    </h5>
+                    <small class="text-muted">NPC #{{ selectedNpc.id }}</small>
+                  </template>
+                  <template v-else>
+                    <h5 class="mb-0 mr-3" style="color: #fcc721;">
+                      <i class="fa fa-object-group mr-2"></i>
+                      Spawngroup #{{ directSpawnGroupId }}
+                    </h5>
+                  </template>
                 </div>
                 <span class="badge badge-pill" style="background: rgba(138,163,255,0.15); color: #8aa3ff;">
                   {{ spawnGroupCards.length }} spawn group{{ spawnGroupCards.length !== 1 ? 's' : '' }}
@@ -1110,6 +1118,9 @@ export default {
       saving: false,
       editorError: "",
       editorSuccess: "",
+
+      // Direct spawn group mode (when navigated with ?spawnGroupId=)
+      directSpawnGroupId: null,
     };
   },
 
@@ -1120,6 +1131,8 @@ export default {
     if (this.$route.params.npcId) {
       this.npcSearch = this.$route.params.npcId;
       this.doNpcSearch();
+    } else if (this.$route.query.spawnGroupId) {
+      this.loadDirectSpawnGroup(Number(this.$route.query.spawnGroupId));
     }
   },
 
@@ -1128,6 +1141,8 @@ export default {
       if (this.$route.params.npcId) {
         this.npcSearch = this.$route.params.npcId;
         this.doNpcSearch();
+      } else if (this.$route.query.spawnGroupId) {
+        this.loadDirectSpawnGroup(Number(this.$route.query.spawnGroupId));
       }
     },
     editorSuccess(val) {
@@ -1138,6 +1153,29 @@ export default {
   },
 
   methods: {
+    // ========================
+    // Direct Spawn Group mode
+    // ========================
+    async loadDirectSpawnGroup(spawnGroupId) {
+      if (!spawnGroupId) return;
+      this.directSpawnGroupId = spawnGroupId;
+      this.selectedNpc = null;
+      this.showCreatePanel = false;
+      this.clearMessages();
+      this.spawnGroupCards = [];
+      this.spawnGroupsLoading = true;
+      try {
+        const card = await this.loadSpawnGroupCard(spawnGroupId);
+        if (card) {
+          card.collapsed = false;
+          this.spawnGroupCards = [card];
+        }
+      } catch (e) {
+        console.error("Failed to load spawn group card", e);
+      }
+      this.spawnGroupsLoading = false;
+    },
+
     // ========================
     // Range Visualizer blur handling
     // ========================
@@ -1605,6 +1643,7 @@ export default {
     async selectNpc(npc) {
       this.showCreatePanel = false;
       this.selectedNpc = npc;
+      this.directSpawnGroupId = null;
       this.clearMessages();
       this.spawnGroupCards = [];
       this.spawnGroupsLoading = true;
