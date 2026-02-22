@@ -604,6 +604,7 @@ import {DbStrApi} from "@/app/api/api/db-str-api";
 import {DB_SPA, DB_SPA_DESCRIPTIONS, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
 import {EXPANSION_NAMES} from "@/app/constants/eq-expansions";
 import {ROUTE}            from "@/routes";
+import {Spells}           from "@/app/spells";
 
 const AaAbilityClient = new AaAbilityApi(...SpireApi.cfg())
 const AaRankClient = new AaRankApi(...SpireApi.cfg())
@@ -826,6 +827,14 @@ export default {
     spellName(spellId) {
       const id = Number(spellId || 0)
       if (!id) return ''
+      if (id in this.allSpells) {
+        return this.allSpells[id]
+      }
+      // Set a placeholder immediately to prevent duplicate fetches
+      this.$set(this.allSpells, id, `Spell #${id}`)
+      Spells.getSpell(id).then(spell => {
+        this.$set(this.allSpells, id, spell && spell.name ? spell.name : `Spell #${id}`)
+      })
       return `Spell #${id}`
     },
     rankTitleText(titleSid) {
