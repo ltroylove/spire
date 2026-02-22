@@ -284,7 +284,11 @@
                         <div class="row">
                           <div class="col-2">Cost<b-form-input v-model.number="rank.cost" @input="markRankDirty(rank)"/></div>
                           <div class="col-2">Level Req<b-form-input v-model.number="rank.level_req" @input="markRankDirty(rank)"/></div>
-                          <div class="col-2">Recast Time<b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/></div>
+                          <div class="col-2">
+                            Recast Time
+                            <b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/>
+                            <small class="text-muted">{{ formatTime(rank.recast_time) }}</small>
+                          </div>
                           <div class="col-3">
                             Spell
                             <div class="d-flex gap-2 align-items-center">
@@ -312,31 +316,67 @@
                           <div class="col-2">Next ID<b-form-input v-model.number="rank.next_id" @input="markRankDirty(rank)"/></div>
                           <div class="col-2">
                             Title SID
-                            <b-form-input v-model.number="rank.title_sid" @input="markRankDirty(rank)" :title="rankTitleText(rank.title_sid) || '(no title)'"/>
-                            <router-link
-                              class="btn btn-warning btn-sm mt-1"
-                              tag="button"
-                              :to="DB_STRING_EDITOR_URL + '?type=1&selectedId=' + rank.title_sid"
-                            >
-                              <i class="ra ra-scroll-unfurled mr-1"></i> Editor
-                            </router-link>
+                            <div class="input-group input-group-sm">
+                              <b-form-input v-model.number="rank.title_sid" @input="markRankDirty(rank)" :title="rankTitleText(rank.title_sid) || '(no title)'"/>
+                              <div class="input-group-append">
+                                <a
+                                  class="btn btn-warning btn-sm"
+                                  :href="DB_STRING_EDITOR_URL + '?type=1&selectedId=' + rank.title_sid"
+                                  target="_blank"
+                                >
+                                  <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                                </a>
+                              </div>
+                            </div>
                           </div>
                           <div class="col-3">
                             Desc SID
-                            <b-form-input v-model.number="rank.desc_sid" @input="markRankDirty(rank)" :title="rankDescText(rank.desc_sid) || '(no description)'"/>
-                            <router-link
-                              class="btn btn-warning btn-sm mt-1"
-                              tag="button"
-                              :to="DB_STRING_EDITOR_URL + '?type=4&selectedId=' + rank.desc_sid"
-                            >
-                              <i class="ra ra-scroll-unfurled mr-1"></i> Editor
-                            </router-link>
+                            <div class="input-group input-group-sm">
+                              <b-form-input v-model.number="rank.desc_sid" @input="markRankDirty(rank)" :title="rankDescText(rank.desc_sid) || '(no description)'"/>
+                              <div class="input-group-append">
+                                <a
+                                  class="btn btn-warning btn-sm"
+                                  :href="DB_STRING_EDITOR_URL + '?type=4&selectedId=' + rank.desc_sid"
+                                  target="_blank"
+                                >
+                                  <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                                </a>
+                              </div>
+                            </div>
                           </div>
                         </div>
 
                         <div class="row mt-2">
-                          <div class="col-3">Lower Hotkey SID<b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)"/></div>
-                          <div class="col-3">Upper Hotkey SID<b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)"/></div>
+                          <div class="col-3">
+                            Lower Hotkey SID
+                            <div class="input-group input-group-sm">
+                              <b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyLowerText(rank.lower_hotkey_sid) || '(no hotkey)'"/>
+                              <div class="input-group-append">
+                                <a
+                                  class="btn btn-warning btn-sm"
+                                  :href="DB_STRING_EDITOR_URL + '?type=2&selectedId=' + rank.lower_hotkey_sid"
+                                  target="_blank"
+                                >
+                                  <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-3">
+                            Upper Hotkey SID
+                            <div class="input-group input-group-sm">
+                              <b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyUpperText(rank.upper_hotkey_sid) || '(no hotkey)'"/>
+                              <div class="input-group-append">
+                                <a
+                                  class="btn btn-warning btn-sm"
+                                  :href="DB_STRING_EDITOR_URL + '?type=3&selectedId=' + rank.upper_hotkey_sid"
+                                  target="_blank"
+                                >
+                                  <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                                </a>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         <!-- Effects sub-section -->
@@ -571,6 +611,8 @@ export default {
       allSpells: {},
       dbStrs: [],
       dbStrsDesc: [],
+      dbStrsHotkeyLower: [],
+      dbStrsHotkeyUpper: [],
       selected: null,
       selectedOriginal: null,
       chainRanks: [],
@@ -688,6 +730,8 @@ export default {
         const allDbStrs = dbStrResponse.data || []
         this.dbStrs = allDbStrs.filter(e => Number(e.type) === 1)
         this.dbStrsDesc = allDbStrs.filter(e => Number(e.type) === 4)
+        this.dbStrsHotkeyLower = allDbStrs.filter(e => Number(e.type) === 2)
+        this.dbStrsHotkeyUpper = allDbStrs.filter(e => Number(e.type) === 3)
         this.typeOptions = [{value: -1, text: "All"}].concat([...new Set(this.rows.map(r => Number(r.type || 0)))].sort((a, b) => a - b).map(v => ({value: v, text: this.aaTypeLabel(v)})))
         this.applyFilters()
       } catch (e) {
@@ -737,6 +781,30 @@ export default {
       if (!id) return ''
       const entry = this.dbStrsDesc.find(e => Number(e.id) === id)
       return entry ? entry.value : ''
+    },
+    rankHotkeyLowerText(sid) {
+      const id = Number(sid || 0)
+      if (!id) return ''
+      const entry = this.dbStrsHotkeyLower.find(e => Number(e.id) === id)
+      return entry ? entry.value : ''
+    },
+    rankHotkeyUpperText(sid) {
+      const id = Number(sid || 0)
+      if (!id) return ''
+      const entry = this.dbStrsHotkeyUpper.find(e => Number(e.id) === id)
+      return entry ? entry.value : ''
+    },
+    formatTime(seconds) {
+      if (!seconds || seconds <= 0) return '0s'
+      const s = Math.abs(Number(seconds))
+      const h = Math.floor(s / 3600)
+      const m = Math.floor((s % 3600) / 60)
+      const sec = s % 60
+      const parts = []
+      if (h > 0) parts.push(h + 'h')
+      if (m > 0) parts.push(m + 'm')
+      if (sec > 0) parts.push(sec + 's')
+      return parts.join(' ') || '0s'
     },
     expansionName(expansionId) {
       const id = Number(expansionId)
