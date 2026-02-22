@@ -336,7 +336,7 @@
                               </div>
                             </div>
                           </div>
-                          <div class="col-3" style="max-width: 350px; min-width: 0; overflow: hidden">
+                          <div class="col-3" style="max-width: 350px">
                             Desc SID
                             <div class="input-group input-group-sm">
                               <select
@@ -746,7 +746,10 @@ export default {
     },
     dbStrSelectDesc() {
       const result = {'0': 'None'}
-      this.dbStrsDesc.forEach(e => { result[e.id] = e.value })
+      this.dbStrsDesc.forEach(e => {
+        const v = String(e.value || '')
+        result[e.id] = v.length > 60 ? v.slice(0, 59) + '\u2026' : v
+      })
       return result
     },
   },
@@ -759,9 +762,16 @@ export default {
       .sort((a, b) => a.id - b.id)
     await this.refreshAll()
     this.$nextTick(this.checkAaDetailsOverflow)
-    window.addEventListener("resize", this.checkAaDetailsOverflow)
+    this._resizeHandler = () => {
+      clearTimeout(this._resizeTimer)
+      this._resizeTimer = setTimeout(this.checkAaDetailsOverflow, 100)
+    }
+    window.addEventListener("resize", this._resizeHandler)
   },
-  beforeDestroy() { window.removeEventListener("resize", this.checkAaDetailsOverflow) },
+  beforeDestroy() {
+    window.removeEventListener("resize", this._resizeHandler)
+    clearTimeout(this._resizeTimer)
+  },
   methods: {
     async refreshAll() {
       this.loading = true
@@ -1451,13 +1461,6 @@ export default {
 }
 .rank-card-body {
   padding: 10px;
-}
-/* Allow SID dropdown input-groups and selects to shrink below content width */
-.rank-card-body .input-group {
-  min-width: 0;
-}
-.rank-card-body select.form-control {
-  min-width: 0;
 }
 
 /* Clickable rank header */
