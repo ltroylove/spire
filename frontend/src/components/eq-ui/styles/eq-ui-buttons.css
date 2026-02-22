@@ -157,6 +157,75 @@
     border-color: #1a1a22;
 }
 
+/* <a> elements used as Bootstrap buttons (".btn") inside EQ windows.
+   The existing rules above only target <button> elements; <a> link-buttons
+   (e.g. the DB-String Editor links in rank cards) would otherwise fall back
+   to Bootstrap's default styling (bright yellow for btn-warning, etc.) which
+   clashes with the dark EQ theme. */
+
+[class|="eq-window"] a.btn:not(.close) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+
+    background: linear-gradient(180deg, #4b4b63, #1f1f31);
+    border: 1px solid #000000;
+    border-radius: 4px;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+[class|="eq-window"] a.btn:hover:not(.disabled):not([disabled]) {
+    opacity: 1 !important;
+    box-shadow: inset 0 0 7px white;
+    color: #ffffff !important;
+    text-decoration: none;
+    background-color: rgba(204, 204, 204, 0.08);
+    border: 1px solid rgb(204, 204, 204);
+}
+
+/* Solid variant overrides for <a> buttons */
+[class|="eq-window"] a.btn-primary {
+    background: linear-gradient(180deg, #5a5a78, #2a2a3b);
+    color: #ffffff;
+    border-color: #1f1f29;
+}
+[class|="eq-window"] a.btn-secondary {
+    background: linear-gradient(180deg, #7a7a7a, #3a3a3a);
+    color: #ffffff;
+    border-color: #2d2d2d;
+}
+[class|="eq-window"] a.btn-success {
+    background: linear-gradient(180deg, #4a754a, #2c4a2c);
+    color: #ffffff;
+    border-color: #233b23;
+}
+[class|="eq-window"] a.btn-danger {
+    background: linear-gradient(180deg, #8b4646, #5a2a2a);
+    color: #ffffff;
+    border-color: #412020;
+}
+[class|="eq-window"] a.btn-warning {
+    background: linear-gradient(180deg, #f6c343, #785911);
+    color: #0c1a23;
+    border-color: #4d3d23;
+}
+[class|="eq-window"] a.btn-warning:hover:not(.disabled):not([disabled]) {
+    box-shadow: inset 0 0 7px rgba(246, 195, 67, 0.5);
+    border-color: #a68e50;
+    background: linear-gradient(180deg, #f6c343, #785911);
+    background-color: unset;
+    color: #0c1a23 !important;
+    text-decoration: none;
+}
+[class|="eq-window"] a.btn-info {
+    background: linear-gradient(180deg, #46788b, #2a4c5a);
+    color: #ffffff;
+    border-color: #203842;
+}
+
 /* Outline Button Variants */
 
 /* Outline Primary */
