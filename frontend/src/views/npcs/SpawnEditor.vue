@@ -329,9 +329,16 @@
               </div>
 
               <!-- No spawngroups message -->
-              <div v-if="spawnGroupCards.length === 0" class="text-center p-4" style="opacity: .5;">
-                <i class="fa fa-map-marker fa-2x d-block mb-2"></i>
-                This NPC has no spawn groups.
+              <div v-if="spawnGroupCards.length === 0" class="text-center p-4">
+                <i class="fa fa-map-marker fa-2x d-block mb-2" style="opacity: 0.3;"></i>
+                <div class="text-muted mb-3">This NPC has no spawn groups.</div>
+                <button
+                  v-if="selectedNpc"
+                  class="btn btn-sm btn-outline-warning"
+                  @click="openCreateForSelectedNpc"
+                >
+                  <i class="fa fa-plus mr-1"></i> Add New Spawn
+                </button>
               </div>
 
               <div
@@ -2279,6 +2286,12 @@ export default {
       this.createForm.npcId = n.id;
       this.createForm.npcSearch = (n.name || "").replace(/_/g, " ") + " (#" + n.id + ")";
       this.showCreateNpcDropdown = false;
+    },
+    openCreateForSelectedNpc() {
+      this.createForm = this.getDefaultCreateForm();
+      this.createForm.npcId = this.selectedNpc.id;
+      this.createForm.npcSearch = this.selectedNpc.cleanName + " (#" + this.selectedNpc.id + ")";
+      this.showCreatePanel = true;
     },
 
     // ========================
