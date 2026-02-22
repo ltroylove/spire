@@ -42,8 +42,17 @@
         </thead>
         <tbody>
           <tr v-for="entry in spawn2.spawnentries" :key="entry.npc_id + '-' + entry.spawngroup_id">
-            <td style="padding: 3px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" :title="entry.npc_type ? cleanName(entry.npc_type.name) : '#' + entry.npc_id">
-              <span v-if="entry.npc_type">{{ cleanName(entry.npc_type.name) }}</span>
+            <td style="padding: 3px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <npc-popover
+                v-if="entry.npc_type"
+                :npc="entry.npc_type"
+                :show-image="false"
+                :show-label="false"
+                :no-stats="true"
+                :limit-entries="25"
+              >
+                <span :title="cleanName(entry.npc_type.name)">{{ cleanName(entry.npc_type.name) }}</span>
+              </npc-popover>
               <span v-else class="text-muted">#{{ entry.npc_id }}</span>
             </td>
             <td style="padding: 3px 4px; text-align: right; opacity: 0.8;">{{ entry.chance }}%</td>
@@ -57,9 +66,11 @@
 <script>
 import { Npcs } from "../../app/npcs";
 import { ROUTE } from "../../routes";
+import NpcPopover from "../NpcPopover";
 
 export default {
   name: "SpawnGroupPanel",
+  components: { NpcPopover },
   props: {
     spawn2: {
       type: Object,
