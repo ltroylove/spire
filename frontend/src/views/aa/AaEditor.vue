@@ -337,7 +337,7 @@
                         <div class="row mt-2">
                           <div class="col-3">
                             Lower Hotkey SID
-                            <b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)"/>
+                            <b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyLowerText(rank.lower_hotkey_sid) || '(no hotkey)'"/>
                             <a
                               class="btn btn-warning btn-sm mt-1"
                               :href="DB_STRING_EDITOR_URL + '?type=2&selectedId=' + rank.lower_hotkey_sid"
@@ -348,7 +348,7 @@
                           </div>
                           <div class="col-3">
                             Upper Hotkey SID
-                            <b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)"/>
+                            <b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyUpperText(rank.upper_hotkey_sid) || '(no hotkey)'"/>
                             <a
                               class="btn btn-warning btn-sm mt-1"
                               :href="DB_STRING_EDITOR_URL + '?type=3&selectedId=' + rank.upper_hotkey_sid"
@@ -591,6 +591,8 @@ export default {
       allSpells: {},
       dbStrs: [],
       dbStrsDesc: [],
+      dbStrsHotkeyLower: [],
+      dbStrsHotkeyUpper: [],
       selected: null,
       selectedOriginal: null,
       chainRanks: [],
@@ -708,6 +710,8 @@ export default {
         const allDbStrs = dbStrResponse.data || []
         this.dbStrs = allDbStrs.filter(e => Number(e.type) === 1)
         this.dbStrsDesc = allDbStrs.filter(e => Number(e.type) === 4)
+        this.dbStrsHotkeyLower = allDbStrs.filter(e => Number(e.type) === 2)
+        this.dbStrsHotkeyUpper = allDbStrs.filter(e => Number(e.type) === 3)
         this.typeOptions = [{value: -1, text: "All"}].concat([...new Set(this.rows.map(r => Number(r.type || 0)))].sort((a, b) => a - b).map(v => ({value: v, text: this.aaTypeLabel(v)})))
         this.applyFilters()
       } catch (e) {
@@ -756,6 +760,18 @@ export default {
       const id = Number(descSid || 0)
       if (!id) return ''
       const entry = this.dbStrsDesc.find(e => Number(e.id) === id)
+      return entry ? entry.value : ''
+    },
+    rankHotkeyLowerText(sid) {
+      const id = Number(sid || 0)
+      if (!id) return ''
+      const entry = this.dbStrsHotkeyLower.find(e => Number(e.id) === id)
+      return entry ? entry.value : ''
+    },
+    rankHotkeyUpperText(sid) {
+      const id = Number(sid || 0)
+      if (!id) return ''
+      const entry = this.dbStrsHotkeyUpper.find(e => Number(e.id) === id)
       return entry ? entry.value : ''
     },
     expansionName(expansionId) {
