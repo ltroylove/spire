@@ -507,7 +507,7 @@
     <b-modal ref="spellSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
       <eq-window title="Spell Selector">
         <div class="p-2 spell-selector-wrap">
-          <spell-selector @input="onSpellSelected"/>
+          <spell-selector ref="spellSelector" @input="onSpellSelected"/>
         </div>
       </eq-window>
     </b-modal>
@@ -959,6 +959,16 @@ export default {
     openSpellSelector(rankIndex) {
       this.selectedSpellRankIndex = rankIndex
       this.$refs.spellSelectorModal.show()
+      const rank = this.chainRanks[rankIndex]
+      if (rank && rank.spell && rank.spell !== 0 && rank.spell !== -1) {
+        this.$nextTick(() => {
+          this.$refs.spellSelector.prefillAndSearch(rank.spell)
+        })
+      } else {
+        this.$nextTick(() => {
+          this.$refs.spellSelector.resetForm()
+        })
+      }
     },
     onSpellSelected(event) {
       if (this.selectedSpellRankIndex === null) return
