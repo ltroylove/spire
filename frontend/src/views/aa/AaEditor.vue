@@ -1400,7 +1400,10 @@ export default {
 
 /* Action bar */
 .aa-action-bar {
-  background: rgba(14, 23, 38, 0.5);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(14, 23, 38, 0.97);
   border: 1px solid rgba(83, 146, 255, 0.2);
   border-radius: 6px;
 }
