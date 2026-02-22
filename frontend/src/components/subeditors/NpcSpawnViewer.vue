@@ -8,13 +8,13 @@
         <small v-if="loaded" class="ml-1 text-muted">({{ spawnRows.length }})</small>
       </div>
       <div>
-        <router-link
-          :to="'/spawns/' + npcId"
+        <button
+          @click="openSpawnEditor"
           class="btn btn-xs btn-outline-warning"
           title="Open the full-featured Spawn Editor for this NPC"
         >
           <i class="fa fa-external-link mr-1"></i> Full Editor
-        </router-link>
+        </button>
       </div>
     </div>
 
@@ -99,6 +99,11 @@ export default {
     this.loadSpawns();
   },
   methods: {
+    openSpawnEditor() {
+      const route = this.$router.resolve({ path: '/spawns/' + this.npcId });
+      window.open(route.href, '_blank');
+    },
+
     formatTime(seconds) {
       if (!seconds || seconds <= 0) return "0s";
       const s = Math.abs(Number(seconds));

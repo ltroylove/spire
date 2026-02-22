@@ -289,17 +289,6 @@
                       </b-button>
                     </div>
                   </div>
-                  <!-- Loot Editor button (General tab only) -->
-                  <div v-if="tab.name === 'General'" class="mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                    <b-button
-                      size="sm"
-                      variant="outline-warning"
-                      @click="openLootEditor()"
-                      :disabled="!npc || !npc.loottable_id"
-                    >
-                      <i class="fa fa-external-link-alt mr-1"></i> Loot Editor
-                    </b-button>
-                  </div>
                 </div>
 
                 <div class="col-12" v-else>
@@ -504,6 +493,10 @@
           <npc-spawn-viewer :npc-id="npc.id"/>
         </eq-window>
 
+        <eq-window v-if="npc && !isAnySelectorActive()" class="mt-3">
+          <npc-loot-viewer :loottable-id="npc.loottable_id || 0"/>
+        </eq-window>
+
         <eq-window v-if="selectorActive['special_abilities']">
           <npc-special-abilities
             :abilities="npc.special_abilities"
@@ -623,6 +616,7 @@ import FacialAppearanceSelector from "../../components/selectors/FacialAppearanc
 import MerchantSubEditor        from "../../components/subeditors/MerchantSubEditor";
 import LootSubEditor            from "../../components/subeditors/LootSubEditor";
 import NpcSpawnViewer           from "../../components/subeditors/NpcSpawnViewer";
+import NpcLootViewer            from "../../components/subeditors/NpcLootViewer";
 import FactionSubEditor         from "../../components/subeditors/FactionSubEditor";
 import { Chrome }               from "vue-color";
 import SpellsSubEditor          from "../../components/subeditors/SpellsSubEditor";
@@ -636,6 +630,7 @@ export default {
   components: {
     LootSubEditor,
     NpcSpawnViewer,
+    NpcLootViewer,
     FactionSubEditor,
     SpellsSubEditor,
     AltCurrencySubEditor,
@@ -816,12 +811,6 @@ export default {
     /**
      * Template System
      */
-    openLootEditor() {
-      if (!this.npc || !this.npc.loottable_id) return;
-      const route = this.$router.resolve({ path: '/loot', query: { loottableId: this.npc.loottable_id } });
-      window.open(route.href, '_blank');
-    },
-
     loadCustomTemplates() {
       try {
         const raw = localStorage.getItem('spire-npc-templates');
