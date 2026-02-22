@@ -43,6 +43,12 @@
         <div class="mt-2 small text-muted">Loading loot data...</div>
       </div>
 
+      <!-- Load Error -->
+      <div v-else-if="loadError" class="text-center py-3">
+        <i class="fa fa-exclamation-triangle fa-2x d-block mb-2" style="color: #ef9a9a; opacity: 0.7;"></i>
+        <div class="text-muted small">Failed to load loot data.</div>
+      </div>
+
       <!-- Empty State -->
       <div v-else-if="loaded && entries.length === 0" class="text-center py-3">
         <i class="fa fa-gem fa-2x d-block mb-2" style="opacity: 0.2;"></i>
@@ -112,6 +118,7 @@ export default {
       collapsed: true,
       loading: false,
       loaded: false,
+      loadError: false,
       loottable: null,
       entries: [],
     };
@@ -134,6 +141,7 @@ export default {
       this.loottable = null;
       this.entries = [];
       this.loaded = false;
+      this.loadError = false;
     },
 
     openFullEditor() {
@@ -149,6 +157,7 @@ export default {
 
     async loadLoot() {
       this.loading = true;
+      this.loadError = false;
       try {
         const ltApi = new LoottableApi(...SpireApi.cfg());
         const ltResult = await ltApi.getLoottable({ id: this.loottableId });
@@ -160,12 +169,11 @@ export default {
         builder.includes(["Lootdrop"]);
         const entriesResult = await lteApi.listLoottableEntries(builder.get());
         this.entries = entriesResult.data || [];
+        this.loaded = true;
       } catch (e) {
         console.error("Failed to load NPC loot viewer data", e);
-        this.loottable = null;
-        this.entries = [];
+        this.loadError = true;
       }
-      this.loaded = true;
       this.loading = false;
     },
   },
