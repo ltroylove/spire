@@ -8,7 +8,7 @@
           class="form-control form-control-sm"
           placeholder="Search abilities..."
           v-model="searchFilter"
-          style="padding-left: 26px;"
+          style="padding-left: 28px !important;"
         >
         <i class="fa fa-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0.4;font-size:12px;"></i>
       </div>
