@@ -1136,20 +1136,26 @@ export default {
   async created() {
     this.zones = await Zones.getZones() || [];
 
-    // If navigated with NPC ID in route, pre-search
+    // If navigated with NPC ID in route, pre-search and auto-select
     if (this.$route.params.npcId) {
       this.npcSearch = this.$route.params.npcId;
-      this.doNpcSearch();
+      await this.doNpcSearch();
+      if (this.npcList.length > 0) {
+        this.selectNpc(this.npcList[0]);
+      }
     } else if (this.$route.query.spawnGroupId) {
       this.loadDirectSpawnGroup(Number(this.$route.query.spawnGroupId));
     }
   },
 
   watch: {
-    '$route'() {
+    async '$route'() {
       if (this.$route.params.npcId) {
         this.npcSearch = this.$route.params.npcId;
-        this.doNpcSearch();
+        await this.doNpcSearch();
+        if (this.npcList.length > 0) {
+          this.selectNpc(this.npcList[0]);
+        }
       } else if (this.$route.query.spawnGroupId) {
         this.loadDirectSpawnGroup(Number(this.$route.query.spawnGroupId));
       }
