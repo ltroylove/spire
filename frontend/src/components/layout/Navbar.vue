@@ -134,18 +134,7 @@
                 <b-badge class="ml-3" variant="primary">NEW!</b-badge>
               </router-link>
             </li>
-            <li class="nav-item">
-              <router-link class="nav-link " to="/spells">
-                <i class="ra ra-book mr-1"></i> Spells
-                <b-badge class="ml-3" variant="primary">NEW!</b-badge>
-              </router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link " :to="ROUTE.AA_EDITOR">
-                <i class="ra ra-player-upgrade mr-1"></i> AA Editor
-                <b-badge class="ml-3" variant="primary">NEW!</b-badge>
-              </router-link>
-            </li>
+            <nav-section-component :config="spellsAbilitiesNav"/>
             <li class="nav-item">
               <router-link class="nav-link " to="/tasks">
                 <i class="ra ra-zebra-shield mr-1"></i> Tasks
@@ -466,6 +455,27 @@ export default {
         { label: "Server Update", labelIcon: "fa fa-upload mr-1", to: ROUTE.ADMIN_SERVER_UPDATE },
 
       ],
+      spellsAbilitiesNav: {
+        label: "Spells/Abilities",
+        labelIcon: "ra ra-book mr-1",
+        routePrefixMatches: ["spells", "aa"],
+        navs: [
+          {
+            title: "Spell Editor",
+            to: "/spells",
+            icon: "ra ra-book mr-1",
+            isNew: true,
+            routes: ['spells']
+          },
+          {
+            title: "AA Editor",
+            to: ROUTE.AA_EDITOR,
+            icon: "ra ra-player-upgrade mr-1",
+            isNew: true,
+            routes: ['aa']
+          },
+        ]
+      },
       viewerNav: {
         label: "Viewers",
         labelIcon: "ra ra-bleeding-eye mr-1",
