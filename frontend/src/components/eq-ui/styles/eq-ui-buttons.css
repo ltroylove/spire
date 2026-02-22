@@ -157,96 +157,165 @@
     border-color: #1a1a22;
 }
 
+/* <a> elements used as Bootstrap buttons (".btn") inside EQ windows.
+   The existing rules above only target <button> elements; <a> link-buttons
+   (e.g. the DB-String Editor links in rank cards) would otherwise fall back
+   to Bootstrap's default styling (bright yellow for btn-warning, etc.) which
+   clashes with the dark EQ theme. */
+
+[class|="eq-window"] a.btn:not(.close) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+
+    background: linear-gradient(180deg, #4b4b63, #1f1f31);
+    border: 1px solid #000000;
+    border-radius: 4px;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+[class|="eq-window"] a.btn:hover:not(.disabled):not([disabled]) {
+    opacity: 1 !important;
+    box-shadow: inset 0 0 7px white;
+    color: #ffffff !important;
+    text-decoration: none;
+    background-color: rgba(204, 204, 204, 0.08);
+    border: 1px solid rgb(204, 204, 204);
+}
+
+/* Solid variant overrides for <a> buttons */
+[class|="eq-window"] a.btn-primary {
+    background: linear-gradient(180deg, #5a5a78, #2a2a3b);
+    color: #ffffff;
+    border-color: #1f1f29;
+}
+[class|="eq-window"] a.btn-secondary {
+    background: linear-gradient(180deg, #7a7a7a, #3a3a3a);
+    color: #ffffff;
+    border-color: #2d2d2d;
+}
+[class|="eq-window"] a.btn-success {
+    background: linear-gradient(180deg, #4a754a, #2c4a2c);
+    color: #ffffff;
+    border-color: #233b23;
+}
+[class|="eq-window"] a.btn-danger {
+    background: linear-gradient(180deg, #8b4646, #5a2a2a);
+    color: #ffffff;
+    border-color: #412020;
+}
+[class|="eq-window"] a.btn-warning {
+    background: linear-gradient(180deg, #f6c343, #785911);
+    color: #0c1a23;
+    border-color: #4d3d23;
+}
+[class|="eq-window"] a.btn-warning:hover:not(.disabled):not([disabled]) {
+    box-shadow: inset 0 0 7px rgba(246, 195, 67, 0.5);
+    border-color: #a68e50;
+    background: linear-gradient(180deg, #f6c343, #785911);
+    background-color: unset;
+    color: #0c1a23 !important;
+    text-decoration: none;
+}
+[class|="eq-window"] a.btn-info {
+    background: linear-gradient(180deg, #46788b, #2a4c5a);
+    color: #ffffff;
+    border-color: #203842;
+}
+
 /* Outline Button Variants */
 
 /* Outline Primary */
 [class|="eq-window"] button.btn-outline-primary {
     background: none;
-    color: #5a5a78;
-    border: 1px solid #5a5a78;
+    color: #8888c0;
+    border: 1px solid #8888c0;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-primary:hover:not(:disabled) {
-    background: rgba(90, 90, 120, 0.2); /* Subtle background on hover */
+    background: rgba(136, 136, 192, 0.2); /* Subtle background on hover */
     color: #ffffff;
-    border-color: #6b6b90;
-    box-shadow: inset 0 0 8px rgba(90, 90, 120, 0.5); /* Internal glow */
+    border-color: #a0a0d0;
+    box-shadow: inset 0 0 8px rgba(136, 136, 192, 0.5); /* Internal glow */
 }
 
 /* Outline Secondary */
 [class|="eq-window"] button.btn-outline-secondary {
     background: none;
-    color: #7a7a7a;
-    border: 1px solid #7a7a7a;
+    color: #9aacbe;
+    border: 1px solid #9aacbe;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-secondary:hover:not(:disabled) {
-    background: rgba(122, 122, 122, 0.2);
+    background: rgba(154, 172, 190, 0.2);
     color: #ffffff;
-    border-color: #8c8c8c;
-    box-shadow: inset 0 0 8px rgba(122, 122, 122, 0.5);
+    border-color: #b0bece;
+    box-shadow: inset 0 0 8px rgba(154, 172, 190, 0.5);
 }
 
 /* Outline Success */
 [class|="eq-window"] button.btn-outline-success {
     background: none;
-    color: #4a754a;
-    border: 1px solid #4a754a;
+    color: #5aaa5a;
+    border: 1px solid #5aaa5a;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-success:hover:not(:disabled) {
-    background: rgba(74, 117, 74, 0.2);
+    background: rgba(90, 170, 90, 0.2);
     color: #ffffff;
-    border-color: #5b8c5b;
-    box-shadow: inset 0 0 8px rgba(74, 117, 74, 0.5);
+    border-color: #70c070;
+    box-shadow: inset 0 0 8px rgba(90, 170, 90, 0.5);
 }
 
 /* Outline Danger */
 [class|="eq-window"] button.btn-outline-danger {
     background: none;
-    color: #8b4646;
-    border: 1px solid #8b4646;
+    color: #cc5555;
+    border: 1px solid #cc5555;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-danger:hover:not(:disabled) {
-    background: rgba(139, 70, 70, 0.2);
+    background: rgba(204, 85, 85, 0.2);
     color: #ffffff;
-    border-color: #a25454;
-    box-shadow: inset 0 0 8px rgba(139, 70, 70, 0.5);
+    border-color: #e06868;
+    box-shadow: inset 0 0 8px rgba(204, 85, 85, 0.5);
 }
 
 /* Outline Warning */
 [class|="eq-window"] button.btn-outline-warning {
     background: none;
-    color: #8a7946;
-    border: 1px solid #8a7946;
+    color: #d4a830;
+    border: 1px solid #d4a830;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-warning:hover:not(:disabled) {
-    background: rgba(138, 121, 70, 0.2);
+    background: rgba(212, 168, 48, 0.2);
     color: #ffffff;
-    border-color: #a68e50;
-    box-shadow: inset 0 0 8px rgba(138, 121, 70, 0.5);
+    border-color: #e8c048;
+    box-shadow: inset 0 0 8px rgba(212, 168, 48, 0.5);
 }
 
 /* Outline Info */
 [class|="eq-window"] button.btn-outline-info {
     background: none;
-    color: #46788b;
-    border: 1px solid #46788b;
+    color: #4aa8c8;
+    border: 1px solid #4aa8c8;
     box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 [class|="eq-window"] button.btn-outline-info:hover:not(:disabled) {
-    background: rgba(70, 120, 139, 0.2);
+    background: rgba(74, 168, 200, 0.2);
     color: #ffffff;
-    border-color: #5698a2;
-    box-shadow: inset 0 0 8px rgba(70, 120, 139, 0.5);
+    border-color: #60c0e0;
+    box-shadow: inset 0 0 8px rgba(74, 168, 200, 0.5);
 }
 
 /* Outline Light */

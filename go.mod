@@ -14,6 +14,8 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/gammazero/workerpool v1.1.3
 	github.com/gertd/go-pluralize v0.2.1
+	github.com/getsentry/sentry-go v0.42.0
+	github.com/getsentry/sentry-go/echo v0.42.0
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gobuffalo/packr v1.30.1
@@ -75,8 +77,6 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/friendsofgo/errors v0.9.2 // indirect
 	github.com/gammazero/deque v0.2.0 // indirect
-	github.com/getsentry/sentry-go v0.42.0 // indirect
-	github.com/getsentry/sentry-go/echo v0.42.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect

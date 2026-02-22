@@ -133,6 +133,12 @@ const router = new Router({
           meta: {title: "Spells Browser"},
         },
         {
+          path: ROUTE.AA_EDITOR,
+          alias: ['/aa/editor', '/aa-editor'],
+          component: () => import('./views/aa/AaEditor.vue'),
+          meta: {title: "AA Editor"},
+        },
+        {
           path: util.format(ROUTE.SPELL_EDIT, ":id"),
           component: () => import('./views/spells/SpellEditor.vue'),
           meta: {title: "Spell Edit"},
@@ -231,6 +237,16 @@ const router = new Router({
           path: util.format(ROUTE.NPC_SPELL_EDIT, ":id"),
           component: () => import('./views/npcs/NpcSpellListEditor.vue'),
           meta: {title: "NPC Spells List Editor"},
+        },
+        {
+          path: ROUTE.SPAWN_EDITOR_NPC,
+          component: () => import('./views/npcs/SpawnEditor.vue'),
+          meta: {title: "Spawn Editor"},
+        },
+        {
+          path: ROUTE.SPAWN_EDITOR,
+          component: () => import('./views/npcs/SpawnEditor.vue'),
+          meta: {title: "Spawn Editor"},
         },
         {
           path: '/zone/:zone',

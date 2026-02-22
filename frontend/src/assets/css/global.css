@@ -265,9 +265,8 @@
 }
 
 .highlight-selected-inner {
-    /*box-shadow: inset 10px 0 0 0px white;*/
-    border: .5px solid white;
-    box-shadow: inset 0 0 7px white;
+    border: 2px solid #4CAF50;
+    box-shadow: inset 0 0 6px rgba(76, 175, 80, 0.6);
 }
 
 .dropdown-menu {
@@ -279,6 +278,20 @@
     margin-top: 6px;
     margin-bottom: 6px;
     height: 30px;
+}
+
+/* Inputs inside an input-group must not carry the row margin — the group's
+   flexbox handles vertical alignment, and margins expand the container beyond
+   30px, causing the adjacent button to appear shorter than the input. */
+.minified-inputs .input-group .form-control {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Buttons inside input-groups match the 30px input height */
+.minified-inputs .input-group .btn {
+    height: 30px;
+    box-sizing: border-box;
 }
 
 .tooltip-inner {

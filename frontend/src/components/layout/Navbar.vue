@@ -134,12 +134,7 @@
                 <b-badge class="ml-3" variant="primary">NEW!</b-badge>
               </router-link>
             </li>
-            <li class="nav-item">
-              <router-link class="nav-link " to="/spells">
-                <i class="ra ra-book mr-1"></i> Spells
-                <b-badge class="ml-3" variant="primary">NEW!</b-badge>
-              </router-link>
-            </li>
+            <nav-section-component :config="spellsAbilitiesNav"/>
             <li class="nav-item">
               <router-link class="nav-link " to="/tasks">
                 <i class="ra ra-zebra-shield mr-1"></i> Tasks
@@ -340,7 +335,7 @@ export default {
       npcNav: {
         label: "NPCs",
         labelIcon: "ra ra-dragon mr-1",
-        routePrefixMatches: ["npc", "merchant", "loot"],
+        routePrefixMatches: ["npc", "merchant", "loot", "spawn"],
         navs: [
           {
             title: "NPC Editor",
@@ -349,6 +344,14 @@ export default {
             isNew: true,
             isAlpha: true,
             routes: ['npc']
+          },
+          {
+            title: "Spawns",
+            to: ROUTE.SPAWN_EDITOR,
+            icon: "fa fa-map-marker mr-1",
+            isNew: true,
+            isAlpha: true,
+            routes: ['spawns']
           },
           {
             title: "Emotes",
@@ -452,6 +455,27 @@ export default {
         { label: "Server Update", labelIcon: "fa fa-upload mr-1", to: ROUTE.ADMIN_SERVER_UPDATE },
 
       ],
+      spellsAbilitiesNav: {
+        label: "Spells/Abilities",
+        labelIcon: "ra ra-book mr-1",
+        routePrefixMatches: ["spells", "aa"],
+        navs: [
+          {
+            title: "Spell Editor",
+            to: "/spells",
+            icon: "ra ra-book mr-1",
+            isNew: true,
+            routes: ['spells']
+          },
+          {
+            title: "AA Editor",
+            to: ROUTE.AA_EDITOR,
+            icon: "ra ra-book mr-1",
+            isNew: true,
+            routes: ['aa']
+          },
+        ]
+      },
       viewerNav: {
         label: "Viewers",
         labelIcon: "ra ra-bleeding-eye mr-1",
