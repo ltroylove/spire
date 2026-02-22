@@ -335,8 +335,28 @@
                         </div>
 
                         <div class="row mt-2">
-                          <div class="col-3">Lower Hotkey SID<b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)"/></div>
-                          <div class="col-3">Upper Hotkey SID<b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)"/></div>
+                          <div class="col-3">
+                            Lower Hotkey SID
+                            <b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)"/>
+                            <a
+                              class="btn btn-warning btn-sm mt-1"
+                              :href="DB_STRING_EDITOR_URL + '?type=2&selectedId=' + rank.lower_hotkey_sid"
+                              target="_blank"
+                            >
+                              <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                            </a>
+                          </div>
+                          <div class="col-3">
+                            Upper Hotkey SID
+                            <b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)"/>
+                            <a
+                              class="btn btn-warning btn-sm mt-1"
+                              :href="DB_STRING_EDITOR_URL + '?type=3&selectedId=' + rank.upper_hotkey_sid"
+                              target="_blank"
+                            >
+                              <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                            </a>
+                          </div>
                         </div>
 
                         <!-- Effects sub-section -->
