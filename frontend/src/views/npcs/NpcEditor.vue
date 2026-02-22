@@ -493,6 +493,10 @@
           <npc-spawn-viewer :npc-id="npc.id"/>
         </eq-window>
 
+        <eq-window v-if="npc && !isAnySelectorActive()" class="mt-3">
+          <npc-loot-viewer :loottable-id="npc.loottable_id || 0"/>
+        </eq-window>
+
         <eq-window v-if="selectorActive['special_abilities']">
           <npc-special-abilities
             :abilities="npc.special_abilities"
@@ -612,6 +616,7 @@ import FacialAppearanceSelector from "../../components/selectors/FacialAppearanc
 import MerchantSubEditor        from "../../components/subeditors/MerchantSubEditor";
 import LootSubEditor            from "../../components/subeditors/LootSubEditor";
 import NpcSpawnViewer           from "../../components/subeditors/NpcSpawnViewer";
+import NpcLootViewer            from "../../components/subeditors/NpcLootViewer";
 import FactionSubEditor         from "../../components/subeditors/FactionSubEditor";
 import { Chrome }               from "vue-color";
 import SpellsSubEditor          from "../../components/subeditors/SpellsSubEditor";
@@ -625,6 +630,7 @@ export default {
   components: {
     LootSubEditor,
     NpcSpawnViewer,
+    NpcLootViewer,
     FactionSubEditor,
     SpellsSubEditor,
     AltCurrencySubEditor,

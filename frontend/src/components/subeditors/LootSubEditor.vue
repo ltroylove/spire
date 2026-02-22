@@ -93,6 +93,12 @@
         </div>
       </div>
 
+      <!-- Load Error -->
+      <div v-else-if="loadError" class="text-center text-muted py-5">
+        <i class="fa fa-exclamation-triangle fa-3x mb-3 d-block" style="color: #ef9a9a; opacity: 0.7;"></i>
+        <div>Failed to load loot data.</div>
+      </div>
+
       <!-- No loot assigned -->
       <div v-else-if="!loading && !currentLoottable" class="text-center text-muted py-5">
         <i class="fa fa-box-open fa-3x mb-3 d-block" style="opacity: 0.3;"></i>
@@ -168,6 +174,7 @@ export default {
       loottableEntries: [],
       dropItems: {},
       loading: false,
+      loadError: false,
       searchQuery: "",
       searchResults: [],
       searchTimeout: null
@@ -184,6 +191,7 @@ export default {
           this.currentLoottable = null;
           this.loottableEntries = [];
           this.dropItems = {};
+          this.loadError = false;
         }
       }
     }
@@ -196,6 +204,7 @@ export default {
     },
     async loadLoottable(id) {
       this.loading = true;
+      this.loadError = false;
       try {
         const ltApi = new LoottableApi(...SpireApi.cfg());
         const ltResult = await ltApi.getLoottable({ id });
@@ -222,6 +231,7 @@ export default {
         }
       } catch (e) {
         console.error("Failed to load loottable", e);
+        this.loadError = true;
         this.currentLoottable = null;
         this.loottableEntries = [];
       }
