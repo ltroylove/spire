@@ -564,24 +564,35 @@
                         'pending-delete-row': entry._pendingDelete
                       }"
                     >
-                      <td style="vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <npc-popover
-                          v-if="entry.npcData"
-                          :npc="entry.npcData"
-                          :show-image="false"
-                          :show-label="false"
-                        >
-                          <router-link :to="'/npc/' + entry.npc_id" target="_blank" class="npc-link">
-                            {{ entry.npcName || ('NPC #' + entry.npc_id) }}
-                          </router-link>
-                          <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
-                        </npc-popover>
-                        <span v-else>
-                          <router-link :to="'/npc/' + entry.npc_id" target="_blank" class="npc-link">
-                            {{ entry.npcName || ('NPC #' + entry.npc_id) }}
-                          </router-link>
-                          <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
-                        </span>
+                      <td style="vertical-align: middle;">
+                        <div style="display: flex; align-items: center; gap: 4px; overflow: hidden;">
+                          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;">
+                            <npc-popover
+                              v-if="entry.npcData"
+                              :npc="entry.npcData"
+                              :show-image="false"
+                              :show-label="false"
+                            >
+                              <router-link :to="'/npc/' + entry.npc_id" target="_blank" class="npc-link">
+                                {{ entry.npcName || ('NPC #' + entry.npc_id) }}
+                              </router-link>
+                              <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
+                            </npc-popover>
+                            <span v-else>
+                              <router-link :to="'/npc/' + entry.npc_id" target="_blank" class="npc-link">
+                                {{ entry.npcName || ('NPC #' + entry.npc_id) }}
+                              </router-link>
+                              <small class="text-muted ml-1">#{{ entry.npc_id }}</small>
+                            </span>
+                          </div>
+                          <a
+                            :href="'/npc/' + entry.npc_id"
+                            target="_blank"
+                            class="btn btn-xs btn-outline-secondary"
+                            style="flex-shrink: 0; padding: 1px 5px; font-size: 10px; line-height: 1.4;"
+                            title="Edit NPC"
+                          ><i class="fa fa-pencil"></i></a>
+                        </div>
                       </td>
                       <td style="vertical-align: middle;">
                         <div class="d-flex align-items-center justify-content-center">
