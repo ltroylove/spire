@@ -316,50 +316,66 @@
                           <div class="col-2">Next ID<b-form-input v-model.number="rank.next_id" @input="markRankDirty(rank)"/></div>
                           <div class="col-2">
                             Title SID
-                            <b-form-input v-model.number="rank.title_sid" @input="markRankDirty(rank)" :title="rankTitleText(rank.title_sid) || '(no title)'"/>
-                            <a
-                              class="btn btn-warning btn-sm mt-1"
-                              :href="DB_STRING_EDITOR_URL + '?type=1&selectedId=' + rank.title_sid"
-                              target="_blank"
-                            >
-                              <i class="ra ra-scroll-unfurled mr-1"></i> Editor
-                            </a>
+                            <div class="input-group input-group-sm">
+                              <b-form-input v-model.number="rank.title_sid" @input="markRankDirty(rank)" :title="rankTitleText(rank.title_sid) || '(no title)'"/>
+                              <div class="input-group-append">
+                                <a
+                                  class="btn btn-warning btn-sm"
+                                  :href="DB_STRING_EDITOR_URL + '?type=1&selectedId=' + rank.title_sid"
+                                  target="_blank"
+                                >
+                                  <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                                </a>
+                              </div>
+                            </div>
                           </div>
                           <div class="col-3">
                             Desc SID
-                            <b-form-input v-model.number="rank.desc_sid" @input="markRankDirty(rank)" :title="rankDescText(rank.desc_sid) || '(no description)'"/>
-                            <a
-                              class="btn btn-warning btn-sm mt-1"
-                              :href="DB_STRING_EDITOR_URL + '?type=4&selectedId=' + rank.desc_sid"
-                              target="_blank"
-                            >
-                              <i class="ra ra-scroll-unfurled mr-1"></i> Editor
-                            </a>
+                            <div class="input-group input-group-sm">
+                              <b-form-input v-model.number="rank.desc_sid" @input="markRankDirty(rank)" :title="rankDescText(rank.desc_sid) || '(no description)'"/>
+                              <div class="input-group-append">
+                                <a
+                                  class="btn btn-warning btn-sm"
+                                  :href="DB_STRING_EDITOR_URL + '?type=4&selectedId=' + rank.desc_sid"
+                                  target="_blank"
+                                >
+                                  <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                                </a>
+                              </div>
+                            </div>
                           </div>
                         </div>
 
                         <div class="row mt-2">
                           <div class="col-3">
                             Lower Hotkey SID
-                            <b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyLowerText(rank.lower_hotkey_sid) || '(no hotkey)'"/>
-                            <a
-                              class="btn btn-warning btn-sm mt-1"
-                              :href="DB_STRING_EDITOR_URL + '?type=2&selectedId=' + rank.lower_hotkey_sid"
-                              target="_blank"
-                            >
-                              <i class="ra ra-scroll-unfurled mr-1"></i> Editor
-                            </a>
+                            <div class="input-group input-group-sm">
+                              <b-form-input v-model.number="rank.lower_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyLowerText(rank.lower_hotkey_sid) || '(no hotkey)'"/>
+                              <div class="input-group-append">
+                                <a
+                                  class="btn btn-warning btn-sm"
+                                  :href="DB_STRING_EDITOR_URL + '?type=2&selectedId=' + rank.lower_hotkey_sid"
+                                  target="_blank"
+                                >
+                                  <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                                </a>
+                              </div>
+                            </div>
                           </div>
                           <div class="col-3">
                             Upper Hotkey SID
-                            <b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyUpperText(rank.upper_hotkey_sid) || '(no hotkey)'"/>
-                            <a
-                              class="btn btn-warning btn-sm mt-1"
-                              :href="DB_STRING_EDITOR_URL + '?type=3&selectedId=' + rank.upper_hotkey_sid"
-                              target="_blank"
-                            >
-                              <i class="ra ra-scroll-unfurled mr-1"></i> Editor
-                            </a>
+                            <div class="input-group input-group-sm">
+                              <b-form-input v-model.number="rank.upper_hotkey_sid" @input="markRankDirty(rank)" :title="rankHotkeyUpperText(rank.upper_hotkey_sid) || '(no hotkey)'"/>
+                              <div class="input-group-append">
+                                <a
+                                  class="btn btn-warning btn-sm"
+                                  :href="DB_STRING_EDITOR_URL + '?type=3&selectedId=' + rank.upper_hotkey_sid"
+                                  target="_blank"
+                                >
+                                  <i class="ra ra-scroll-unfurled mr-1"></i> Editor
+                                </a>
+                              </div>
+                            </div>
                           </div>
                         </div>
 
