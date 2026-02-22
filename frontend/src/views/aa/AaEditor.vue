@@ -313,24 +313,24 @@
                           <div class="col-2">
                             Title SID
                             <b-form-input v-model.number="rank.title_sid" @input="markRankDirty(rank)" :title="rankTitleText(rank.title_sid) || '(no title)'"/>
-                            <router-link
+                            <a
                               class="btn btn-warning btn-sm mt-1"
-                              tag="button"
-                              :to="DB_STRING_EDITOR_URL + '?type=1&selectedId=' + rank.title_sid"
+                              :href="DB_STRING_EDITOR_URL + '?type=1&selectedId=' + rank.title_sid"
+                              target="_blank"
                             >
                               <i class="ra ra-scroll-unfurled mr-1"></i> Editor
-                            </router-link>
+                            </a>
                           </div>
                           <div class="col-3">
                             Desc SID
                             <b-form-input v-model.number="rank.desc_sid" @input="markRankDirty(rank)" :title="rankDescText(rank.desc_sid) || '(no description)'"/>
-                            <router-link
+                            <a
                               class="btn btn-warning btn-sm mt-1"
-                              tag="button"
-                              :to="DB_STRING_EDITOR_URL + '?type=4&selectedId=' + rank.desc_sid"
+                              :href="DB_STRING_EDITOR_URL + '?type=4&selectedId=' + rank.desc_sid"
+                              target="_blank"
                             >
                               <i class="ra ra-scroll-unfurled mr-1"></i> Editor
-                            </router-link>
+                            </a>
                           </div>
                         </div>
 
