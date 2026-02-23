@@ -116,7 +116,7 @@ export default {
     for (const spell of this.spells) {
       Spells.setSpell(spell["id"], spell)
 
-      spellMinis[spell["id"]] = await Spells.renderSpellMini("0", spell["id"], 30)
+      spellMinis[spell["id"]] = await Spells.renderSpellMini("0", spell["id"], 30, this.spellEditorHref(spell["id"]))
     }
     this.spellMinis = spellMinis
 
@@ -178,6 +178,9 @@ export default {
     },
     getBuffDuration: function (spell) {
       return Spells.getBuffDuration(spell)
+    },
+    spellEditorHref(spellId) {
+      return this.$router.resolve({ path: util.format(ROUTE.SPELL_EDIT, spellId) }).href
     },
     editSpell(spellId) {
       this.$router.push(

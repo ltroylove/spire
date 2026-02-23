@@ -234,6 +234,10 @@ export default {
     this.loaded = true;
   },
   methods: {
+    prefillAndSearch(spellId) {
+      this.spellName = String(spellId);
+      this.listSpells();
+    },
     bubbleToParent(event) {
       this.$emit('input', event);
     },
