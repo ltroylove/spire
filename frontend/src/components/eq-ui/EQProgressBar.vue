@@ -35,5 +35,18 @@
 </script>
 
 <style scoped>
+.eq-progress-bar {
+  position: relative;
+  width: 100%;
+  height: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.3);
+}
 
+.eq-progress-bar > div {
+  height: 100%;
+  transition: width 0.05s linear;
+}
 </style>
