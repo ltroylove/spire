@@ -287,12 +287,13 @@
                           <div class="col-2">
                             Recast Time
                             <b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/>
-                            <small class="text-muted">{{ formatTime(rank.recast_time / 1000) }}</small>
                             <loader-cast-bar-timer
                               v-if="rank.recast_time > 0"
                               color="#FF00FF"
                               :time-ms="rank.recast_time"
+                              style="margin-top: 0; display: block;"
                             />
+                            <small class="text-muted">{{ formatTime(rank.recast_time / 1000) }}</small>
                           </div>
                           <div class="col-3">
                             Spell
