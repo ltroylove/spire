@@ -252,7 +252,8 @@
                         v-for="npc in (selectedTable.npc_types || []).slice(0, 50)"
                         :key="'npc-' + npc.id"
                         class="npc-row"
-                        @click="goToNpc(npc.id)"
+                        :class="{ 'pending-delete': npc._pendingRemove }"
+                        @click="!npc._pendingRemove && goToNpc(npc.id)"
                       >
                         <td style="opacity:.5;">{{ npc.id }}</td>
                         <td><npc-popover :npc="npc" /></td>
@@ -260,12 +261,22 @@
                         <td class="text-center" style="opacity:.6;">{{ npc.race || '—' }}</td>
                         <td class="text-center" @click.stop>
                           <b-button
+                            v-if="!npc._pendingRemove"
                             size="sm"
                             variant="outline-warning"
                             @click="removeLoottableFromNpc(npc)"
                             title="Remove this loot table from the NPC (does not delete the loot table)"
                           >
                             <i class="fa fa-times mr-1"></i> Remove
+                          </b-button>
+                          <b-button
+                            v-else
+                            size="sm"
+                            variant="outline-success"
+                            @click="undoRemoveNpc(npc)"
+                            title="Undo removal"
+                          >
+                            <i class="fa fa-undo mr-1"></i> Undo
                           </b-button>
                         </td>
                       </tr>
@@ -802,6 +813,7 @@ export default {
         addedLootdrops: [],     // newly added lootdrop entries (full objects, not yet saved)
         removedLootdrops: [],   // indices of lootdrops queued for removal from loottable (loottable_entry deleted, lootdrop preserved)
         deletedLootdrops: [],   // indices of lootdrops queued for permanent deletion (loottable_entry + lootdrop deleted)
+        removedNpcs: [],        // NPC ids queued for loottable unlink (sets npc.loottable_id = 0)
         addedItems: {},         // { lootdropIndex: [{ item, lde }] } items added to existing lootdrops
         deletedItems: {},       // { lootdropIndex: [ldeIndex] } items marked for deletion
         editedFields: {},       // { 'le-{leIdx}-{field}': { old, new }, 'lde-{leIdx}-{ldeIdx}-{field}': { old, new } }
@@ -903,6 +915,7 @@ export default {
         this.pendingChanges.addedLootdrops.length > 0 ||
         this.pendingChanges.removedLootdrops.length > 0 ||
         this.pendingChanges.deletedLootdrops.length > 0 ||
+        this.pendingChanges.removedNpcs.length > 0 ||
         Object.keys(this.pendingChanges.addedItems).length > 0 ||
         Object.keys(this.pendingChanges.deletedItems).length > 0 ||
         Object.keys(this.pendingChanges.editedFields).length > 0
@@ -915,6 +928,7 @@ export default {
         addedLootdrops: [],
         removedLootdrops: [],
         deletedLootdrops: [],
+        removedNpcs: [],
         addedItems: {},
         deletedItems: {},
         editedFields: {},
@@ -953,42 +967,27 @@ export default {
       this.showNotification('Select an NPC below to remove this loot table from')
     },
 
-    async removeLoottableFromContextNpc() {
+    removeLoottableFromContextNpc() {
       if (!this.contextNpcId) return;
       const npc = (this.selectedTable.npc_types || []).find(n => n.id === this.contextNpcId)
-      const name = npc ? (npc.name || 'NPC #' + this.contextNpcId) : 'NPC #' + this.contextNpcId
-      if (!confirm('Remove this loot table from "' + name + '"? The loot table itself will not be deleted.')) return;
-      try {
-        const id = this.contextNpcId;
-        await this._unlinkLoottableFromNpc(id);
-        // Remove NPC from local linked list if present
-        if (this.selectedTable.npc_types) {
-          const idx = this.selectedTable.npc_types.findIndex(n => n.id === id)
-          if (idx !== -1) this.selectedTable.npc_types.splice(idx, 1)
-        }
-        this.contextNpcId = null;
-        this.showNotification('Removed loot table from "' + name + '"');
-      } catch (e) {
-        console.error('Failed to remove loot table from NPC', e);
-        this.showNotification('Failed to remove loot table from NPC', 'error');
-      }
+      if (npc) this.removeLoottableFromNpc(npc)
     },
 
-    async removeLoottableFromNpc(npc) {
+    removeLoottableFromNpc(npc) {
       const name = npc.name || 'NPC #' + npc.id;
-      if (!confirm('Remove this loot table from "' + name + '"? The loot table itself will not be deleted.')) return;
-      try {
-        await this._unlinkLoottableFromNpc(npc.id);
-        // Remove the NPC from the local linked list
-        const idx = (this.selectedTable.npc_types || []).findIndex(n => n.id === npc.id);
-        if (idx !== -1) {
-          this.selectedTable.npc_types.splice(idx, 1);
-        }
-        this.showNotification('Removed loot table from "' + name + '"');
-      } catch (e) {
-        console.error('Failed to remove loot table from NPC', e);
-        this.showNotification('Failed to remove loot table from NPC', 'error');
-      }
+      this.$set(npc, '_pendingRemove', true)
+      this.pendingChanges.removedNpcs.push(npc.id)
+      this.npcsExpanded = true
+      this.showNotification('Queued removal from "' + name + '" — save to finalize')
+      this.updateHasChanges()
+    },
+
+    undoRemoveNpc(npc) {
+      const name = npc.name || 'NPC #' + npc.id;
+      this.$delete(npc, '_pendingRemove')
+      this.pendingChanges.removedNpcs = this.pendingChanges.removedNpcs.filter(id => id !== npc.id)
+      this.showNotification('Cancelled removal from "' + name + '"')
+      this.updateHasChanges()
     },
 
     async _unlinkLoottableFromNpc(npcId) {
@@ -1403,6 +1402,15 @@ export default {
             } catch (e) {
               console.error('Error deleting lootdrop:', e)
             }
+          }
+        }
+
+        // 6. Unlink loottable from queued NPCs
+        for (const npcId of this.pendingChanges.removedNpcs) {
+          try {
+            await this._unlinkLoottableFromNpc(npcId)
+          } catch (e) {
+            console.error('Error removing loottable from NPC', e)
           }
         }
 
