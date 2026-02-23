@@ -166,7 +166,8 @@ export default {
   name: "LootSubEditor",
   components: { EqWindow, ItemPopover },
   props: {
-    loottableId: { type: [Number, String], default: 0 }
+    loottableId: { type: [Number, String], default: 0 },
+    npcId: { type: [Number, String], default: 0 },
   },
   data() {
     return {
@@ -199,6 +200,7 @@ export default {
   methods: {
     openFullEditor() {
       const query = this.currentLoottable ? { loottableId: this.currentLoottable.id } : {};
+      if (this.npcId > 0) query.npcId = this.npcId;
       const route = this.$router.resolve({ path: '/loot', query });
       window.open(route.href, '_blank');
     },
