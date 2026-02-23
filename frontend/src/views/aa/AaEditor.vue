@@ -1,10 +1,10 @@
 <template>
   <content-area style="padding: 0 !important;">
-    <div class="row">
+    <div ref="aaRow" class="row">
       <!-- Left panel: AA ability list -->
       <div class="col-5">
-        <eq-window title="Alternate Advancement Editor" class="p-0">
-          <div class="p-3 border-bottom aa-toolbar minified-inputs">
+        <eq-window title="Alternate Advancement Editor" class="p-0" :style="panelHeight ? { height: panelHeight + 'px' } : {}">
+          <div ref="aaToolbar" class="p-3 border-bottom aa-toolbar minified-inputs">
             <div class="d-flex gap-2 align-items-end flex-wrap">
               <div class="flex-grow-1 min-search">
                 <label class="mb-1">Search</label>
@@ -75,7 +75,7 @@
             </div>
           </div>
 
-          <div class="aa-list-wrap">
+          <div class="aa-list-wrap" :style="listWrapStyle">
             <app-loader :is-loading="loading" padding="4"/>
             <div v-if="!loading && filteredRows.length === 0" class="text-center text-muted p-4">No AA abilities matched your filters.</div>
             <table v-if="filteredRows.length" class="eq-table eq-highlight-rows bordered" id="aa-editor-table">
@@ -102,8 +102,8 @@
 
       <!-- Right panel: AA ability details -->
       <div class="col-7">
-        <eq-window :title="selectedTitle" class="aa-details-window">
-          <div ref="aaDetailsScroll" class="aa-details-wrap" @scroll="onAaDetailsScroll">
+        <eq-window :title="selectedTitle" class="aa-details-window" :style="panelHeight ? { height: panelHeight + 'px' } : {}">
+          <div ref="aaDetailsScroll" class="aa-details-wrap" :style="panelHeight ? { height: (panelHeight - 48) + 'px', maxHeight: (panelHeight - 48) + 'px' } : {}" @scroll="onAaDetailsScroll">
             <div v-if="!selected" class="text-center text-muted p-5">
               <i class="fa fa-hand-pointer-o fa-2x mb-3 d-block" style="opacity: 0.4"/>
               Select an AA ability from the list or create a new one.
@@ -287,7 +287,13 @@
                           <div class="col-2">
                             Recast Time
                             <b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/>
-                            <small class="text-muted">{{ formatTime(rank.recast_time) }}</small>
+                            <loader-cast-bar-timer
+                              v-if="rank.recast_time > 0"
+                              color="#FF00FF"
+                              :time-ms="rank.recast_time"
+                              style="margin-top: 0; display: block;"
+                            />
+                            <small class="text-muted">{{ formatTime(rank.recast_time / 1000) }}</small>
                           </div>
                           <div class="col-3">
                             Spell
@@ -594,6 +600,7 @@ import RaceBitmaskCalculator from "@/components/tools/RaceBitmaskCalculator.vue"
 import DeityBitmaskCalculator from "@/components/tools/DeityCalculator.vue";
 import ContentExpansionSelector from "@/components/selectors/ContentExpansionSelector.vue";
 import SpellSelector from "@/components/selectors/SpellSelector.vue";
+import LoaderCastBarTimer from "@/components/LoaderCastBarTimer";
 import {SpireApi} from "@/app/api/spire-api";
 import {SpireQueryBuilder} from "@/app/api/spire-query-builder";
 import {AaAbilityApi} from "@/app/api/api/aa-ability-api";
@@ -630,6 +637,7 @@ export default {
     DeityBitmaskCalculator,
     ContentExpansionSelector,
     SpellSelector,
+    LoaderCastBarTimer,
   },
   data() {
     return {
@@ -685,6 +693,8 @@ export default {
       isNew: false,
       showDetailsScrollHint: false,
       sortBy: 'id',
+      panelHeight: 0,
+      toolbarHeight: 0,
       originalValues: {},
       pendingChanges: { editedFields: {} },
       aaCategoryOptions: [
@@ -721,6 +731,10 @@ export default {
     },
     allRanksExpanded() {
       return this.chainRanks.length > 0 && this.chainRanks.every(r => r._expanded)
+    },
+    listWrapStyle() {
+      if (!this.panelHeight || !this.toolbarHeight) return {}
+      return { height: (this.panelHeight - this.toolbarHeight - 4) + 'px' }
     },
     filteredAaForSelector() {
       const q = String(this.aaSearch || "").toLowerCase().trim()
@@ -763,9 +777,13 @@ export default {
       .sort((a, b) => a.id - b.id)
     await this.refreshAll()
     this.$nextTick(this.checkAaDetailsOverflow)
+    this.$nextTick(this.updatePanelHeight)
     this._resizeHandler = () => {
       clearTimeout(this._resizeTimer)
-      this._resizeTimer = setTimeout(this.checkAaDetailsOverflow, 100)
+      this._resizeTimer = setTimeout(() => {
+        this.checkAaDetailsOverflow()
+        this.updatePanelHeight()
+      }, 100)
     }
     window.addEventListener("resize", this._resizeHandler)
   },
@@ -798,6 +816,7 @@ export default {
       } finally {
         this.loading = false
         this.$nextTick(this.checkAaDetailsOverflow)
+        this.$nextTick(this.updatePanelHeight)
       }
     },
 
@@ -1217,6 +1236,16 @@ export default {
       this.$nextTick(this.checkAaDetailsOverflow)
     },
 
+    // ---- Panel height ----
+    updatePanelHeight() {
+      const el = this.$refs.aaRow
+      if (!el) return
+      const top = el.getBoundingClientRect().top
+      this.panelHeight = Math.max(200, Math.floor(window.innerHeight - top - 34))
+      const toolbar = this.$refs.aaToolbar
+      if (toolbar) this.toolbarHeight = toolbar.offsetHeight
+    },
+
     // ---- Scroll hint ----
     checkAaDetailsOverflow() {
       const el = this.$refs.aaDetailsScroll
@@ -1366,18 +1395,18 @@ export default {
 </script>
 
 <style scoped>
-/* Left panel list */
-.aa-list-wrap { max-height: 82vh; overflow: auto; }
+/* Left panel list: height set via :style binding */
+.aa-list-wrap {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 
-/* Right panel */
+/* Right panel: height set via :style binding */
 .aa-details-window {
   position: relative;
-  height: 82vh;
   overflow: visible;
 }
 .aa-details-wrap {
-  height: calc(82vh - 48px);
-  max-height: calc(82vh - 48px);
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 4px;
