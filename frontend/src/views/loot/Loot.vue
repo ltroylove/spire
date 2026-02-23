@@ -230,10 +230,11 @@
                   <table class="eq-table eq-highlight-rows w-100" style="font-size: 12px;">
                     <thead>
                       <tr>
-                        <th style="width: 15%;">ID</th>
-                        <th style="width: 45%;">Name</th>
-                        <th style="width: 15%;" class="text-center">Level</th>
-                        <th style="width: 25%;" class="text-center">Race</th>
+                        <th style="width: 12%;">ID</th>
+                        <th style="width: 38%;">Name</th>
+                        <th style="width: 12%;" class="text-center">Level</th>
+                        <th style="width: 18%;" class="text-center">Race</th>
+                        <th style="width: 20%;"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -247,6 +248,16 @@
                         <td><npc-popover :npc="npc" /></td>
                         <td class="text-center">{{ npc.level || '—' }}</td>
                         <td class="text-center" style="opacity:.6;">{{ npc.race || '—' }}</td>
+                        <td class="text-center" @click.stop>
+                          <b-button
+                            size="sm"
+                            variant="outline-warning"
+                            @click="removeLoottableFromNpc(npc)"
+                            title="Remove this loot table from the NPC (does not delete the loot table)"
+                          >
+                            <i class="fa fa-times mr-1"></i> Remove
+                          </b-button>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -276,7 +287,7 @@
                 v-for="(le, leIndex) in editEntries"
                 :key="'le-' + leIndex"
                 class="lootdrop-card"
-                :class="{ 'pending-add': le._pendingAdd, 'pending-delete': le._pendingDelete }"
+                :class="{ 'pending-add': le._pendingAdd, 'pending-delete': le._pendingDelete || le._pendingRemove }"
               >
                 <!-- Lootdrop Header -->
                 <div class="lootdrop-header" @click="le._expanded = !le._expanded; $forceUpdate()">
@@ -302,7 +313,7 @@
                           v-model.number="le.probability"
                           @input="trackFieldEdit('le-' + leIndex + '-probability', originalValues.entries?.[leIndex]?.probability || 100, le.probability)"
                           :class="{ 'pending-edit': isFieldEdited('le-' + leIndex + '-probability') }"
-                          :disabled="le._pendingDelete"
+                          :disabled="le._pendingDelete || le._pendingRemove"
                           min="0" max="100" step="1"
                         >
                       </div>
@@ -314,7 +325,7 @@
                           v-model.number="le.multiplier"
                           @input="trackFieldEdit('le-' + leIndex + '-multiplier', originalValues.entries?.[leIndex]?.multiplier || 1, le.multiplier)"
                           :class="{ 'pending-edit': isFieldEdited('le-' + leIndex + '-multiplier') }"
-                          :disabled="le._pendingDelete"
+                          :disabled="le._pendingDelete || le._pendingRemove"
                           min="0" step="1"
                         >
                       </div>
@@ -326,7 +337,7 @@
                           v-model.number="le.droplimit"
                           @input="trackFieldEdit('le-' + leIndex + '-droplimit', originalValues.entries?.[leIndex]?.droplimit || 0, le.droplimit)"
                           :class="{ 'pending-edit': isFieldEdited('le-' + leIndex + '-droplimit') }"
-                          :disabled="le._pendingDelete"
+                          :disabled="le._pendingDelete || le._pendingRemove"
                           min="0" step="1"
                         >
                       </div>
@@ -338,12 +349,12 @@
                           v-model.number="le.mindrop"
                           @input="trackFieldEdit('le-' + leIndex + '-mindrop', originalValues.entries?.[leIndex]?.mindrop || 0, le.mindrop)"
                           :class="{ 'pending-edit': isFieldEdited('le-' + leIndex + '-mindrop') }"
-                          :disabled="le._pendingDelete"
+                          :disabled="le._pendingDelete || le._pendingRemove"
                           min="0" step="1"
                         >
                       </div>
                       <b-button
-                        v-if="!le._pendingDelete"
+                        v-if="!le._pendingDelete && !le._pendingRemove"
                         size="sm"
                         variant="outline-info"
                         @click.stop="cloneLootdrop(leIndex)"
@@ -353,21 +364,41 @@
                         <i class="fa fa-copy"></i>
                       </b-button>
                       <b-button
-                        v-if="!le._pendingDelete"
+                        v-if="!le._pendingDelete && !le._pendingRemove"
+                        size="sm"
+                        variant="outline-warning"
+                        @click.stop="removeLootdrop(leIndex)"
+                        title="Remove this loot drop from this loot table only (does not delete the loot drop)"
+                        class="ml-1"
+                      >
+                        <i class="fa fa-times mr-1"></i> Remove
+                      </b-button>
+                      <b-button
+                        v-if="le._pendingRemove"
+                        size="sm"
+                        variant="outline-success"
+                        @click.stop="undoRemoveLootdrop(leIndex)"
+                        title="Undo removal"
+                        class="ml-1"
+                      >
+                        <i class="fa fa-undo"></i> Undo
+                      </b-button>
+                      <b-button
+                        v-if="!le._pendingDelete && !le._pendingRemove"
                         size="sm"
                         variant="outline-danger"
-                        @click.stop="removeLootdrop(leIndex)"
-                        title="Remove lootdrop"
+                        @click.stop="deleteLootdrop(leIndex)"
+                        title="Permanently delete this loot drop and all its items"
                         class="ml-1"
                       >
                         <i class="fa fa-trash"></i>
                       </b-button>
                       <b-button
-                        v-else
+                        v-if="le._pendingDelete"
                         size="sm"
                         variant="outline-success"
                         @click.stop="undoRemoveLootdrop(leIndex)"
-                        title="Undo removal"
+                        title="Undo deletion"
                         class="ml-1"
                       >
                         <i class="fa fa-undo"></i> Undo
@@ -759,7 +790,8 @@ export default {
       pendingChanges: {
         tableFields: {},        // { fieldName: { old, new } } for loottable fields
         addedLootdrops: [],     // newly added lootdrop entries (full objects, not yet saved)
-        deletedLootdrops: [],   // indices/ids of lootdrops marked for deletion
+        removedLootdrops: [],   // indices of lootdrops queued for removal from loottable (loottable_entry deleted, lootdrop preserved)
+        deletedLootdrops: [],   // indices of lootdrops queued for permanent deletion (loottable_entry + lootdrop deleted)
         addedItems: {},         // { lootdropIndex: [{ item, lde }] } items added to existing lootdrops
         deletedItems: {},       // { lootdropIndex: [ldeIndex] } items marked for deletion
         editedFields: {},       // { 'le-{leIdx}-{field}': { old, new }, 'lde-{leIdx}-{ldeIdx}-{field}': { old, new } }
@@ -858,6 +890,7 @@ export default {
       this.hasUnsavedChanges = (
         Object.keys(this.pendingChanges.tableFields).length > 0 ||
         this.pendingChanges.addedLootdrops.length > 0 ||
+        this.pendingChanges.removedLootdrops.length > 0 ||
         this.pendingChanges.deletedLootdrops.length > 0 ||
         Object.keys(this.pendingChanges.addedItems).length > 0 ||
         Object.keys(this.pendingChanges.deletedItems).length > 0 ||
@@ -869,6 +902,7 @@ export default {
       this.pendingChanges = {
         tableFields: {},
         addedLootdrops: [],
+        removedLootdrops: [],
         deletedLootdrops: [],
         addedItems: {},
         deletedItems: {},
@@ -885,6 +919,23 @@ export default {
 
     goToNpc(id) {
       window.open(window.location.origin + '/npc/' + id, '_blank')
+    },
+
+    async removeLoottableFromNpc(npc) {
+      const name = npc.name || 'NPC #' + npc.id;
+      if (!confirm('Remove this loot table from "' + name + '"? The loot table itself will not be deleted.')) return;
+      try {
+        await SpireApi.v1().patch('/npc_type/' + npc.id, { loottable_id: 0 });
+        // Remove the NPC from the local linked list
+        const idx = (this.selectedTable.npc_types || []).findIndex(n => n.id === npc.id);
+        if (idx !== -1) {
+          this.selectedTable.npc_types.splice(idx, 1);
+        }
+        this.showNotification('Removed loot table from "' + name + '"');
+      } catch (e) {
+        console.error('Failed to remove loot table from NPC', e);
+        this.showNotification('Failed to remove loot table from NPC', 'error');
+      }
     },
 
     showNotification(message, type = 'success') {
@@ -1267,12 +1318,25 @@ export default {
           }
         }
 
-        // 5. Delete lootdrops
+        // 5a. Remove lootdrops (loottable_entry only — lootdrop itself is preserved)
+        for (const leIndex of this.pendingChanges.removedLootdrops) {
+          const le = this.editEntries[leIndex]
+          if (le && !le._pendingAdd) {
+            try {
+              await SpireApi.v1().delete('/loottable_entry/' + le.loottable_id, { params: { lootdrop_id: le.lootdrop_id } })
+            } catch (e) {
+              console.error('Error removing lootdrop from table:', e)
+            }
+          }
+        }
+
+        // 5b. Delete lootdrops permanently (loottable_entry + lootdrop itself)
         for (const leIndex of this.pendingChanges.deletedLootdrops) {
           const le = this.editEntries[leIndex]
           if (le && !le._pendingAdd) {
             try {
               await SpireApi.v1().delete('/loottable_entry/' + le.loottable_id, { params: { lootdrop_id: le.lootdrop_id } })
+              await SpireApi.v1().delete('/lootdrop/' + le.lootdrop_id)
             } catch (e) {
               console.error('Error deleting lootdrop:', e)
             }
@@ -1491,41 +1555,47 @@ export default {
 
     removeLootdrop(index) {
       const le = this.editEntries[index]
-      
+
       if (le._pendingAdd) {
         // If this was a pending add, just remove it from the queue and display
         this.editEntries.splice(index, 1)
-        
-        // Remove from pending adds
         this.pendingChanges.addedLootdrops = this.pendingChanges.addedLootdrops.filter(
           addedLe => addedLe !== le
         )
-        
         this.showNotification('Cancelled addition of ' + (le.lootdrop.name || 'lootdrop'))
         this.updateHasChanges()
       } else {
         const name = (le.lootdrop && le.lootdrop.name) || 'Lootdrop #' + le.lootdrop_id
-        const itemCount = (le.lootdrop && le.lootdrop.lootdrop_entries) ? le.lootdrop.lootdrop_entries.length : 0
-        this.deleteConfirm = {
-          title: '⚠️ Delete Loot Drop',
-          message: '<p style="color: #ef9a9a; font-weight: 600; font-size: 1.1em;">You are about to DELETE this loot drop:</p>' +
-            '<p style="font-size: 1.2em; color: #fff; font-weight: bold;">"' + name + '"</p>' +
-            '<div style="background: rgba(244,67,54,0.15); border: 1px solid rgba(244,67,54,0.4); border-radius: 6px; padding: 12px; margin: 12px 0;">' +
-            '<strong style="color: #f44336;">⛔ This will remove:</strong>' +
-            '<ul style="margin: 8px 0 0 0; color: #ef9a9a;">' +
-            '<li>This loot drop and its link to the loot table</li>' +
-            '<li>ALL <strong>' + itemCount + '</strong> item entries within this drop</li>' +
-            '</ul></div>' +
-            '<p style="color: #ff9800;">Save to finalize deletion. You can undo before saving.</p>',
-          onConfirm: () => {
-            this.$set(le, '_pendingDelete', true)
-            this.pendingChanges.deletedLootdrops.push(index)
-            this.showNotification('Queued "' + name + '" for deletion')
-            this.updateHasChanges()
-          },
-        }
-        this.$refs.deleteConfirmModal.show()
+        this.$set(le, '_pendingRemove', true)
+        this.pendingChanges.removedLootdrops.push(index)
+        this.showNotification('Queued "' + name + '" for removal — save to finalize')
+        this.updateHasChanges()
       }
+    },
+
+    deleteLootdrop(index) {
+      const le = this.editEntries[index]
+      const name = (le.lootdrop && le.lootdrop.name) || 'Lootdrop #' + le.lootdrop_id
+      const itemCount = (le.lootdrop && le.lootdrop.lootdrop_entries) ? le.lootdrop.lootdrop_entries.length : 0
+      this.deleteConfirm = {
+        title: '⚠️ Delete Loot Drop',
+        message: '<p style="color: #ef9a9a; font-weight: 600; font-size: 1.1em;">You are about to PERMANENTLY DELETE this loot drop:</p>' +
+          '<p style="font-size: 1.2em; color: #fff; font-weight: bold;">"' + name + '"</p>' +
+          '<div style="background: rgba(244,67,54,0.15); border: 1px solid rgba(244,67,54,0.4); border-radius: 6px; padding: 12px; margin: 12px 0;">' +
+          '<strong style="color: #f44336;">⛔ This will permanently delete:</strong>' +
+          '<ul style="margin: 8px 0 0 0; color: #ef9a9a;">' +
+          '<li>The loot drop itself</li>' +
+          '<li>ALL <strong>' + itemCount + '</strong> item entries within this drop</li>' +
+          '</ul></div>' +
+          '<p style="color: #ff9800;">Save to finalize deletion. You can undo before saving.</p>',
+        onConfirm: () => {
+          this.$set(le, '_pendingDelete', true)
+          this.pendingChanges.deletedLootdrops.push(index)
+          this.showNotification('Queued "' + name + '" for permanent deletion')
+          this.updateHasChanges()
+        },
+      }
+      this.$refs.deleteConfirmModal.show()
     },
 
     getDropdownPosition(leIndex) {
@@ -1727,16 +1797,22 @@ export default {
 
     undoRemoveLootdrop(leIndex) {
       const le = this.editEntries[leIndex]
-      
-      // Remove pending delete marker
-      this.$delete(le, '_pendingDelete')
-      
-      // Remove from pending deletes
-      this.pendingChanges.deletedLootdrops = this.pendingChanges.deletedLootdrops.filter(
-        idx => idx !== leIndex
-      )
-      
-      this.showNotification('Cancelled removal of lootdrop "' + (le.lootdrop.name || le.lootdrop_id) + '"')
+      const name = (le.lootdrop && le.lootdrop.name) || le.lootdrop_id
+
+      if (le._pendingRemove) {
+        this.$delete(le, '_pendingRemove')
+        this.pendingChanges.removedLootdrops = this.pendingChanges.removedLootdrops.filter(
+          idx => idx !== leIndex
+        )
+        this.showNotification('Cancelled removal of "' + name + '"')
+      } else if (le._pendingDelete) {
+        this.$delete(le, '_pendingDelete')
+        this.pendingChanges.deletedLootdrops = this.pendingChanges.deletedLootdrops.filter(
+          idx => idx !== leIndex
+        )
+        this.showNotification('Cancelled deletion of "' + name + '"')
+      }
+
       this.updateHasChanges()
     },
 
