@@ -2350,12 +2350,8 @@ export default {
     },
 
     editNpc(n) {
-      this.$router.push(
-        {
-          path: ROUTE.NPC_EDIT.replaceAll(":npc", n.id)
-        }
-      ).catch(() => {
-      })
+      const route = this.$router.resolve({ path: ROUTE.NPC_EDIT.replaceAll(":npc", n.id) });
+      window.open(route.href, '_blank');
     },
 
     showNpcCard(n) {

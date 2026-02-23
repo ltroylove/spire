@@ -22,6 +22,14 @@
               </span>
             </div>
           </div>
+          <button
+            @click="openFullEditor"
+            class="btn btn-sm btn-outline-info ml-2"
+            title="Open in full NPC Spells Editor"
+            style="white-space: nowrap;"
+          >
+            <i class="fa fa-external-link-alt mr-1"></i> Full Editor
+          </button>
         </div>
       </div>
 
@@ -130,6 +138,11 @@ export default {
     }
   },
   methods: {
+    openFullEditor() {
+      const query = this.currentSpellList ? { selectedId: this.currentSpellList.id } : {};
+      const route = this.$router.resolve({ path: '/npc-spells', query });
+      window.open(route.href, '_blank');
+    },
     async loadSpellList(id) {
       this.loading = true;
       try {
