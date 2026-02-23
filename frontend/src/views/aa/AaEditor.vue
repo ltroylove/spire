@@ -1512,6 +1512,11 @@ export default {
 .rank-card-body {
   padding: 10px;
 }
+/* Give the progress bar track a visible background since the rank card's
+   own background blocks the EQ window texture that normally shows through */
+.rank-card .eq-progress-bar {
+  background-color: rgba(61, 50, 30, 0.6);
+}
 
 /* Clickable rank header */
 .rank-card-header-clickable {
