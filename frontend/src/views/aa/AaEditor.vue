@@ -289,12 +289,12 @@
                             <b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/>
                             <div class="d-flex align-items-center gap-2">
                               <small class="text-muted">{{ formatTime(rank.recast_time / 1000) }}</small>
-                              <loader-cast-bar-timer
-                                v-if="rank.recast_time > 0"
-                                color="#FF00FF"
-                                :time-ms="rank.recast_time"
-                                style="flex: 1"
-                              />
+                              <div v-if="rank.recast_time > 0" style="flex: 1; min-width: 0;">
+                                <loader-cast-bar-timer
+                                  color="#FF00FF"
+                                  :time-ms="rank.recast_time"
+                                />
+                              </div>
                             </div>
                           </div>
                           <div class="col-3">

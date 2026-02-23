@@ -35,9 +35,4 @@
 </script>
 
 <style scoped>
-.eq-progress-bar > div {
-  position: absolute;
-  left: 0;
-  top: 0;
-}
 </style>
