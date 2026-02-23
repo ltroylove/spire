@@ -2965,7 +2965,7 @@ export class Spells {
     }
   };
 
-  public static async renderSpellMini(parentSpellId, renderSpellId, iconSize = 12) {
+  public static async renderSpellMini(parentSpellId, renderSpellId, iconSize = 12, href = "") {
     let spell             = <any>await this.getSpell(renderSpellId)
     const targetTypeColor = this.getTargetTypeColor(spell["targettype"]);
 
@@ -2992,6 +2992,10 @@ export class Spells {
       textTop        = 1;
     }
 
+    const nameEl = href
+      ? `<a href="${href}" target="_blank" rel="noopener" class="ml-${marginLeft}" style="color: #f7ff00; position: relative; top: -${textTop}px;">${spell.name}</a>`
+      : `<span class="ml-${marginLeft}" style="color: #f7ff00; position: relative; top: -${textTop}px;">${spell.name}</span>`
+
     return `
           <div :id="${parentSpellId} + '-' + ${renderSpellId} + '-' + componentId" style="display:inline-block">
             <div style="display: inline-block">
@@ -2999,9 +3003,7 @@ export class Spells {
                  style="width: ${renderIconSize}px; height: ${renderIconSize}px; border: ${borderSize}px solid ${targetTypeColor}; border-radius: ${borderRadius}px; display: inline-block"
                  :class="'spell-' + ${spell.new_icon} + '-${renderIconSize}'"
                />
-              <span
-                :class="'ml-${marginLeft}'"
-                style="color: #f7ff00; position: relative; top: -${textTop}px;">${spell.name}</span>
+              ${nameEl}
             </div>
 
           </div>

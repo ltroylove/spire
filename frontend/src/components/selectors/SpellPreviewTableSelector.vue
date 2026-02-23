@@ -57,9 +57,6 @@
             <eq-spell-effects :spell="spell"/>
           </td>
           <td style="vertical-align: middle">
-            <div>
-              <a :href="spellEditorHref(spell.id)" target="_blank" rel="noopener">{{ spell.name }}</a>
-            </div>
             <v-runtime-template
               v-if="spellMinis"
               :template="'<span>' + spellMinis[spell.id] + '</span>'"
@@ -119,7 +116,7 @@ export default {
     for (const spell of this.spells) {
       Spells.setSpell(spell["id"], spell)
 
-      spellMinis[spell["id"]] = await Spells.renderSpellMini("0", spell["id"], 30)
+      spellMinis[spell["id"]] = await Spells.renderSpellMini("0", spell["id"], 30, this.spellEditorHref(spell["id"]))
     }
     this.spellMinis = spellMinis
 
