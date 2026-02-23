@@ -19,7 +19,6 @@
       </div>
       <div>
         <button
-          v-if="loottableId > 0"
           @click.stop="openFullEditor"
           class="btn btn-xs btn-outline-warning"
           title="Open the full-featured Loot Editor for this NPC"
@@ -145,7 +144,8 @@ export default {
     },
 
     openFullEditor() {
-      const route = this.$router.resolve({ path: '/loot', query: { loottableId: this.loottableId } });
+      const query = this.loottableId > 0 ? { loottableId: this.loottableId } : {};
+      const route = this.$router.resolve({ path: '/loot', query });
       window.open(route.href, '_blank');
     },
 
