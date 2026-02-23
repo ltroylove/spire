@@ -2,7 +2,7 @@
   <content-area style="padding: 0 !important;">
     <div ref="aaRow" class="row">
       <!-- Left panel: AA ability list -->
-      <div class="col-5">
+      <div class="col-12 col-lg-5">
         <eq-window title="Alternate Advancement Editor" class="p-0" :style="panelHeight ? { height: panelHeight + 'px' } : {}">
           <div ref="aaToolbar" class="p-3 border-bottom aa-toolbar minified-inputs">
             <div class="d-flex gap-2 align-items-end flex-wrap">
@@ -101,7 +101,7 @@
       </div>
 
       <!-- Right panel: AA ability details -->
-      <div class="col-7">
+      <div class="col-12 col-lg-7">
         <eq-window :title="selectedTitle" class="aa-details-window" :style="panelHeight ? { height: panelHeight + 'px' } : {}">
           <div ref="aaDetailsScroll" class="aa-details-wrap" :style="panelHeight ? { height: (panelHeight - 48) + 'px', maxHeight: (panelHeight - 48) + 'px' } : {}" @scroll="onAaDetailsScroll">
             <div v-if="!selected" class="text-center text-muted p-5">
@@ -127,29 +127,29 @@
                 <eq-tab name="Basic" :selected="true">
                   <div class="p-2">
                     <div class="row">
-                      <div class="col-2">ID<b-form-input v-model.number="selected.id" disabled/></div>
-                      <div class="col-5">Name<b-form-input v-model="selected.name" placeholder="AA ability name" :class="{ 'pending-edit': isFieldEdited('name') }" @input="trackFieldEdit('name', originalValues.name, selected.name); markDirty()"/></div>
-                      <div class="col-2">
+                      <div class="col-6 col-sm-2">ID<b-form-input v-model.number="selected.id" disabled/></div>
+                      <div class="col-12 col-sm-5">Name<b-form-input v-model="selected.name" placeholder="AA ability name" :class="{ 'pending-edit': isFieldEdited('name') }" @input="trackFieldEdit('name', originalValues.name, selected.name); markDirty()"/></div>
+                      <div class="col-6 col-sm-2">
                         Category
                         <b-form-select v-model.number="selected.category" :options="aaCategoryOptions" :class="{ 'pending-edit': isFieldEdited('category') }" @change="trackFieldEdit('category', originalValues.category, selected.category); markDirty()"/>
                       </div>
-                      <div class="col-3">
+                      <div class="col-6 col-sm-3">
                         Type
                         <b-form-select v-model.number="selected.type" :options="aaTypeOptions" :class="{ 'pending-edit': isFieldEdited('type') }" @change="trackFieldEdit('type', originalValues.type, selected.type); markDirty()"/>
                       </div>
                     </div>
 
                     <div class="row mt-3">
-                      <div class="col-2">
+                      <div class="col-6 col-sm-3 col-md-2">
                         First Rank ID
                         <div class="d-flex gap-1 align-items-center">
                           <b-form-input v-model.number="selected.first_rank_id" :class="{ 'pending-edit': isFieldEdited('first_rank_id') }" @input="trackFieldEdit('first_rank_id', originalValues.first_rank_id, selected.first_rank_id); onFirstRankIdChanged()" style="flex: 1"/>
                           <b-button size="sm" variant="outline-info" @click="findFirstRankId" title="Find First Rank ID"><i class="fa fa-search"/></b-button>
                         </div>
                       </div>
-                      <div class="col-2">Charges<b-form-input v-model.number="selected.charges" :class="{ 'pending-edit': isFieldEdited('charges') }" @input="trackFieldEdit('charges', originalValues.charges, selected.charges); markDirty()"/></div>
-                      <div class="col-2">Status<b-form-input v-model.number="selected.status" :class="{ 'pending-edit': isFieldEdited('status') }" @input="trackFieldEdit('status', originalValues.status, selected.status); markDirty()"/></div>
-                      <div class="col-2">Drakkin Heritage<b-form-input v-model.number="selected.drakkin_heritage" :class="{ 'pending-edit': isFieldEdited('drakkin_heritage') }" @input="trackFieldEdit('drakkin_heritage', originalValues.drakkin_heritage, selected.drakkin_heritage); markDirty()"/></div>
+                      <div class="col-6 col-sm-3 col-md-2">Charges<b-form-input v-model.number="selected.charges" :class="{ 'pending-edit': isFieldEdited('charges') }" @input="trackFieldEdit('charges', originalValues.charges, selected.charges); markDirty()"/></div>
+                      <div class="col-6 col-sm-3 col-md-2">Status<b-form-input v-model.number="selected.status" :class="{ 'pending-edit': isFieldEdited('status') }" @input="trackFieldEdit('status', originalValues.status, selected.status); markDirty()"/></div>
+                      <div class="col-6 col-sm-3 col-md-2">Drakkin Heritage<b-form-input v-model.number="selected.drakkin_heritage" :class="{ 'pending-edit': isFieldEdited('drakkin_heritage') }" @input="trackFieldEdit('drakkin_heritage', originalValues.drakkin_heritage, selected.drakkin_heritage); markDirty()"/></div>
                     </div>
 
                     <!-- Flags -->
@@ -241,7 +241,7 @@
                 <!-- TAB: Ranks -->
                 <eq-tab name="Ranks">
                   <div class="p-2">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                       <div>
                         <span v-if="chainRanks.length" class="text-muted">
                           {{ chainRanks.length }} rank{{ chainRanks.length !== 1 ? 's' : '' }}
@@ -282,9 +282,9 @@
                       <!-- Rank body -->
                       <div v-if="rank._expanded" class="rank-card-body">
                         <div class="row">
-                          <div class="col-2">Cost<b-form-input v-model.number="rank.cost" @input="markRankDirty(rank)"/></div>
-                          <div class="col-2">Level Req<b-form-input v-model.number="rank.level_req" @input="markRankDirty(rank)"/></div>
-                          <div class="col-2">
+                          <div class="col-6 col-sm-4 col-md-2">Cost<b-form-input v-model.number="rank.cost" @input="markRankDirty(rank)"/></div>
+                          <div class="col-6 col-sm-4 col-md-2">Level Req<b-form-input v-model.number="rank.level_req" @input="markRankDirty(rank)"/></div>
+                          <div class="col-6 col-sm-4 col-md-2">
                             Recast Time
                             <b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/>
                             <loader-cast-bar-timer
@@ -295,7 +295,7 @@
                             />
                             <small class="text-muted">{{ formatTime(rank.recast_time / 1000) }}</small>
                           </div>
-                          <div class="col-3">
+                          <div class="col-12 col-sm-6 col-md-3">
                             Spell
                             <div class="d-flex gap-2 align-items-center">
                               <b-form-input v-model.number="rank.spell" @input="markRankDirty(rank)" style="flex: 1"/>
@@ -303,14 +303,14 @@
                             </div>
                             <small v-if="rank.spell" class="text-muted">{{ spellName(rank.spell) }}</small>
                           </div>
-                          <div class="col-3">
+                          <div class="col-12 col-sm-6 col-md-3">
                             Spell Type
                             <b-form-select v-model.number="rank.spell_type" :options="spellTypeOptions" @change="markRankDirty(rank)"/>
                           </div>
                         </div>
 
                         <div class="row mt-2">
-                          <div class="col-3">
+                          <div class="col-12 col-sm-6 col-md-3">
                             Expansion
                             <div class="d-flex gap-2 align-items-center">
                               <b-form-input v-model.number="rank.expansion" @input="markRankDirty(rank)" style="flex: 1"/>
@@ -318,9 +318,9 @@
                             </div>
                             <small class="text-muted">{{ expansionName(rank.expansion) }}</small>
                           </div>
-                          <div class="col-2">Prev ID<b-form-input v-model.number="rank.prev_id" @input="markRankDirty(rank)"/></div>
-                          <div class="col-2">Next ID<b-form-input v-model.number="rank.next_id" @input="markRankDirty(rank)"/></div>
-                          <div class="col-2">
+                          <div class="col-6 col-sm-3 col-md-2">Prev ID<b-form-input v-model.number="rank.prev_id" @input="markRankDirty(rank)"/></div>
+                          <div class="col-6 col-sm-3 col-md-2">Next ID<b-form-input v-model.number="rank.next_id" @input="markRankDirty(rank)"/></div>
+                          <div class="col-12 col-sm-6 col-md-2">
                             Title SID
                             <div class="input-group input-group-sm">
                               <select
@@ -342,7 +342,7 @@
                               </div>
                             </div>
                           </div>
-                          <div class="col-3" style="max-width: 350px">
+                          <div class="col-12 col-sm-6 col-md-3">
                             Desc SID
                             <div class="input-group input-group-sm">
                               <select
@@ -367,7 +367,7 @@
                         </div>
 
                         <div class="row mt-2">
-                          <div class="col-3">
+                          <div class="col-12 col-sm-6 col-md-3">
                             Lower Hotkey SID
                             <div class="input-group input-group-sm">
                               <select
@@ -389,7 +389,7 @@
                               </div>
                             </div>
                           </div>
-                          <div class="col-3">
+                          <div class="col-12 col-sm-6 col-md-3">
                             Upper Hotkey SID
                             <div class="input-group input-group-sm">
                               <select
@@ -420,7 +420,8 @@
                             <b-button size="sm" variant="outline-success" @click="addRankEffect(rank)"><i class="fa fa-plus mr-1"/>Add</b-button>
                           </div>
                           <div v-if="!rank.effects || rank.effects.length === 0" class="text-muted small p-2">No effects defined.</div>
-                          <table v-if="rank.effects && rank.effects.length" class="eq-table bordered w-100 mt-1 aa-sub-table">
+                          <div v-if="rank.effects && rank.effects.length" class="aa-sub-table-wrap">
+                          <table class="eq-table bordered w-100 mt-1 aa-sub-table">
                             <thead>
                             <tr>
                               <th style="width: 60px; text-align: center;">Slot</th>
@@ -447,6 +448,7 @@
                             </tr>
                             </tbody>
                           </table>
+                          </div>
                         </div>
 
                         <!-- Prereqs sub-section -->
@@ -456,7 +458,8 @@
                             <b-button size="sm" variant="outline-success" @click="addRankPrereq(rank)"><i class="fa fa-plus mr-1"/>Add</b-button>
                           </div>
                           <div v-if="!rank.prereqs || rank.prereqs.length === 0" class="text-muted small p-2">No prerequisites defined.</div>
-                          <table v-if="rank.prereqs && rank.prereqs.length" class="eq-table bordered w-100 mt-1 aa-sub-table">
+                          <div v-if="rank.prereqs && rank.prereqs.length" class="aa-sub-table-wrap">
+                          <table class="eq-table bordered w-100 mt-1 aa-sub-table">
                             <thead>
                             <tr>
                               <th style="width: 140px;">AA ID</th>
@@ -479,6 +482,7 @@
                             </tr>
                             </tbody>
                           </table>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1240,6 +1244,12 @@ export default {
     updatePanelHeight() {
       const el = this.$refs.aaRow
       if (!el) return
+      // On mobile (<lg breakpoint), let panels stack naturally without a fixed height
+      if (window.innerWidth < 992) {
+        this.panelHeight = 0
+        this.toolbarHeight = 0
+        return
+      }
       const top = el.getBoundingClientRect().top
       this.panelHeight = Math.max(200, Math.floor(window.innerHeight - top - 34))
       const toolbar = this.$refs.aaToolbar
@@ -1555,6 +1565,10 @@ export default {
 }
 
 /* Sub-tables for effects/prereqs */
+.aa-sub-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .aa-sub-table th {
   font-size: 11px;
   padding: 4px 6px !important;
@@ -1609,5 +1623,51 @@ export default {
 @keyframes save-glow {
   0%, 100% { box-shadow: 0 0 4px rgba(255, 100, 0, 0.3); }
   50% { box-shadow: 0 0 12px rgba(255, 100, 0, 0.7); }
+}
+
+/* ---- Mobile responsive overrides (below lg = <992px) ---- */
+@media (max-width: 991px) {
+  /* Remove min-width on search input so it doesn't force toolbar overflow */
+  .min-search {
+    min-width: 0;
+  }
+
+  /* Cap the list panel height so both panels are visible when stacked */
+  .aa-list-wrap {
+    max-height: 380px;
+  }
+
+  /* Allow filter icon rows to scroll horizontally instead of clipping */
+  .filter-icons {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-icons ::v-deep .row > div {
+    flex-wrap: nowrap !important;
+  }
+
+  /* Details panel: let it size to content, not a fixed height */
+  .aa-details-wrap {
+    height: auto !important;
+    max-height: none !important;
+  }
+}
+
+@media (max-width: 575px) {
+  /* Give the rank card body a bit more breathing room on xs */
+  .rank-card-body {
+    padding: 8px 6px;
+  }
+
+  /* Slightly reduce action bar padding on xs */
+  .aa-action-bar {
+    padding: 6px 8px !important;
+  }
+
+  /* Make bitmask filter labels stack more compactly */
+  .filter-section {
+    margin-bottom: 6px;
+  }
 }
 </style>
