@@ -57,6 +57,9 @@
             <eq-spell-effects :spell="spell"/>
           </td>
           <td style="vertical-align: middle">
+            <div>
+              <a :href="spellEditorHref(spell.id)" target="_blank" rel="noopener">{{ spell.name }}</a>
+            </div>
             <v-runtime-template
               v-if="spellMinis"
               :template="'<span>' + spellMinis[spell.id] + '</span>'"
@@ -178,6 +181,9 @@ export default {
     },
     getBuffDuration: function (spell) {
       return Spells.getBuffDuration(spell)
+    },
+    spellEditorHref(spellId) {
+      return this.$router.resolve({ path: util.format(ROUTE.SPELL_EDIT, spellId) }).href
     },
     editSpell(spellId) {
       this.$router.push(
