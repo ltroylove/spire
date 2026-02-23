@@ -507,7 +507,7 @@
     <b-modal ref="spellSelectorModal" size="xl" hide-footer hide-header body-class="p-0" content-class="bg-transparent border-0" centered>
       <eq-window title="Spell Selector">
         <div class="p-2 spell-selector-wrap">
-          <spell-selector @input="onSpellSelected"/>
+          <spell-selector ref="spellSelector" @input="onSpellSelected"/>
         </div>
       </eq-window>
     </b-modal>
@@ -604,6 +604,7 @@ import {DbStrApi} from "@/app/api/api/db-str-api";
 import {DB_SPA, DB_SPA_DESCRIPTIONS, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
 import {EXPANSION_NAMES} from "@/app/constants/eq-expansions";
 import {ROUTE}            from "@/routes";
+import {Spells}           from "@/app/spells";
 
 const AaAbilityClient = new AaAbilityApi(...SpireApi.cfg())
 const AaRankClient = new AaRankApi(...SpireApi.cfg())
@@ -649,9 +650,9 @@ export default {
       search: "",
       enabledFilter: -1,
       typeFilter: -1,
-      classFilter: 0,
-      raceFilter: 0,
-      deityFilter: 0,
+      classFilter: 65535,
+      raceFilter: 65535,
+      deityFilter: 131071,
       tabSelected: "Basic",
       enabledOptions: [{value: -1, text: "All"}, {value: 1, text: "Enabled"}, {value: 0, text: "Disabled"}],
       typeOptions: [{value: -1, text: "All"}],
@@ -826,6 +827,14 @@ export default {
     spellName(spellId) {
       const id = Number(spellId || 0)
       if (!id) return ''
+      if (id in this.allSpells) {
+        return this.allSpells[id]
+      }
+      // Set a placeholder immediately to prevent duplicate fetches
+      this.$set(this.allSpells, id, `Spell #${id}`)
+      Spells.getSpell(id).then(spell => {
+        this.$set(this.allSpells, id, spell && spell.name ? spell.name : `Spell #${id}`)
+      })
       return `Spell #${id}`
     },
     rankTitleText(titleSid) {
@@ -876,9 +885,9 @@ export default {
         .filter(r => this.enabledFilter === -1 || Number(r.enabled || 0) === this.enabledFilter)
         .filter(r => this.typeFilter === -1 || Number(r.type || 0) === this.typeFilter)
         .filter(r => !q || String(r.id).includes(q) || String(r.name || "").toLowerCase().includes(q))
-        .filter(r => !this.classFilter || Number(r.classes || 0) === 0 || (Number(r.classes || 0) & this.classFilter) !== 0)
-        .filter(r => !this.raceFilter || Number(r.races || 0) === 0 || (Number(r.races || 0) & this.raceFilter) !== 0)
-        .filter(r => !this.deityFilter || Number(r.deities || 0) === 0 || (Number(r.deities || 0) & this.deityFilter) !== 0)
+        .filter(r => Number(r.classes || 0) === 0 || (Number(r.classes || 0) & this.classFilter) !== 0)
+        .filter(r => Number(r.races || 0) === 0 || (Number(r.races || 0) & this.raceFilter) !== 0)
+        .filter(r => Number(r.deities || 0) === 0 || (Number(r.deities || 0) & this.deityFilter) !== 0)
         .sort((a, b) => this.sortBy === 'name'
           ? String(a.name || '').localeCompare(String(b.name || ''))
           : Number(a.id || 0) - Number(b.id || 0))
@@ -959,6 +968,16 @@ export default {
     openSpellSelector(rankIndex) {
       this.selectedSpellRankIndex = rankIndex
       this.$refs.spellSelectorModal.show()
+      const rank = this.chainRanks[rankIndex]
+      if (rank && rank.spell && rank.spell !== 0 && rank.spell !== -1) {
+        this.$nextTick(() => {
+          this.$refs.spellSelector.prefillAndSearch(rank.spell)
+        })
+      } else {
+        this.$nextTick(() => {
+          this.$refs.spellSelector.resetForm()
+        })
+      }
     },
     onSpellSelected(event) {
       if (this.selectedSpellRankIndex === null) return
