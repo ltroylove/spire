@@ -292,7 +292,6 @@
                               v-if="rank.recast_time > 0"
                               color="#FF00FF"
                               :time-ms="rank.recast_time"
-                              style="background-color: rgba(100, 85, 50, 0.55);"
                             />
                           </div>
                           <div class="col-3">
@@ -1512,11 +1511,6 @@ export default {
 }
 .rank-card-body {
   padding: 10px;
-}
-/* Give the progress bar track a visible background since the rank card's
-   own background blocks the EQ window texture that normally shows through */
-.rank-card ::v-deep .eq-progress-bar {
-  background-color: rgba(100, 85, 50, 0.55);
 }
 
 /* Clickable rank header */
