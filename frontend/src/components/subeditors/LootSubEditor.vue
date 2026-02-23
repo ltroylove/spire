@@ -3,9 +3,9 @@
     <eq-window title="Loot" class="loot-eq-window" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: visible !important;">
 
       <!-- Header Info -->
-      <div v-if="currentLoottable" style="flex-shrink: 0;">
+      <div style="flex-shrink: 0;">
         <div class="d-flex justify-content-between align-items-center">
-          <div style="min-width: 0; flex: 1;">
+          <div v-if="currentLoottable" style="min-width: 0; flex: 1;">
             <div class="text-warning font-weight-bold" style="font-size: 1.05em;">
               {{ currentLoottable.name || 'Loottable #' + currentLoottable.id }}
             </div>
@@ -27,7 +27,7 @@
             <i class="fa fa-external-link-alt mr-1"></i> Full Editor
           </button>
         </div>
-        <hr class="my-2" style="border-color: rgba(255,255,255,0.1);">
+        <hr v-if="currentLoottable" class="my-2" style="border-color: rgba(255,255,255,0.1);">
       </div>
 
       <!-- Loot Entries (scrollable) -->
@@ -198,8 +198,8 @@ export default {
   },
   methods: {
     openFullEditor() {
-      if (!this.currentLoottable) return;
-      const route = this.$router.resolve({ path: '/loot', query: { loottableId: this.currentLoottable.id } });
+      const query = this.currentLoottable ? { loottableId: this.currentLoottable.id } : {};
+      const route = this.$router.resolve({ path: '/loot', query });
       window.open(route.href, '_blank');
     },
     async loadLoottable(id) {
