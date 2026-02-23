@@ -734,7 +734,7 @@ export default {
     },
     listWrapStyle() {
       if (!this.panelHeight || !this.toolbarHeight) return {}
-      return { height: (this.panelHeight - this.toolbarHeight) + 'px' }
+      return { height: (this.panelHeight - this.toolbarHeight - 4) + 'px' }
     },
     filteredAaForSelector() {
       const q = String(this.aaSearch || "").toLowerCase().trim()
@@ -1241,7 +1241,7 @@ export default {
       const el = this.$refs.aaRow
       if (!el) return
       const top = el.getBoundingClientRect().top
-      this.panelHeight = Math.max(200, Math.floor(window.innerHeight - top - 10))
+      this.panelHeight = Math.max(200, Math.floor(window.innerHeight - top - 34))
       const toolbar = this.$refs.aaToolbar
       if (toolbar) this.toolbarHeight = toolbar.offsetHeight
     },
