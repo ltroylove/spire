@@ -46,6 +46,9 @@
 }
 
 .eq-progress-bar > div {
+  position: absolute;
+  left: 0;
+  top: 0;
   height: 100%;
   transition: width 0.05s linear;
 }
