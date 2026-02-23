@@ -960,7 +960,7 @@ export default {
       if (!confirm('Remove this loot table from "' + name + '"? The loot table itself will not be deleted.')) return;
       try {
         const id = this.contextNpcId;
-        await SpireApi.v1().patch('/npc_type/' + id, { loottable_id: 0 });
+        await this._unlinkLoottableFromNpc(id);
         // Remove NPC from local linked list if present
         if (this.selectedTable.npc_types) {
           const idx = this.selectedTable.npc_types.findIndex(n => n.id === id)
@@ -978,7 +978,7 @@ export default {
       const name = npc.name || 'NPC #' + npc.id;
       if (!confirm('Remove this loot table from "' + name + '"? The loot table itself will not be deleted.')) return;
       try {
-        await SpireApi.v1().patch('/npc_type/' + npc.id, { loottable_id: 0 });
+        await this._unlinkLoottableFromNpc(npc.id);
         // Remove the NPC from the local linked list
         const idx = (this.selectedTable.npc_types || []).findIndex(n => n.id === npc.id);
         if (idx !== -1) {
@@ -989,6 +989,14 @@ export default {
         console.error('Failed to remove loot table from NPC', e);
         this.showNotification('Failed to remove loot table from NPC', 'error');
       }
+    },
+
+    async _unlinkLoottableFromNpc(npcId) {
+      // The PATCH endpoint requires the full NPC object — fetch it first, then send it back with loottable_id cleared
+      const response = await SpireApi.v1().get('/npc_type/' + npcId);
+      const fullNpc = response.data;
+      fullNpc.loottable_id = 0;
+      await SpireApi.v1().patch('/npc_type/' + npcId, fullNpc);
     },
 
     showNotification(message, type = 'success') {
