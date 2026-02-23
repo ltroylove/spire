@@ -153,7 +153,7 @@
                   </b-button>
                   <b-button
                     size="sm"
-                    :variant="hasUnsavedChanges ? 'outline-danger' : 'outline-warning'"
+                    :variant="hasUnsavedChanges ? 'outline-success' : 'outline-warning'"
                     :class="{ 'save-btn-glow': hasUnsavedChanges }"
                     @click="saveLoottable"
                     :disabled="saving"
@@ -2141,12 +2141,12 @@ input[type=number] {
 }
 
 .save-btn-glow {
-  box-shadow: 0 0 8px 2px rgba(244, 67, 54, 0.6) !important;
+  box-shadow: 0 0 8px 2px rgba(76, 175, 80, 0.6) !important;
   animation: loot-save-pulse 1.5s ease-in-out infinite !important;
 }
 @keyframes loot-save-pulse {
-  0%, 100% { box-shadow: 0 0 8px 2px rgba(244, 67, 54, 0.6); }
-  50% { box-shadow: 0 0 14px 4px rgba(244, 67, 54, 0.9); }
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(76, 175, 80, 0.6); }
+  50% { box-shadow: 0 0 14px 4px rgba(76, 175, 80, 0.9); }
 }
 
 .loot-notification {
