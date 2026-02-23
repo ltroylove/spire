@@ -114,12 +114,12 @@
                 </div>
                 <div>
                   <b-button
-                    v-if="contextNpcId"
+                    v-if="selectedTable && (selectedTable.npc_types || []).length > 0"
                     size="sm"
                     variant="outline-warning"
                     class="mr-1"
-                    @click="removeLoottableFromContextNpc"
-                    title="Remove this loot table from the NPC (does not delete the loot table)"
+                    @click="removeLoottableHeader"
+                    title="Remove this loot table from an NPC (does not delete the loot table)"
                   >
                     <i class="fa fa-times mr-1"></i> Remove
                   </b-button>
@@ -930,6 +930,27 @@ export default {
 
     goToNpc(id) {
       window.open(window.location.origin + '/npc/' + id, '_blank')
+    },
+
+    removeLoottableHeader() {
+      const npcs = this.selectedTable.npc_types || []
+      // If we have a specific NPC context (opened from NPC editor), remove from it directly
+      if (this.contextNpcId) {
+        this.removeLoottableFromContextNpc()
+        return
+      }
+      // If only one NPC uses this table, remove from it directly
+      if (npcs.length === 1) {
+        this.removeLoottableFromNpc(npcs[0])
+        return
+      }
+      // Multiple NPCs — expand the linked NPCs section so the user can pick
+      this.npcsExpanded = true
+      this.$nextTick(() => {
+        const el = this.$el.querySelector('.npc-section-header')
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+      this.showNotification('Select an NPC below to remove this loot table from')
     },
 
     async removeLoottableFromContextNpc() {
