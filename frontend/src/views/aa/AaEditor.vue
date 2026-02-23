@@ -885,9 +885,9 @@ export default {
         .filter(r => this.enabledFilter === -1 || Number(r.enabled || 0) === this.enabledFilter)
         .filter(r => this.typeFilter === -1 || Number(r.type || 0) === this.typeFilter)
         .filter(r => !q || String(r.id).includes(q) || String(r.name || "").toLowerCase().includes(q))
-        .filter(r => !this.classFilter || Number(r.classes || 0) === 0 || (Number(r.classes || 0) & this.classFilter) !== 0)
-        .filter(r => !this.raceFilter || Number(r.races || 0) === 0 || (Number(r.races || 0) & this.raceFilter) !== 0)
-        .filter(r => !this.deityFilter || Number(r.deities || 0) === 0 || (Number(r.deities || 0) & this.deityFilter) !== 0)
+        .filter(r => Number(r.classes || 0) === 0 || (Number(r.classes || 0) & this.classFilter) !== 0)
+        .filter(r => Number(r.races || 0) === 0 || (Number(r.races || 0) & this.raceFilter) !== 0)
+        .filter(r => Number(r.deities || 0) === 0 || (Number(r.deities || 0) & this.deityFilter) !== 0)
         .sort((a, b) => this.sortBy === 'name'
           ? String(a.name || '').localeCompare(String(b.name || ''))
           : Number(a.id || 0) - Number(b.id || 0))
