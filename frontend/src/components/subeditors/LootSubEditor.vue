@@ -19,6 +19,15 @@
             </div>
           </div>
           <button
+            v-if="currentLoottable"
+            @click="removeLoottable"
+            class="btn btn-sm btn-outline-danger ml-2"
+            title="Remove this loot table from the NPC (does not delete the loot table)"
+            style="white-space: nowrap;"
+          >
+            <i class="fa fa-times mr-1"></i> Remove
+          </button>
+          <button
             @click="openFullEditor"
             class="btn btn-sm btn-outline-info ml-2"
             title="Open in full Loot Editor"
@@ -48,11 +57,20 @@
                 </span>
                 <span class="text-muted ml-1">#{{ entry.lootdrop_id }}</span>
               </div>
-              <div class="lootdrop-badges">
-                <span class="loot-badge loot-badge-chance" title="Drop probability">{{ entry.probability }}%</span>
-                <span v-if="entry.multiplier > 1" class="loot-badge loot-badge-mult ml-1" title="Multiplier">×{{ entry.multiplier }}</span>
-                <span v-if="entry.droplimit > 0" class="loot-badge loot-badge-limit ml-1" title="Drop limit">limit: {{ entry.droplimit }}</span>
-                <span v-if="entry.mindrop > 0" class="loot-badge loot-badge-limit ml-1" title="Min drop">min: {{ entry.mindrop }}</span>
+              <div class="d-flex align-items-center">
+                <div class="lootdrop-badges">
+                  <span class="loot-badge loot-badge-chance" title="Drop probability">{{ entry.probability }}%</span>
+                  <span v-if="entry.multiplier > 1" class="loot-badge loot-badge-mult ml-1" title="Multiplier">×{{ entry.multiplier }}</span>
+                  <span v-if="entry.droplimit > 0" class="loot-badge loot-badge-limit ml-1" title="Drop limit">limit: {{ entry.droplimit }}</span>
+                  <span v-if="entry.mindrop > 0" class="loot-badge loot-badge-limit ml-1" title="Min drop">min: {{ entry.mindrop }}</span>
+                </div>
+                <button
+                  @click.stop="removeLootdrop(entry)"
+                  class="btn btn-xs btn-outline-danger ml-2"
+                  title="Remove this loot drop from the loot table (does not delete the loot drop)"
+                >
+                  <i class="fa fa-times"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -201,6 +219,20 @@ export default {
       const query = this.currentLoottable ? { loottableId: this.currentLoottable.id } : {};
       const route = this.$router.resolve({ path: '/loot', query });
       window.open(route.href, '_blank');
+    },
+    removeLoottable() {
+      this.$emit('input', 0);
+    },
+    async removeLootdrop(entry) {
+      const name = 'Lootdrop #' + entry.lootdrop_id;
+      if (!confirm('Remove "' + name + '" from this loot table? The loot drop itself will not be deleted.')) return;
+      try {
+        await SpireApi.v1().delete('/loottable_entry/' + entry.loottable_id, { params: { lootdrop_id: entry.lootdrop_id } });
+        await this.loadLoottable(this.currentLoottable.id);
+      } catch (e) {
+        console.error('Failed to remove loot drop from loot table', e);
+        alert('Failed to remove loot drop. Please try again.');
+      }
     },
     async loadLoottable(id) {
       this.loading = true;

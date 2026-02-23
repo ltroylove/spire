@@ -19,6 +19,14 @@
       </div>
       <div>
         <button
+          v-if="loottableId > 0"
+          @click.stop="removeLoottable"
+          class="btn btn-xs btn-outline-danger mr-1"
+          title="Remove this loot table from the NPC (does not delete the loot table)"
+        >
+          <i class="fa fa-times mr-1"></i> Remove
+        </button>
+        <button
           @click.stop="openFullEditor"
           class="btn btn-xs btn-outline-warning"
           title="Open the full-featured Loot Editor for this NPC"
@@ -67,10 +75,11 @@
           <table class="eq-table eq-highlight-rows w-100" style="font-size: 12px;">
             <thead class="eq-table-floating-header">
               <tr>
-                <th style="width: 50%;">Lootdrop</th>
-                <th class="text-center" style="width: 20%;">Prob</th>
-                <th class="text-center" style="width: 15%;">Multi</th>
-                <th class="text-center" style="width: 15%;">Limit</th>
+                <th style="width: 44%;">Lootdrop</th>
+                <th class="text-center" style="width: 18%;">Prob</th>
+                <th class="text-center" style="width: 13%;">Multi</th>
+                <th class="text-center" style="width: 13%;">Limit</th>
+                <th style="width: 12%;"></th>
               </tr>
             </thead>
             <tbody>
@@ -91,6 +100,15 @@
                 </td>
                 <td class="text-center" style="vertical-align: middle;">
                   <span style="opacity: 0.7;">{{ entry.droplimit > 0 ? entry.droplimit : '—' }}</span>
+                </td>
+                <td class="text-center" style="vertical-align: middle;">
+                  <button
+                    class="btn btn-xs btn-outline-danger"
+                    title="Remove this loot drop from the loot table (does not delete the loot drop)"
+                    @click.stop="removeLootdrop(entry)"
+                  >
+                    <i class="fa fa-times"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -153,6 +171,23 @@ export default {
       if (prob >= 75) return "prob-high";
       if (prob >= 25) return "prob-med";
       return "prob-low";
+    },
+
+    removeLoottable() {
+      if (!confirm('Remove this loot table from the NPC? The loot table itself will not be deleted.')) return;
+      this.$emit('remove-loottable');
+    },
+
+    async removeLootdrop(entry) {
+      const name = entry.lootdrop ? (entry.lootdrop.name || 'Lootdrop #' + entry.lootdrop_id) : 'Lootdrop #' + entry.lootdrop_id;
+      if (!confirm('Remove "' + name + '" from this loot table? The loot drop itself will not be deleted.')) return;
+      try {
+        await SpireApi.v1().delete('/loottable_entry/' + entry.loottable_id, { params: { lootdrop_id: entry.lootdrop_id } });
+        await this.loadLoot();
+      } catch (e) {
+        console.error('Failed to remove loot drop from loot table', e);
+        alert('Failed to remove loot drop. Please try again.');
+      }
     },
 
     async loadLoot() {

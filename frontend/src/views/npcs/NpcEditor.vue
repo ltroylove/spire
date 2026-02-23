@@ -494,7 +494,10 @@
         </eq-window>
 
         <eq-window v-if="npc && !isAnySelectorActive()" class="mt-3">
-          <npc-loot-viewer :loottable-id="npc.loottable_id || 0"/>
+          <npc-loot-viewer
+            :loottable-id="npc.loottable_id || 0"
+            @remove-loottable="npc.loottable_id = 0; setFieldModifiedById('loottable_id')"
+          />
         </eq-window>
 
         <eq-window v-if="selectorActive['special_abilities']">
