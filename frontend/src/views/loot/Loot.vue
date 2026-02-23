@@ -93,7 +93,7 @@
         <!-- Editor -->
         <div v-if="selectedTable" ref="rightPanel">
           <!-- Header -->
-          <eq-window class="p-0 loot-header-window">
+          <eq-window title="Loot Table" class="p-0 loot-header-window">
             <div class="loot-editor-header">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
@@ -113,6 +113,16 @@
                   >{{ (selectedTable.npc_types || []).length }} NPC{{ (selectedTable.npc_types || []).length !== 1 ? 's' : '' }}</span>
                 </div>
                 <div>
+                  <b-button
+                    v-if="contextNpcId"
+                    size="sm"
+                    variant="outline-warning"
+                    class="mr-1"
+                    @click="removeLoottableFromContextNpc"
+                    title="Remove this loot table from the NPC (does not delete the loot table)"
+                  >
+                    <i class="fa fa-times mr-1"></i> Remove
+                  </b-button>
                   <b-button
                     size="sm"
                     variant="outline-danger"
@@ -804,6 +814,7 @@ export default {
       saving: false,
       hasUnsavedChanges: false,
       notification: null,
+      contextNpcId: null,
       npcsExpanded: false,
       allExpanded: false,
       rerenderContentFlags: 0,
@@ -921,6 +932,27 @@ export default {
       window.open(window.location.origin + '/npc/' + id, '_blank')
     },
 
+    async removeLoottableFromContextNpc() {
+      if (!this.contextNpcId) return;
+      const npc = (this.selectedTable.npc_types || []).find(n => n.id === this.contextNpcId)
+      const name = npc ? (npc.name || 'NPC #' + this.contextNpcId) : 'NPC #' + this.contextNpcId
+      if (!confirm('Remove this loot table from "' + name + '"? The loot table itself will not be deleted.')) return;
+      try {
+        const id = this.contextNpcId;
+        await SpireApi.v1().patch('/npc_type/' + id, { loottable_id: 0 });
+        // Remove NPC from local linked list if present
+        if (this.selectedTable.npc_types) {
+          const idx = this.selectedTable.npc_types.findIndex(n => n.id === id)
+          if (idx !== -1) this.selectedTable.npc_types.splice(idx, 1)
+        }
+        this.contextNpcId = null;
+        this.showNotification('Removed loot table from "' + name + '"');
+      } catch (e) {
+        console.error('Failed to remove loot table from NPC', e);
+        this.showNotification('Failed to remove loot table from NPC', 'error');
+      }
+    },
+
     async removeLoottableFromNpc(npc) {
       const name = npc.name || 'NPC #' + npc.id;
       if (!confirm('Remove this loot table from "' + name + '"? The loot table itself will not be deleted.')) return;
@@ -1030,6 +1062,8 @@ export default {
 
     async init() {
       this.loadQueryState()
+      // Capture NPC context from URL (set when opening from NPC editor)
+      this.contextNpcId = this.$route.query.npcId ? parseInt(this.$route.query.npcId) : null
       await Promise.all([this.listLootTables(), this.getTotalLootTables()])
 
       // Auto-select if loottableId query param

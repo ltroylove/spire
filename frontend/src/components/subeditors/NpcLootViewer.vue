@@ -111,6 +111,7 @@ export default {
   name: "NpcLootViewer",
   props: {
     loottableId: { type: Number, default: 0 },
+    npcId: { type: Number, default: 0 },
   },
   data() {
     return {
@@ -145,6 +146,7 @@ export default {
 
     openFullEditor() {
       const query = this.loottableId > 0 ? { loottableId: this.loottableId } : {};
+      if (this.npcId > 0) query.npcId = this.npcId;
       const route = this.$router.resolve({ path: '/loot', query });
       window.open(route.href, '_blank');
     },

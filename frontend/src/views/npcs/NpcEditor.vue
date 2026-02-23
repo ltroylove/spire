@@ -494,7 +494,7 @@
         </eq-window>
 
         <eq-window v-if="npc && !isAnySelectorActive()" class="mt-3">
-          <npc-loot-viewer :loottable-id="npc.loottable_id || 0"/>
+          <npc-loot-viewer :loottable-id="npc.loottable_id || 0" :npc-id="npc.id || 0"/>
         </eq-window>
 
         <eq-window v-if="selectorActive['special_abilities']">
@@ -550,6 +550,7 @@
         <loot-sub-editor
           v-if="selectorActive['loottable_id']"
           :loottable-id="npc ? npc.loottable_id : 0"
+          :npc-id="npc ? npc.id : 0"
           @input="(val) => { npc.loottable_id = val; setFieldModifiedById('loottable_id'); }"
         />
 
