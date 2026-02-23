@@ -288,6 +288,12 @@
                             Recast Time
                             <b-form-input v-model.number="rank.recast_time" @input="markRankDirty(rank)"/>
                             <small class="text-muted">{{ formatTime(rank.recast_time) }}</small>
+                            <loader-cast-bar-timer
+                              v-if="rank.recast_time > 0"
+                              class="mt-1"
+                              color="#FF00FF"
+                              :time-ms="rank.recast_time * 1000"
+                            />
                           </div>
                           <div class="col-3">
                             Spell
@@ -594,6 +600,7 @@ import RaceBitmaskCalculator from "@/components/tools/RaceBitmaskCalculator.vue"
 import DeityBitmaskCalculator from "@/components/tools/DeityCalculator.vue";
 import ContentExpansionSelector from "@/components/selectors/ContentExpansionSelector.vue";
 import SpellSelector from "@/components/selectors/SpellSelector.vue";
+import LoaderCastBarTimer from "@/components/LoaderCastBarTimer";
 import {SpireApi} from "@/app/api/spire-api";
 import {SpireQueryBuilder} from "@/app/api/spire-query-builder";
 import {AaAbilityApi} from "@/app/api/api/aa-ability-api";
@@ -630,6 +637,7 @@ export default {
     DeityBitmaskCalculator,
     ContentExpansionSelector,
     SpellSelector,
+    LoaderCastBarTimer,
   },
   data() {
     return {
