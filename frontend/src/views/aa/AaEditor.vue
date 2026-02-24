@@ -787,7 +787,7 @@ export default {
       this._resizeTimer = setTimeout(() => {
         this.checkAaDetailsOverflow()
         this.updatePanelHeight()
-      }, 100)
+      }, 150)
     }
     window.addEventListener("resize", this._resizeHandler)
   },
@@ -1246,14 +1246,18 @@ export default {
       if (!el) return
       // On mobile (<lg breakpoint), let panels stack naturally without a fixed height
       if (window.innerWidth < 992) {
-        this.panelHeight = 0
-        this.toolbarHeight = 0
+        if (this.panelHeight !== 0) this.panelHeight = 0
+        if (this.toolbarHeight !== 0) this.toolbarHeight = 0
         return
       }
       const top = el.getBoundingClientRect().top
-      this.panelHeight = Math.max(200, Math.floor(window.innerHeight - top - 34))
+      const newHeight = Math.max(200, Math.floor(window.innerHeight - top - 34))
+      if (newHeight !== this.panelHeight) this.panelHeight = newHeight
       const toolbar = this.$refs.aaToolbar
-      if (toolbar) this.toolbarHeight = toolbar.offsetHeight
+      if (toolbar) {
+        const newToolbarHeight = toolbar.offsetHeight
+        if (newToolbarHeight !== this.toolbarHeight) this.toolbarHeight = newToolbarHeight
+      }
     },
 
     // ---- Scroll hint ----
