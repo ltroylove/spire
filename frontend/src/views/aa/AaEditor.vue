@@ -52,8 +52,15 @@
                   <!-- Dropdown button: only at 992–1199px (lg) where the panel is too narrow for icons -->
                   <div class="d-none d-lg-flex d-xl-none align-items-center">
                     <b-dropdown size="sm" :text="classFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
-                      <div class="p-2">
-                        <class-bitmask-calculator :mask="classFilter" :show-text-top="true" :centered-buttons="true" :display-all-none="true" :all-none-below="true" :icon-small="true" @input="classFilter = Number($event || 0); applyFilters()"/>
+                      <div class="filter-abbr-list">
+                        <div v-for="entry in classAbbrevList" :key="entry.id"
+                          class="filter-abbr-item"
+                          :class="{ 'filter-abbr-item--on': isClassBitSet(entry.mask) }"
+                          @click.stop="toggleBitInClassFilter(entry.mask)"
+                        >
+                          <i class="fa fa-fw" :class="isClassBitSet(entry.mask) ? 'fa-check-square' : 'fa-square-o'"/>
+                          {{ entry.short }}
+                        </div>
                       </div>
                     </b-dropdown>
                   </div>
@@ -75,8 +82,15 @@
                   <!-- Dropdown button: only at 992–1199px (lg) -->
                   <div class="d-none d-lg-flex d-xl-none align-items-center">
                     <b-dropdown size="sm" :text="raceFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
-                      <div class="p-2">
-                        <race-bitmask-calculator :mask="raceFilter" :show-text-top="true" :centered-buttons="true" :display-all-none="true" :all-none-below="true" :icon-small="true" @input="raceFilter = Number($event || 0); applyFilters()"/>
+                      <div class="filter-abbr-list">
+                        <div v-for="entry in raceAbbrevList" :key="entry.id"
+                          class="filter-abbr-item"
+                          :class="{ 'filter-abbr-item--on': isRaceBitSet(entry.mask) }"
+                          @click.stop="toggleBitInRaceFilter(entry.mask)"
+                        >
+                          <i class="fa fa-fw" :class="isRaceBitSet(entry.mask) ? 'fa-check-square' : 'fa-square-o'"/>
+                          {{ entry.short }}
+                        </div>
                       </div>
                     </b-dropdown>
                   </div>
@@ -98,8 +112,15 @@
                   <!-- Dropdown button: only at 992–1199px (lg) -->
                   <div class="d-none d-lg-flex d-xl-none align-items-center">
                     <b-dropdown size="sm" :text="deityFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
-                      <div class="p-2">
-                        <deity-bitmask-calculator :mask="deityFilter" :show-names="true" :centered-buttons="true" :display-all-none="true" :all-none-below="true" :icon-small="true" @input="deityFilter = Number($event || 0); applyFilters()"/>
+                      <div class="filter-abbr-list">
+                        <div v-for="entry in deityAbbrevList" :key="entry.id"
+                          class="filter-abbr-item"
+                          :class="{ 'filter-abbr-item--on': isDeityBitSet(entry.mask) }"
+                          @click.stop="toggleBitInDeityFilter(entry.mask)"
+                        >
+                          <i class="fa fa-fw" :class="isDeityBitSet(entry.mask) ? 'fa-check-square' : 'fa-square-o'"/>
+                          {{ entry.short }}
+                        </div>
                       </div>
                     </b-dropdown>
                   </div>
@@ -647,6 +668,9 @@ import {AaRankPrereqApi} from "@/app/api/api/aa-rank-prereq-api";
 import {DbStrApi} from "@/app/api/api/db-str-api";
 import {DB_SPA, DB_SPA_DESCRIPTIONS, DB_SPELL_TYPES} from "@/app/constants/eq-spell-constants";
 import {EXPANSION_NAMES} from "@/app/constants/eq-expansions";
+import {DB_PLAYER_CLASSES_ALL} from "@/app/constants/eq-classes-constants";
+import {DB_PLAYER_RACES}       from "@/app/constants/eq-races-constants";
+import {DB_DIETIES_FULL}       from "@/app/constants/eq-deities-constants";
 import {ROUTE}            from "@/routes";
 import {Spells}           from "@/app/spells";
 
@@ -821,6 +845,15 @@ export default {
       if (this.deityFilter === 0) return 'None'
       const count = this.deityFilter.toString(2).split('').filter(c => c === '1').length
       return `${count} sel.`
+    },
+    classAbbrevList() {
+      return Object.entries(DB_PLAYER_CLASSES_ALL).map(([id, c]) => ({ id: Number(id), short: c.short, mask: c.mask }))
+    },
+    raceAbbrevList() {
+      return Object.entries(DB_PLAYER_RACES).map(([id, r]) => ({ id: Number(id), short: r.short, mask: Number(r.mask) }))
+    },
+    deityAbbrevList() {
+      return Object.entries(DB_DIETIES_FULL).map(([id, d]) => ({ id: Number(id), short: d.short, mask: d.mask }))
     },
   },
   async mounted() {
@@ -1322,6 +1355,14 @@ export default {
       this.checkAaDetailsOverflow()
     },
 
+    // ---- Bitmask filter toggle helpers (used by dropdown abbreviation lists) ----
+    isClassBitSet(mask)  { return (this.classFilter  & mask) !== 0 },
+    isRaceBitSet(mask)   { return (this.raceFilter   & mask) !== 0 },
+    isDeityBitSet(mask)  { return (this.deityFilter  & mask) !== 0 },
+    toggleBitInClassFilter(mask)  { this.classFilter  = (this.classFilter  ^ mask) & 65535;  this.applyFilters() },
+    toggleBitInRaceFilter(mask)   { this.raceFilter   = (this.raceFilter   ^ mask) & 65535;  this.applyFilters() },
+    toggleBitInDeityFilter(mask)  { this.deityFilter  = (this.deityFilter  ^ mask) & 131071; this.applyFilters() },
+
     // ---- Validation ----
     validateBeforeSave() {
       if (!this.selected.name || !String(this.selected.name).trim()) return "Name is required"
@@ -1677,14 +1718,44 @@ export default {
   border: 1px solid rgba(83, 146, 255, 0.25);
   border-radius: 6px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
-  min-width: 340px;
+  min-width: 160px;
   max-width: 95vw;
   max-height: 70vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding: 4px;
 }
-::v-deep .bitmask-filter-dropdown-menu .row {
-  flex-wrap: wrap !important;
+/* Vertical abbreviation list inside the dropdown */
+.filter-abbr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.filter-abbr-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #7a8fa8;
+  user-select: none;
+  white-space: nowrap;
+  transition: background 0.1s, color 0.1s;
+}
+.filter-abbr-item:hover {
+  background: rgba(83, 146, 255, 0.12);
+  color: #c0cfe8;
+}
+.filter-abbr-item--on {
+  background: rgba(83, 146, 255, 0.16);
+  color: #9db8ff;
+}
+.filter-abbr-item--on:hover {
+  background: rgba(83, 146, 255, 0.26);
 }
 
 /* Save button glow when dirty */
