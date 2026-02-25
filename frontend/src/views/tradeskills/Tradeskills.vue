@@ -27,20 +27,6 @@
             @keyup.enter="loadRecipes()"
           >
         </div>
-        <div class="col-lg-2">
-          <select class="form-control" v-model="sortField" @change="loadRecipes()">
-            <option value="name">Sort: Name</option>
-            <option value="trivial">Sort: Trivial</option>
-            <option value="skillneeded">Sort: Skill Needed</option>
-            <option value="id">Sort: ID</option>
-          </select>
-        </div>
-        <div class="col-lg-1">
-          <select class="form-control" v-model="sortDir" @change="loadRecipes()">
-            <option value="asc">Asc</option>
-            <option value="desc">Desc</option>
-          </select>
-        </div>
         <div class="col-lg-1">
           <select class="form-control" v-model.number="pageSize" @change="onPageSizeChange()" title="Rows per page">
             <option :value="25">25</option>
@@ -75,10 +61,10 @@
         <table class="eq-table bordered eq-highlight-rows tradeskill-table" style="font-size: 14px;">
           <thead class="eq-table-floating-header">
             <tr>
-              <th style="width: 60px;">ID</th>
-              <th>Name</th>
-              <th style="width: 80px;" class="text-center">Trivial</th>
-              <th style="width: 100px;" class="text-center">Skill Needed</th>
+              <th class="sortable-th" style="width: 60px;" @click="setSort('id')">ID <i :class="sortIconClass('id')"/></th>
+              <th class="sortable-th" @click="setSort('name')">Name <i :class="sortIconClass('name')"/></th>
+              <th class="sortable-th text-center" style="width: 80px;" @click="setSort('trivial')">Trivial <i :class="sortIconClass('trivial')"/></th>
+              <th class="sortable-th text-center" style="width: 100px;" @click="setSort('skillneeded')">Skill Needed <i :class="sortIconClass('skillneeded')"/></th>
               <th style="width: 80px;" class="text-center">No Fail</th>
               <th style="width: 80px;" class="text-center">Quest</th>
               <th style="width: 80px;" class="text-center">Enabled</th>
@@ -313,6 +299,20 @@ export default {
       this.page = 1;
       this.loadRecipes();
     },
+    setSort(col) {
+      if (this.sortField === col) {
+        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortField = col;
+        this.sortDir = 'asc';
+      }
+      this.page = 1;
+      this.loadRecipes();
+    },
+    sortIconClass(col) {
+      if (this.sortField !== col) return 'fa fa-sort sort-icon';
+      return this.sortDir === 'asc' ? 'fa fa-sort-asc sort-icon sort-icon--active' : 'fa fa-sort-desc sort-icon sort-icon--active';
+    },
     resetSearch() {
       this.search = "";
       this.maxTrivial = null;
@@ -359,5 +359,22 @@ export default {
 <style>
 .cursor-pointer {
   cursor: pointer;
+}
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sortable-th:hover {
+  background: rgba(138, 163, 255, 0.1);
+}
+.sort-icon {
+  opacity: 0.3;
+  font-size: 11px;
+  margin-left: 2px;
+}
+.sort-icon--active {
+  opacity: 1;
+  color: #8aa3ff;
 }
 </style>
