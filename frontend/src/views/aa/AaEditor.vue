@@ -45,7 +45,18 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
+                  <!-- Icon row: shown at <992px and >=1200px -->
+                  <div class="d-lg-none d-xl-block">
+                    <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
+                  </div>
+                  <!-- Dropdown button: only at 992–1199px (lg) where the panel is too narrow for icons -->
+                  <div class="d-none d-lg-flex d-xl-none align-items-center">
+                    <b-dropdown size="sm" :text="classFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
+                      <div class="p-2">
+                        <class-bitmask-calculator :mask="classFilter" :show-text-top="true" :centered-buttons="true" :display-all-none="true" :all-none-below="true" :icon-small="true" @input="classFilter = Number($event || 0); applyFilters()"/>
+                      </div>
+                    </b-dropdown>
+                  </div>
                 </div>
               </div>
               <div class="filter-section">
@@ -57,7 +68,18 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
+                  <!-- Icon row: shown at <992px and >=1200px -->
+                  <div class="d-lg-none d-xl-block">
+                    <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
+                  </div>
+                  <!-- Dropdown button: only at 992–1199px (lg) -->
+                  <div class="d-none d-lg-flex d-xl-none align-items-center">
+                    <b-dropdown size="sm" :text="raceFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
+                      <div class="p-2">
+                        <race-bitmask-calculator :mask="raceFilter" :show-text-top="true" :centered-buttons="true" :display-all-none="true" :all-none-below="true" :icon-small="true" @input="raceFilter = Number($event || 0); applyFilters()"/>
+                      </div>
+                    </b-dropdown>
+                  </div>
                 </div>
               </div>
               <div class="filter-section">
@@ -69,7 +91,18 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
+                  <!-- Icon row: shown at <992px and >=1200px -->
+                  <div class="d-lg-none d-xl-block">
+                    <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
+                  </div>
+                  <!-- Dropdown button: only at 992–1199px (lg) -->
+                  <div class="d-none d-lg-flex d-xl-none align-items-center">
+                    <b-dropdown size="sm" :text="deityFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
+                      <div class="p-2">
+                        <deity-bitmask-calculator :mask="deityFilter" :show-names="true" :centered-buttons="true" :display-all-none="true" :all-none-below="true" :icon-small="true" @input="deityFilter = Number($event || 0); applyFilters()"/>
+                      </div>
+                    </b-dropdown>
+                  </div>
                 </div>
               </div>
             </div>
@@ -770,6 +803,24 @@ export default {
         result[e.id] = v.length > 60 ? v.slice(0, 59) + '\u2026' : v
       })
       return result
+    },
+    classFilterLabel() {
+      if (this.classFilter >= 65535) return 'All'
+      if (this.classFilter === 0) return 'None'
+      const count = this.classFilter.toString(2).split('').filter(c => c === '1').length
+      return `${count} sel.`
+    },
+    raceFilterLabel() {
+      if (this.raceFilter >= 65535) return 'All'
+      if (this.raceFilter === 0) return 'None'
+      const count = this.raceFilter.toString(2).split('').filter(c => c === '1').length
+      return `${count} sel.`
+    },
+    deityFilterLabel() {
+      if (this.deityFilter >= 131071) return 'All'
+      if (this.deityFilter === 0) return 'None'
+      const count = this.deityFilter.toString(2).split('').filter(c => c === '1').length
+      return `${count} sel.`
     },
   },
   async mounted() {
@@ -1619,6 +1670,22 @@ export default {
 .filter-icons ::v-deep .row > div { display: flex !important; flex-wrap: nowrap; margin: 0 !important; padding: 0 !important; }
 .filter-icons ::v-deep .row > div > div { margin: 0 !important; flex-shrink: 0; }
 .filter-icons ::v-deep .row > div > div > div { padding: 0 !important; margin-right: 1px !important; }
+
+/* Bitmask dropdown menu (shown at lg breakpoint when icons don't fit) */
+::v-deep .bitmask-filter-dropdown-menu {
+  background: rgba(12, 20, 36, 0.98);
+  border: 1px solid rgba(83, 146, 255, 0.25);
+  border-radius: 6px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+  min-width: 340px;
+  max-width: 95vw;
+  max-height: 70vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+::v-deep .bitmask-filter-dropdown-menu .row {
+  flex-wrap: wrap !important;
+}
 
 /* Save button glow when dirty */
 .save-btn-glow {
