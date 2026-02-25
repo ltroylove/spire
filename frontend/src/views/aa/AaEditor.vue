@@ -45,12 +45,10 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <!-- Icon row: shown at <992px and >=1200px -->
-                  <div class="d-lg-none d-xl-block">
+                  <div v-if="!filterDropdownMode">
                     <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
                   </div>
-                  <!-- Dropdown button: only at 992–1199px (lg) where the panel is too narrow for icons -->
-                  <div class="d-none d-lg-flex d-xl-none align-items-center">
+                  <div v-else class="d-flex align-items-center">
                     <b-dropdown size="sm" :text="classFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
                       <div class="filter-abbr-list">
                         <div v-for="entry in classAbbrevList" :key="entry.id"
@@ -75,12 +73,10 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <!-- Icon row: shown at <992px and >=1200px -->
-                  <div class="d-lg-none d-xl-block">
+                  <div v-if="!filterDropdownMode">
                     <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
                   </div>
-                  <!-- Dropdown button: only at 992–1199px (lg) -->
-                  <div class="d-none d-lg-flex d-xl-none align-items-center">
+                  <div v-else class="d-flex align-items-center">
                     <b-dropdown size="sm" :text="raceFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
                       <div class="filter-abbr-list">
                         <div v-for="entry in raceAbbrevList" :key="entry.id"
@@ -105,12 +101,10 @@
                   </div>
                 </div>
                 <div class="filter-icons">
-                  <!-- Icon row: shown at <992px and >=1200px -->
-                  <div class="d-lg-none d-xl-block">
+                  <div v-if="!filterDropdownMode">
                     <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
                   </div>
-                  <!-- Dropdown button: only at 992–1199px (lg) -->
-                  <div class="d-none d-lg-flex d-xl-none align-items-center">
+                  <div v-else class="d-flex align-items-center">
                     <b-dropdown size="sm" :text="deityFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
                       <div class="filter-abbr-list">
                         <div v-for="entry in deityAbbrevList" :key="entry.id"
@@ -756,6 +750,7 @@ export default {
       sortBy: 'id',
       panelHeight: 0,
       toolbarHeight: 0,
+      filterDropdownMode: false,
       originalValues: {},
       pendingChanges: { editedFields: {} },
       aaCategoryOptions: [
@@ -1328,6 +1323,18 @@ export default {
     updatePanelHeight() {
       const el = this.$refs.aaRow
       if (!el) return
+      const toolbar = this.$refs.aaToolbar
+
+      // Switch to dropdown mode when the left panel is too narrow to display
+      // the full icon rows without clipping. Full-size EQ item sprites are 40px
+      // each; 17 icons (deities) + filter-left + padding needs ~790px of toolbar
+      // width. We measure the actual rendered width so any sidebar/container
+      // constraint is automatically accounted for.
+      if (toolbar) {
+        const narrow = toolbar.clientWidth < 790
+        if (narrow !== this.filterDropdownMode) this.filterDropdownMode = narrow
+      }
+
       // On mobile (<lg breakpoint), let panels stack naturally without a fixed height
       if (window.innerWidth < 992) {
         if (this.panelHeight !== 0) this.panelHeight = 0
@@ -1337,7 +1344,6 @@ export default {
       const top = el.getBoundingClientRect().top
       const newHeight = Math.max(200, Math.floor(window.innerHeight - top - 34))
       if (newHeight !== this.panelHeight) this.panelHeight = newHeight
-      const toolbar = this.$refs.aaToolbar
       if (toolbar) {
         const newToolbarHeight = toolbar.offsetHeight
         if (newToolbarHeight !== this.toolbarHeight) this.toolbarHeight = newToolbarHeight
@@ -1777,16 +1783,6 @@ export default {
   /* Cap the list panel height so both panels are visible when stacked */
   .aa-list-wrap {
     max-height: 380px;
-  }
-
-  /* Allow filter icon rows to scroll horizontally instead of clipping */
-  .filter-icons {
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-  .filter-icons ::v-deep .row > div {
-    flex-wrap: nowrap !important;
   }
 
   /* Details panel: let it size to content, not a fixed height */
