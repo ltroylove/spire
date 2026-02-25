@@ -24,14 +24,7 @@
                 <b-button size="sm" variant="outline-warning" @click="refreshAll"><i class="fa fa-refresh mr-1"/>Refresh</b-button>
                 <b-button size="sm" variant="outline-success" @click="newAbility"><i class="fa fa-plus mr-1"/>New</b-button>
               </div>
-              <div class="d-flex align-items-center gap-2">
-                <small class="text-muted">Sort:</small>
-                <div class="btn-group btn-group-sm">
-                  <b-button size="sm" :variant="sortBy === 'id' ? 'secondary' : 'outline-secondary'" @click="sortBy = 'id'; applyFilters()">ID</b-button>
-                  <b-button size="sm" :variant="sortBy === 'name' ? 'secondary' : 'outline-secondary'" @click="sortBy = 'name'; applyFilters()">Name</b-button>
-                </div>
-                <small class="text-muted" v-if="filteredRows.length">{{ filteredRows.length }}</small>
-              </div>
+              <small class="text-muted" v-if="filteredRows.length">{{ filteredRows.length }}</small>
             </div>
 
             <!-- Bitmask filters - compact inline rows -->
@@ -132,10 +125,10 @@
             <table v-if="filteredRows.length" class="eq-table eq-highlight-rows bordered" id="aa-editor-table">
               <thead class="eq-table-floating-header">
               <tr>
-                <th style="width: 60px; text-align:center">ID</th>
-                <th>Name</th>
-                <th style="width: 80px; text-align:center">Type</th>
-                <th style="width: 50px; text-align:center">On</th>
+                <th class="sortable-th" style="width: 60px; text-align:center" @click="setSort('id')">ID <i :class="sortIconClass('id')"/></th>
+                <th class="sortable-th" @click="setSort('name')">Name <i :class="sortIconClass('name')"/></th>
+                <th class="sortable-th" style="width: 80px; text-align:center" @click="setSort('type')">Type <i :class="sortIconClass('type')"/></th>
+                <th class="sortable-th" style="width: 50px; text-align:center" @click="setSort('enabled')">On <i :class="sortIconClass('enabled')"/></th>
               </tr>
               </thead>
               <tbody>
@@ -751,6 +744,7 @@ export default {
       isNew: false,
       showDetailsScrollHint: false,
       sortBy: 'id',
+      sortDir: 'asc',
       panelHeight: 0,
       toolbarHeight: 0,
       filterDropdownMode: false,
@@ -997,9 +991,32 @@ export default {
         .filter(r => Number(r.classes || 0) === 0 || (Number(r.classes || 0) & this.classFilter) !== 0)
         .filter(r => Number(r.races || 0) === 0 || (Number(r.races || 0) & this.raceFilter) !== 0)
         .filter(r => Number(r.deities || 0) === 0 || (Number(r.deities || 0) & this.deityFilter) !== 0)
-        .sort((a, b) => this.sortBy === 'name'
-          ? String(a.name || '').localeCompare(String(b.name || ''))
-          : Number(a.id || 0) - Number(b.id || 0))
+        .sort((a, b) => {
+          let cmp = 0
+          if (this.sortBy === 'name') {
+            cmp = String(a.name || '').localeCompare(String(b.name || ''))
+          } else if (this.sortBy === 'type') {
+            cmp = Number(a.type || 0) - Number(b.type || 0)
+          } else if (this.sortBy === 'enabled') {
+            cmp = Number(b.enabled || 0) - Number(a.enabled || 0)
+          } else {
+            cmp = Number(a.id || 0) - Number(b.id || 0)
+          }
+          return this.sortDir === 'desc' ? -cmp : cmp
+        })
+    },
+    setSort(col) {
+      if (this.sortBy === col) {
+        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortBy = col
+        this.sortDir = 'asc'
+      }
+      this.applyFilters()
+    },
+    sortIconClass(col) {
+      if (this.sortBy !== col) return 'fa fa-sort sort-icon'
+      return this.sortDir === 'asc' ? 'fa fa-sort-asc sort-icon sort-icon--active' : 'fa fa-sort-desc sort-icon sort-icon--active'
     },
 
     setAllFilters() {
@@ -1514,6 +1531,25 @@ export default {
 </script>
 
 <style scoped>
+/* Sortable column headers */
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sortable-th:hover {
+  background: rgba(138, 163, 255, 0.1);
+}
+.sort-icon {
+  opacity: 0.3;
+  font-size: 11px;
+  margin-left: 2px;
+}
+.sort-icon--active {
+  opacity: 1;
+  color: #8aa3ff;
+}
+
 /* Left panel list: height set via :style binding */
 .aa-list-wrap {
   overflow-y: auto;
