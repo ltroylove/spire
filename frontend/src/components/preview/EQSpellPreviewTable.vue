@@ -19,22 +19,19 @@
           <thead class="eq-table-floating-header">
           <tr>
             <th style="width: 200px;"></th>
-            <th style="width: auto;">Id</th>
-            <th style="width: auto; min-width: 270px">Spell</th>
+            <th class="sortable-th" style="width: auto;" @click="setSort('id')">Id <i :class="sortIconClass('id')"/></th>
+            <th class="sortable-th" style="width: auto; min-width: 270px" @click="setSort('name')">Spell <i :class="sortIconClass('name')"/></th>
             <th style="width: auto; min-width: 300px">Level</th>
             <th style="width: 400px">Effects</th>
-
-            <th>Mana</th>
-            <th style="width: 80px">Cast</th>
-            <th style="width: 80px">Recast</th>
-            <th style="width: 120px">Duration</th>
-            <th>Target</th>
-
-            <!--              <th>Description</th>-->
+            <th class="sortable-th" @click="setSort('mana')">Mana <i :class="sortIconClass('mana')"/></th>
+            <th class="sortable-th" style="width: 80px" @click="setSort('cast_time')">Cast <i :class="sortIconClass('cast_time')"/></th>
+            <th class="sortable-th" style="width: 80px" @click="setSort('recast_time')">Recast <i :class="sortIconClass('recast_time')"/></th>
+            <th class="sortable-th" style="width: 120px" @click="setSort('buffduration')">Duration <i :class="sortIconClass('buffduration')"/></th>
+            <th class="sortable-th" @click="setSort('targettype')">Target <i :class="sortIconClass('targettype')"/></th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="(spell, index) in spells" :key="spell.id">
+          <tr v-for="(spell, index) in sortedSpells" :key="spell.id">
             <td class="p-0 text-center">
 
               <b-button
@@ -155,6 +152,8 @@ export default {
       title: "",
       dbClassIcons: DB_CLASSES_ICONS,
       dbClassesShort: DB_CLASSES_SHORT,
+      sortBy: 'id',
+      sortDir: 'asc',
     }
   },
   async created() {
@@ -168,7 +167,42 @@ export default {
   props: {
     spells: Array
   },
+  computed: {
+    sortedSpells() {
+      return [...this.spells].sort((a, b) => {
+        let cmp = 0
+        if (this.sortBy === 'name') {
+          cmp = String(a.name || '').localeCompare(String(b.name || ''))
+        } else if (this.sortBy === 'mana') {
+          cmp = Number(a.mana || 0) - Number(b.mana || 0)
+        } else if (this.sortBy === 'cast_time') {
+          cmp = Number(a.cast_time || 0) - Number(b.cast_time || 0)
+        } else if (this.sortBy === 'recast_time') {
+          cmp = Number(a.recast_time || 0) - Number(b.recast_time || 0)
+        } else if (this.sortBy === 'buffduration') {
+          cmp = Number(a.buffduration || 0) - Number(b.buffduration || 0)
+        } else if (this.sortBy === 'targettype') {
+          cmp = Number(a.targettype || 0) - Number(b.targettype || 0)
+        } else {
+          cmp = Number(a.id || 0) - Number(b.id || 0)
+        }
+        return this.sortDir === 'desc' ? -cmp : cmp
+      })
+    },
+  },
   methods: {
+    setSort(col) {
+      if (this.sortBy === col) {
+        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortBy = col
+        this.sortDir = 'asc'
+      }
+    },
+    sortIconClass(col) {
+      if (this.sortBy !== col) return 'fa fa-sort sort-icon'
+      return this.sortDir === 'asc' ? 'fa fa-sort-asc sort-icon sort-icon--active' : 'fa fa-sort-desc sort-icon sort-icon--active'
+    },
     async deleteSpell(spell) {
       if (confirm(`Are you sure you want to permanently delete this spell? [${spell.name}] (${spell.id})`)) {
         await Spells.deleteSpell(spell.id)
@@ -215,6 +249,23 @@ export default {
 </script>
 
 <style scoped>
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sortable-th:hover {
+  background: rgba(138, 163, 255, 0.1);
+}
+.sort-icon {
+  opacity: 0.3;
+  font-size: 11px;
+  margin-left: 2px;
+}
+.sort-icon--active {
+  opacity: 1;
+  color: #8aa3ff;
+}
 
 /* For Mobile */
 @media screen and (max-width: 540px) {
