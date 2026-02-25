@@ -178,17 +178,17 @@
           <thead class="eq-table-floating-header">
           <tr>
             <th style="text-align: center; width: 120px"></th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('id')">Id</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('name')">Name</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('level')">Level</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('class')">Class</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('race')">Race</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('bodytype')">Bodytype</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('hp')">HP</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('mindmg')">Min Dmg</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('maxdmg')">Max Dmg</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('aggroradius')">Aggro</th>
-            <th style="text-align: center; cursor: pointer;" @click="sortBy('loottable_id')">Loot Table</th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('id')">Id <i :class="sortIconClass('id')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('name')">Name <i :class="sortIconClass('name')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('level')">Level <i :class="sortIconClass('level')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('class')">Class <i :class="sortIconClass('class')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('race')">Race <i :class="sortIconClass('race')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('bodytype')">Bodytype <i :class="sortIconClass('bodytype')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('hp')">HP <i :class="sortIconClass('hp')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('mindmg')">Min Dmg <i :class="sortIconClass('mindmg')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('maxdmg')">Max Dmg <i :class="sortIconClass('maxdmg')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('aggroradius')">Aggro <i :class="sortIconClass('aggroradius')"/></th>
+            <th class="sortable-th" style="text-align: center;" @click="sortBy('loottable_id')">Loot Table <i :class="sortIconClass('loottable_id')"/></th>
           </tr>
           </thead>
           <tbody>
@@ -504,6 +504,10 @@ export default {
       }
       this.searchNpcs();
     },
+    sortIconClass(field) {
+      if (this.sortField !== field) return 'fa fa-sort sort-icon'
+      return this.sortDirection === 'asc' ? 'fa fa-sort-asc sort-icon sort-icon--active' : 'fa fa-sort-desc sort-icon sort-icon--active'
+    },
 
     editNpc(id) {
       this.$router.push({path: "/npc/" + id});
@@ -566,6 +570,23 @@ export default {
 </script>
 
 <style scoped>
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sortable-th:hover {
+  background: rgba(138, 163, 255, 0.1);
+}
+.sort-icon {
+  opacity: 0.3;
+  font-size: 11px;
+  margin-left: 2px;
+}
+.sort-icon--active {
+  opacity: 1;
+  color: #8aa3ff;
+}
 .eq-table th {
   white-space: nowrap;
   user-select: none;
