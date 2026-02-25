@@ -48,8 +48,9 @@
                   <div v-if="!filterDropdownMode">
                     <class-bitmask-calculator :mask="classFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="classFilter = Number($event || 0); applyFilters()"/>
                   </div>
-                  <div v-else class="d-flex align-items-center">
-                    <b-dropdown size="sm" :text="classFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
+                  <div v-else class="d-flex align-items-center justify-content-center w-100">
+                    <b-dropdown size="sm" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
+                      <template #button-content>Select <i class="fa fa-chevron-down ml-1"/></template>
                       <div class="filter-abbr-list">
                         <div v-for="entry in classAbbrevList" :key="entry.id"
                           class="filter-abbr-item"
@@ -76,8 +77,9 @@
                   <div v-if="!filterDropdownMode">
                     <race-bitmask-calculator :mask="raceFilter" :show-text-top="false" :centered-buttons="false" :display-all-none="false" @input="raceFilter = Number($event || 0); applyFilters()"/>
                   </div>
-                  <div v-else class="d-flex align-items-center">
-                    <b-dropdown size="sm" :text="raceFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
+                  <div v-else class="d-flex align-items-center justify-content-center w-100">
+                    <b-dropdown size="sm" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
+                      <template #button-content>Select <i class="fa fa-chevron-down ml-1"/></template>
                       <div class="filter-abbr-list">
                         <div v-for="entry in raceAbbrevList" :key="entry.id"
                           class="filter-abbr-item"
@@ -104,8 +106,9 @@
                   <div v-if="!filterDropdownMode">
                     <deity-bitmask-calculator :mask="deityFilter" :show-names="false" :centered-buttons="false" :display-all-none="false" @input="deityFilter = Number($event || 0); applyFilters()"/>
                   </div>
-                  <div v-else class="d-flex align-items-center">
-                    <b-dropdown size="sm" :text="deityFilterLabel" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
+                  <div v-else class="d-flex align-items-center justify-content-center w-100">
+                    <b-dropdown size="sm" variant="outline-secondary" menu-class="bitmask-filter-dropdown-menu" boundary="viewport" right>
+                      <template #button-content>Select <i class="fa fa-chevron-down ml-1"/></template>
                       <div class="filter-abbr-list">
                         <div v-for="entry in deityAbbrevList" :key="entry.id"
                           class="filter-abbr-item"
