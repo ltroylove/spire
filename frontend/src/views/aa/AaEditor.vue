@@ -862,8 +862,12 @@ export default {
     this.$nextTick(this.checkAaDetailsOverflow)
     this.$nextTick(this.updatePanelHeight)
     this._resizeHandler = () => {
+      // Suppress expensive CSS effects during active resize by directly
+      // toggling a class on the DOM — no Vue reactivity, no extra renders.
+      if (this.$refs.aaRow) this.$refs.aaRow.classList.add('is-resizing')
       clearTimeout(this._resizeTimer)
       this._resizeTimer = setTimeout(() => {
+        if (this.$refs.aaRow) this.$refs.aaRow.classList.remove('is-resizing')
         this.checkAaDetailsOverflow()
         this.updatePanelHeight()
       }, 150)
@@ -1511,6 +1515,20 @@ export default {
 .aa-list-wrap {
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* During active browser resize: drop the two most expensive layout/paint
+   operations so the browser can keep up at full frame rate.
+   - Sticky thead: requires recalculating the sticky boundary every frame.
+   - Pointer-events + hover rules: the browser tracks hit-testing on every
+     row on every layout pass, even when the mouse isn't moving.
+   The class is applied/removed directly on the DOM (no Vue reactivity)
+   so it adds zero re-render overhead. */
+.is-resizing .eq-table-floating-header {
+  position: static !important;
+}
+.is-resizing {
+  pointer-events: none;
 }
 
 /* Right panel: height set via :style binding */
