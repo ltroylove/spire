@@ -33,8 +33,10 @@ func main() {
 		}
 	}
 
-	// default
-	_ = os.Setenv("APP_ENV", "local")
+	// default (only if not provided by environment)
+	if len(os.Getenv("APP_ENV")) == 0 {
+		_ = os.Setenv("APP_ENV", "local")
+	}
 
 	// load env
 	if err := env.LoadEnvFileIfExists(); err != nil {
