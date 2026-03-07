@@ -73,6 +73,9 @@ RUN useradd -m -u 10001 spire \
 USER spire
 
 # Keep cwd at /app so EQEmu path discovery (which checks cwd and one parent) continues to work.
+# Default to production so the UI does not show local-only controls (e.g., Server Admin).
+# Railway env vars can still override this if explicitly set.
+ENV APP_ENV=production
 ENV PORT=8080
 EXPOSE 8080
 
