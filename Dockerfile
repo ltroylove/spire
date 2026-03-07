@@ -1,0 +1,54 @@
+# syntax=docker/dockerfile:1
+
+############################
+# Frontend build (Vue 2)
+############################
+FROM node:18-bullseye AS frontend
+WORKDIR /app/frontend
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend ./
+# produces ./dist
+RUN npm run build
+
+############################
+# Backend build (Go)
+############################
+FROM golang:1.23-bookworm AS backend
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source
+COPY . ./
+
+# Inject built frontend dist into expected path
+COPY --from=frontend /app/frontend/dist ./frontend/dist
+
+# Build spire binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/spire ./main.go
+
+############################
+# Runtime
+############################
+FROM debian:bookworm-slim AS runtime
+WORKDIR /app
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates bash \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=backend /out/spire /app/spire
+COPY --from=backend /app/internal /app/internal
+COPY --from=backend /app/frontend/dist /app/frontend/dist
+COPY --from=backend /app/public /app/public
+COPY --from=backend /app/dist /app/dist
+
+# Spire serves the SPA using a relative LocalBasePath from internal/http/spa.
+# So we must run from that directory.
+ENV PORT=8080
+EXPOSE 8080
+
+CMD ["bash", "-lc", "cd /app/internal/http/spa && /app/spire http:serve --port ${PORT}"]
