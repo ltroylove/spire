@@ -50,7 +50,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=backend /out/spire /app/spire
-COPY --from=backend /app/internal /app/internal
+
+# Runtime static assets / templates (if any)
 COPY --from=backend /app/frontend/dist /app/frontend/dist
 COPY --from=backend /app/public /app/public
 COPY --from=backend /app/dist /app/dist
