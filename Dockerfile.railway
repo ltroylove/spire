@@ -1,4 +1,9 @@
 # syntax=docker/dockerfile:1
+#
+# Dockerfile.railway
+# OPTIONAL: Railway deployment packaging.
+# This file is NOT required for normal Spire development or releases.
+#
 
 ############################
 # Frontend build (Vue 2)
