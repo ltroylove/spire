@@ -46,7 +46,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/spire .
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates bash \
+  && apt-get install -y --no-install-recommends ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=backend /out/spire /app/spire
@@ -65,4 +65,4 @@ RUN mkdir -p /frontend && ln -s /app/frontend/dist /frontend/dist
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["bash", "-lc", "/app/spire http:serve --port ${PORT}"]
+CMD ["/bin/sh", "-c", "/app/spire http:serve --port ${PORT}"]
