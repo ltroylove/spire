@@ -55,9 +55,13 @@ COPY --from=backend /app/frontend/dist /app/frontend/dist
 COPY --from=backend /app/public /app/public
 COPY --from=backend /app/dist /app/dist
 
-# Spire serves the SPA using a relative LocalBasePath from internal/http/spa.
-# So we must run from that directory.
+# Spire's SPA loader uses a relative LocalBasePath ("../../../frontend/dist/") from the
+# current working directory. If we run with cwd=/app, that resolves to /frontend/dist.
+# Create a symlink so the SPA assets resolve without changing the process working directory.
+RUN mkdir -p /frontend && ln -s /app/frontend/dist /frontend/dist
+
+# Keep cwd at /app so EQEmu path discovery (which checks cwd and one parent) continues to work.
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["bash", "-lc", "cd /app/internal/http/spa && /app/spire http:serve --port ${PORT}"]
+CMD ["bash", "-lc", "/app/spire http:serve --port ${PORT}"]
