@@ -34,7 +34,11 @@ COPY . ./
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 
 # Build spire binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/spire ./main.go
+# NOTE: Do NOT hardcode GOARCH. When building multi-arch images (e.g., arm64 runners),
+# forcing amd64 would produce an amd64 binary inside an arm64 image and fail at runtime.
+ARG TARGETOS=linux
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/spire ./main.go
 
 ############################
 # Runtime
