@@ -61,6 +61,11 @@ COPY --from=backend /app/dist /app/dist
 # Create a symlink so the SPA assets resolve without changing the process working directory.
 RUN mkdir -p /frontend && ln -s /app/frontend/dist /frontend/dist
 
+# Run as non-root for safety
+RUN useradd -m -u 10001 spire \
+  && chown -R spire:spire /app /frontend
+USER spire
+
 # Keep cwd at /app so EQEmu path discovery (which checks cwd and one parent) continues to work.
 ENV PORT=8080
 EXPOSE 8080
