@@ -64,15 +64,8 @@ COPY --from=backend /app/dist /app/dist
 RUN mkdir -p /frontend && ln -s /app/frontend/dist /frontend/dist
 
 # Entrypoint validates PORT and then execs Spire without shell-evaluating an injected command string.
-RUN printf '%s\n' \
-  '#!/bin/sh' \
-  'set -eu' \
-  'case "${PORT:-}" in' \
-  '  ""|*[!0-9]*) echo "Invalid PORT: ${PORT:-}" >&2; exit 1;;' \
-  'esac' \
-  'exec /app/spire http:serve --port "$PORT"' \
-  > /entrypoint.sh \
-  && chmod 0755 /entrypoint.sh
+COPY entrypoint.railway.sh /entrypoint.sh
+RUN chmod 0755 /entrypoint.sh
 
 # Run as non-root for safety
 RUN useradd -m -u 10001 spire \
