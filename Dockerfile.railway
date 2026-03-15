@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 #
 # Dockerfile.railway
-# Railway deployment packaging for Spire.
+# OPTIONAL: Railway deployment packaging.
+# This file is NOT required for normal Spire development or releases.
 #
 
 ############################
@@ -14,6 +15,7 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
 COPY frontend ./
+# produces ./dist
 RUN npm run build
 
 ############################
@@ -25,10 +27,18 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Copy source
 COPY . ./
+
+# Inject built frontend dist into expected path
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 
+# Build spire binary
+# NOTE: Do NOT hardcode GOARCH. When building multi-arch images (e.g., arm64 runners),
+# forcing amd64 would produce an amd64 binary inside an arm64 image and fail at runtime.
 ARG TARGETOS=linux
+# BuildKit normally provides TARGETARCH automatically. Default to amd64 for environments
+# that don't set it.
 ARG TARGETARCH=amd64
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/spire ./main.go
 
@@ -42,17 +52,31 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=backend /out/spire /app/spire
+
+# Runtime static assets / templates (if any)
 COPY --from=backend /app/frontend/dist /app/frontend/dist
+COPY --from=backend /app/public /app/public
 COPY --from=backend /app/dist /app/dist
 
+# Spire's SPA loader uses a relative LocalBasePath ("../../../frontend/dist/") from the
+# current working directory. If we run with cwd=/app, that resolves to /frontend/dist.
+# Create a symlink so the SPA assets resolve without changing the process working directory.
 RUN mkdir -p /frontend && ln -s /app/frontend/dist /frontend/dist
 
+# Entrypoint validates PORT and then execs Spire without shell-evaluating an injected command string.
+COPY entrypoint.railway.sh /entrypoint.sh
+RUN chmod 0755 /entrypoint.sh
+
+# Run as non-root for safety
 RUN useradd -m -u 10001 spire \
-  && chown -R spire:spire /app /frontend
+  && chown -R spire:spire /app /frontend /entrypoint.sh
 USER spire
 
+# Keep cwd at /app so EQEmu path discovery (which checks cwd and one parent) continues to work.
+# Default to production so the UI does not show local-only controls (e.g., Server Admin).
+# Railway env vars can still override this if explicitly set.
 ENV APP_ENV=production
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["/bin/sh", "-c", "exec /app/spire http:serve --port \"$PORT\""]
+CMD ["/entrypoint.sh"]
