@@ -30,6 +30,7 @@ export const ROUTE = {
   ITEM_ICON_VIEWER: "/item-icon-viewer",
   ITEM_VIEWER: "/item-viewer",
   ITEMS_LIST: "/items",
+  ITEMS_EVOLVING: "/items/evolving",
   SPIRE_INITIALIZE: "/initialize",
   LOOT: "/loot",
   LOGIN: "/login",

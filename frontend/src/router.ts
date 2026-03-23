@@ -149,6 +149,11 @@ const router = new Router({
           meta: {title: "Items Browser"},
         },
         {
+          path: ROUTE.ITEMS_EVOLVING,
+          component: () => import('./views/items/EvolvingItemsEditor.vue'),
+          meta: {title: "Evolving Items"},
+        },
+        {
           path: util.format(ROUTE.ITEM_EDIT, ":id"),
           component: () => import('./views/items/ItemEditor.vue'),
           meta: {title: "Item Edit"},
