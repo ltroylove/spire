@@ -137,7 +137,7 @@
                     <th>Item</th>
                     <th style="width: 120px; text-align: center;">Type</th>
                     <th>Subtype</th>
-                    <th style="width: 110px; text-align: center;">Required</th>
+                    <th style="width: 130px; text-align: center;">Required Amount</th>
                     <th style="width: 150px; text-align: center;">Actions</th>
                   </tr>
                   </thead>
@@ -220,7 +220,7 @@
                   <div class="row mt-2">
                     <div class="col-12 col-md-5">
                       Item ID
-                      <b-input-group>
+                      <b-input-group class="evolving-inline-input-group">
                         <b-form-input id="evolving-detail-item-id" v-model.number="form.item_id"/>
                         <b-input-group-append>
                           <b-button
@@ -809,8 +809,22 @@ function subtypeLabel(detail) {
   justify-content: center;
   min-width: 42px;
   height: 30px;
-  margin-top: 3px;
+  margin-top: 0;
   line-height: 1;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.evolving-inline-input-group ::v-deep .form-control {
+  margin-top: 0;
+  margin-bottom: 0;
+  height: 30px;
+}
+
+.evolving-inline-input-group ::v-deep .input-group-append .btn {
+  margin-top: 0;
+  margin-bottom: 0;
+  height: 30px;
 }
 
 .evolving-section-header-collapsed .evolving-section-title {
