@@ -109539,8 +109539,6 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "Spire API documentation",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	LeftDelim:        "{{",
-	RightDelim:       "}}",
 }
 
 func init() {
