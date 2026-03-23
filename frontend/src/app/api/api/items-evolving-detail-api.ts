@@ -11,7 +11,10 @@ function createRequestArgs(path: string, method: string, configuration?: Configu
 
     if (options.query) {
         for (const key in options.query) {
-            queryParameters.set(key, options.query[key]);
+            const value = options.query[key];
+            if (value !== undefined && value !== null) {
+                queryParameters.set(key, value);
+            }
         }
     }
 
