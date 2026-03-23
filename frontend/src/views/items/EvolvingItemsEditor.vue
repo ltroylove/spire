@@ -68,7 +68,6 @@
                       v-for="detail in group.details.slice(0, 3)"
                       :key="`group-${group.evoId}-${detail.id}`"
                       class="mr-3 mb-1 evolving-inline-item"
-                      @click.stop
                     >
                       <item-popover
                         v-if="getCachedItem(detail.item_id)"
@@ -177,7 +176,10 @@
 
               <eq-window-simple class="evolving-form-window">
                 <div
-                  class="d-flex justify-content-between align-items-center evolving-section-header"
+                  :class="[
+                    'd-flex justify-content-between align-items-center evolving-section-header',
+                    { 'evolving-section-header-collapsed': !formSectionExpanded }
+                  ]"
                   @click="toggleFormSection"
                 >
                   <div class="eq-header mb-0">
@@ -190,7 +192,7 @@
                     @click.stop="toggleFormSection"
                   >
                     <i :class="formSectionExpanded ? 'fa fa-chevron-up' : 'fa fa-chevron-down'"></i>
-                    {{ formSectionExpanded ? 'Collapse' : 'Expand' }}
+                    {{ formSectionExpanded ? 'Collapse' : 'Open' }}
                   </b-button>
                 </div>
 
@@ -248,9 +250,6 @@
 
                   <div class="row mt-3">
                     <div class="col-12 col-lg-8">
-                      <div class="text-muted small mb-2">
-                        <span class="mr-3"><strong>Subtype Preview:</strong> {{ formSubtypePreview }}</span>
-                      </div>
                       <div v-if="getCachedItem(form.item_id)" class="mb-2">
                         <item-popover
                           :item="getCachedItem(form.item_id)"
@@ -258,7 +257,7 @@
                         />
                       </div>
                       <div v-else class="text-muted small">
-                        <strong>Item:</strong> {{ formItemName }}
+                        {{ formItemName }}
                       </div>
                     </div>
                     <div class="col-12 col-lg-4 text-lg-right mt-2 mt-lg-0">
@@ -273,14 +272,16 @@
 
                   <div class="row mt-3" v-if="Number(form.item_id) > 0">
                     <div class="col-12">
-                      <a
+                      <b-button
                         :href="itemEditorPath(form.item_id)"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-center btn-xs eq-button-fancy evolving-open-item-link"
+                        size="sm"
+                        variant="outline-warning"
+                        class="evolving-open-item-link"
                       >
-                        Open Item {{ form.item_id }} In New Tab
-                      </a>
+                        Open Item
+                      </b-button>
                     </div>
                   </div>
                 </div>
@@ -407,9 +408,6 @@ export default {
     },
     formItemName() {
       return this.itemName(this.form.item_id);
-    },
-    formSubtypePreview() {
-      return subtypeLabel(this.form);
     },
   },
   async created() {
@@ -748,17 +746,22 @@ function subtypeLabel(detail) {
 
 .evolving-section-header {
   cursor: pointer;
-  padding: 10px 12px 4px;
+  padding: 10px 12px 6px;
+  min-height: 42px;
+}
+
+.evolving-section-header-collapsed {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: 28px;
 }
 
 .evolving-section-toggle {
-  min-width: 110px;
+  min-width: 84px;
 }
 
 .evolving-open-item-link {
-  display: inline-block;
-  line-height: 25px;
-  text-decoration: none;
+  min-width: 110px;
 }
 
 .evolving-inline-item {
