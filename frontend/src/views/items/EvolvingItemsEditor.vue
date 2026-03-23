@@ -182,7 +182,8 @@
                   ]"
                   @click="toggleFormSection"
                 >
-                  <div class="eq-header mb-0">
+                  <div class="evolving-section-spacer"></div>
+                  <div class="eq-header mb-0 evolving-section-title">
                     {{ formMode === 'edit' ? 'Edit Evolution Entry' : 'Add Evolution Entry' }}
                   </div>
                   <b-button
@@ -225,6 +226,7 @@
                           <b-button
                             id="evolving-detail-item-search-btn"
                             variant="outline-warning"
+                            class="evolving-item-search-btn"
                             @click="toggleItemSelector"
                           >
                             <i class="fa fa-search"></i>
@@ -256,7 +258,7 @@
                           size="sm"
                         />
                       </div>
-                      <div v-else class="text-muted small">
+                      <div v-else-if="Number(form.item_id) > 0" class="text-muted small">
                         {{ formItemName }}
                       </div>
                     </div>
@@ -746,6 +748,7 @@ function subtypeLabel(detail) {
 
 .evolving-section-header {
   cursor: pointer;
+  position: relative;
   padding: 10px 12px 6px;
   min-height: 42px;
 }
@@ -758,6 +761,16 @@ function subtypeLabel(detail) {
 
 .evolving-section-toggle {
   min-width: 84px;
+}
+
+.evolving-section-spacer {
+  min-width: 84px;
+}
+
+.evolving-section-title {
+  flex: 1;
+  text-align: center;
+  font-size: 24px;
 }
 
 .evolving-open-item-link {
@@ -788,6 +801,16 @@ function subtypeLabel(detail) {
 ::v-deep .evolving-form [id$='-popover'],
 ::v-deep .evolving-form [id$='-popover'] span {
   cursor: pointer;
+}
+
+.evolving-item-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 30px;
+  margin-top: 3px;
+  line-height: 1;
 }
 
 .minified-inputs input,

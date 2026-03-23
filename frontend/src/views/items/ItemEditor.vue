@@ -546,21 +546,37 @@
               <div class="row">
                 <div class="col-3">
                   Evolving Flag
-                  <b-form-input
+                  <b-form-checkbox
                     id="evoitem"
-                    v-model.number="item.evoitem"
+                    v-model="item.evoitem"
+                    :value="1"
+                    :unchecked-value="0"
+                    switch
                     v-b-tooltip.hover.v-dark.right
                     :title="getFieldDescription('evoitem')"
-                  />
+                    @change="setFieldModifiedById('evoitem')"
+                  >Enabled</b-form-checkbox>
                 </div>
-                <div class="col-3">
+                <div class="col-3" @click="drawEvolvingChainSelector">
                   Evolution ID
-                  <b-form-input
-                    id="evoid"
-                    v-model.number="item.evoid"
-                    v-b-tooltip.hover.v-dark.right
-                    :title="getFieldDescription('evoid')"
-                  />
+                  <b-input-group>
+                    <b-form-input
+                      id="evoid"
+                      v-model.number="item.evoid"
+                      v-b-tooltip.hover.v-dark.right
+                      :title="getFieldDescription('evoid')"
+                    />
+                    <b-input-group-append>
+                      <b-button
+                        size="sm"
+                        variant="outline-warning"
+                        class="item-editor-evolving-search-btn"
+                        @click.stop="drawEvolvingChainSelector"
+                      >
+                        <i class="fa fa-search"></i>
+                      </b-button>
+                    </b-input-group-append>
+                  </b-input-group>
                 </div>
                 <div class="col-3">
                   Evolving Level
@@ -1754,6 +1770,16 @@
 
         </div>
 
+        <div
+          class="fade-in"
+          v-if="evolvingChainSelectorActive && item"
+        >
+          <evolving-chain-selector
+            :selected-evo-id="Number(item.evoid)"
+            @input="selectEvolvingChain($event)"
+          />
+        </div>
+
       </div>
     </div>
   </div>
@@ -1819,6 +1845,7 @@ import {ROUTE}              from "../../routes";
 import {Navbar}             from "@/app/navbar";
 import {SpireQueryBuilder}  from "../../app/api/spire-query-builder";
 import {Zones}              from "../../app/zones";
+import EvolvingChainSelector from "./components/EvolvingChainSelector.vue";
 import {
   getCachedItemName,
   getCurrentEvolutionDetail,
@@ -1856,7 +1883,8 @@ export default {
     EqTab,
     EqTabs,
     EqWindow,
-    EqWindowFancy
+    EqWindowFancy,
+    EvolvingChainSelector
   },
   data() {
     return {
@@ -1876,6 +1904,7 @@ export default {
       itemModelSelectorActive: false,
       spellEffectSelectorActive: false,
       freeIdSelectorActive: false,
+      evolvingChainSelectorActive: false,
       drawStatScaleToolActive: false,
       drawColorSelectorActive: false,
       drawRaceMaterialPreviewActive: false,
@@ -2405,6 +2434,7 @@ export default {
       this.itemModelSelectorActive         = false;
       this.previewItemActive               = false;
       this.spellEffectSelectorActive       = false;
+      this.evolvingChainSelectorActive     = false;
       this.drawStatScaleToolActive         = false;
       this.drawColorSelectorActive         = false;
       this.drawRaceMaterialPreviewActive   = false;
@@ -2424,6 +2454,13 @@ export default {
     drawEffectSelector() {
       this.resetPreviewComponents()
       this.spellEffectSelectorActive = true
+    },
+    drawEvolvingChainSelector() {
+      this.resetPreviewComponents()
+      this.evolvingChainSelectorActive = true
+      this.lastResetTime = Date.now()
+
+      EditFormFieldUtil.setFieldSubEditorHighlightedById("evoid")
     },
     drawItemModelSelector() {
       if ((!this.itemModelSelectorActive)) {
@@ -2544,18 +2581,24 @@ export default {
     itemEditorPath(itemId) {
       return util.format(ROUTE.ITEM_EDIT, itemId)
     },
+    selectEvolvingChain(evoId) {
+      this.item.evoid = Number(evoId)
+      this.setFieldModifiedById('evoid')
+      this.evolvingChainSelectorActive = true
+    },
     manageEvolution() {
       if (!this.item || Number(this.item.evoid) <= 0) {
         return
       }
 
-      this.$router.push({
+      const routeData = this.$router.resolve({
         path: ROUTE.ITEMS_EVOLVING,
         query: {
           evoId: this.item.evoid
         }
-      }).catch(() => {
       })
+
+      window.open(routeData.href, "_blank", "noopener")
     },
     getTargetTypeColor(targetType) {
       return Items.getTargetTypeColor(targetType);
@@ -2581,5 +2624,15 @@ export default {
 
 .evolving-chain-current-row {
   background: rgba(232, 197, 109, 0.18);
+}
+
+.item-editor-evolving-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 30px;
+  margin-top: 3px;
+  line-height: 1;
 }
 </style>
