@@ -131,6 +131,7 @@ export * from './models-inventory-snapshot';
 export * from './models-ip-exemption';
 export * from './models-item';
 export * from './models-item-tick';
+export * from './models-items-evolving-detail';
 export * from './models-keyring';
 export * from './models-ldon-trap-entry';
 export * from './models-ldon-trap-template';

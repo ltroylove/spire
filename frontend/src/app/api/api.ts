@@ -113,6 +113,7 @@ export * from './api/ground-spawn-api';
 // export * from './api/inventory-snapshot-api';
 // export * from './api/ip-exemption-api';
 export * from './api/item-api';
+export * from './api/items-evolving-detail-api';
 // export * from './api/item-tick-api';
 // export * from './api/ldon-trap-entry-api';
 // export * from './api/ldon-trap-template-api';
@@ -192,4 +193,3 @@ export * from './api/tradeskill-recipe-entry-api';
 export * from './api/zone-api';
 // export * from './api/zone-flag-api';
 export * from './api/zone-point-api';
-

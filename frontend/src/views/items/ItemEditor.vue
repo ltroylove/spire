@@ -542,6 +542,131 @@
 
             </eq-tab>
 
+            <eq-tab name="Evolving" class="minified-inputs">
+              <div class="row">
+                <div class="col-3">
+                  Evolving Flag
+                  <b-form-input
+                    id="evoitem"
+                    v-model.number="item.evoitem"
+                    v-b-tooltip.hover.v-dark.right
+                    :title="getFieldDescription('evoitem')"
+                  />
+                </div>
+                <div class="col-3">
+                  Evolution ID
+                  <b-form-input
+                    id="evoid"
+                    v-model.number="item.evoid"
+                    v-b-tooltip.hover.v-dark.right
+                    :title="getFieldDescription('evoid')"
+                  />
+                </div>
+                <div class="col-3">
+                  Evolving Level
+                  <b-form-input
+                    id="evolvinglevel"
+                    v-model.number="item.evolvinglevel"
+                    v-b-tooltip.hover.v-dark.right
+                    :title="getFieldDescription('evolvinglevel')"
+                  />
+                </div>
+                <div class="col-3">
+                  Evo Max
+                  <b-form-input
+                    id="evomax"
+                    v-model.number="item.evomax"
+                    v-b-tooltip.hover.v-dark.right
+                    :title="getFieldDescription('evomax')"
+                  />
+                </div>
+              </div>
+
+              <div class="row mt-2">
+                <div class="col-12 d-flex align-items-center flex-wrap">
+                  <b-button
+                    id="item-editor-refresh-evolving-chain-btn"
+                    size="sm"
+                    variant="outline-warning"
+                    class="mr-2 mb-2"
+                    @click="loadEvolvingChain"
+                  >
+                    <i class="fa fa-refresh mr-1"/>Refresh Chain
+                  </b-button>
+                  <b-button
+                    id="item-editor-manage-evolution-btn"
+                    size="sm"
+                    variant="outline-info"
+                    class="mr-2 mb-2"
+                    :disabled="!item.evoid"
+                    @click="manageEvolution"
+                  >
+                    <i class="fa fa-external-link mr-1"/>Manage Evolution
+                  </b-button>
+                  <small class="text-muted mb-2" v-if="evolvingChain.length > 0">
+                    {{ evolvingChain.length }} levels loaded for evolution {{ item.evoid }}
+                  </small>
+                </div>
+              </div>
+
+              <b-alert show variant="danger" class="mt-3" v-if="evolvingChainError">
+                <i class="fa fa-warning mr-1"></i>{{ evolvingChainError }}
+              </b-alert>
+
+              <b-alert show variant="warning" class="mt-3" v-if="evolvingMisconfiguration">
+                <div class="font-weight-bold mb-1">{{ evolvingMisconfiguration.title }}</div>
+                <ul class="mb-0 pl-3">
+                  <li v-for="issue in evolvingMisconfiguration.issues" :key="issue">{{ issue }}</li>
+                </ul>
+              </b-alert>
+
+              <app-loader :is-loading="evolvingChainLoading" class="mt-3 mb-3"/>
+
+              <div class="mt-3" v-if="!evolvingChainLoading && evolvingChain.length === 0">
+                <div class="text-muted">
+                  No evolving chain entries are loaded for this item.
+                </div>
+              </div>
+
+              <div class="mt-3" v-if="evolvingChain.length > 0">
+                <table id="item-editor-evolving-chain-table" class="eq-table eq-highlight-rows bordered">
+                  <thead>
+                  <tr>
+                    <th style="width: 70px; text-align: center;">Level</th>
+                    <th style="width: 90px; text-align: center;">Item ID</th>
+                    <th>Item</th>
+                    <th style="width: 120px; text-align: center;">Type</th>
+                    <th>Subtype</th>
+                    <th style="width: 110px; text-align: center;">Required</th>
+                    <th style="width: 110px; text-align: center;">Editor</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr
+                    v-for="detail in evolvingChain"
+                    :key="detail.id"
+                    :class="isCurrentEvolutionDetail(detail) ? 'evolving-chain-current-row' : ''"
+                  >
+                    <td style="text-align: center;">{{ detail.item_evolve_level }}</td>
+                    <td style="text-align: center;">{{ detail.item_id }}</td>
+                    <td>{{ evolvingItemName(detail.item_id) }}</td>
+                    <td style="text-align: center;">{{ evolvingTypeLabel(detail.type) }}</td>
+                    <td>{{ formatEvolutionSubtype(detail) }}</td>
+                    <td style="text-align: center;">{{ detail.required_amount }}</td>
+                    <td style="text-align: center;">
+                      <router-link
+                        class="btn btn-sm btn-outline-info"
+                        :to="itemEditorPath(detail.item_id)"
+                      >
+                        Open
+                      </router-link>
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </eq-tab>
+
             <eq-tab name="Stats" class="minified-inputs">
               <div class="row">
                 <div class="col-4">
@@ -1649,7 +1774,8 @@ import {
   Items
 }                              from "../../app/items";
 import {
-  ItemApi
+  ItemApi,
+  ItemsEvolvingDetailApi
 }                              from "../../app/api";
 import ItemModelPreview        from "./components/ItemModelPreview";
 import ItemModelSelector       from "../../components/selectors/ItemModelSelector";
@@ -1691,6 +1817,16 @@ import {FreeIdFetcher}      from "../../app/free-id-fetcher";
 import ContentArea          from "../../components/layout/ContentArea";
 import {ROUTE}              from "../../routes";
 import {Navbar}             from "@/app/navbar";
+import {SpireQueryBuilder}  from "../../app/api/spire-query-builder";
+import {Zones}              from "../../app/zones";
+import {
+  getCachedItemName,
+  getCurrentEvolutionDetail,
+  getEvolutionMisconfiguration,
+  getEvolutionSubtypeLabel,
+  getEvolvingTypeLabel,
+  sortEvolvingDetails
+} from "../../app/items-evolving";
 
 const MILLISECONDS_BEFORE_WINDOW_RESET = 5000;
 
@@ -1756,6 +1892,9 @@ export default {
       // notifications and errors during save
       notification: "",
       error: "",
+      evolvingDetails: [],
+      evolvingChainLoading: false,
+      evolvingChainError: "",
 
       // constants
       DB_ITEM_MATERIAL: DB_ITEM_MATERIAL,
@@ -1870,6 +2009,25 @@ export default {
       },
     }
   },
+  computed: {
+    evolvingChain() {
+      return this.evolvingDetails;
+    },
+    evolvingMisconfiguration() {
+      if (!this.item || this.evolvingChainLoading) {
+        return null;
+      }
+
+      return getEvolutionMisconfiguration(this.item, this.evolvingChain);
+    },
+    currentEvolutionDetail() {
+      if (!this.item) {
+        return null;
+      }
+
+      return getCurrentEvolutionDetail(this.item, this.evolvingChain);
+    },
+  },
   watch: {
 
     // some item effect types have defaults when the effect is set
@@ -1933,6 +2091,11 @@ export default {
           this.item.casttime_ = this.item.casttime
           console.log("casttime_ is [%s]", this.item.casttime_)
         }
+      }
+    },
+    'item.evoid': function (newVal, oldVal) {
+      if (newVal !== oldVal && this.item) {
+        this.loadEvolvingChain()
       }
     },
 
@@ -2151,6 +2314,7 @@ export default {
           this.previewItemActive = true
 
           Object.assign(this.originalItem, item);
+          await this.loadEvolvingChain()
 
           let hex = util.format("#%s", this.toHex(this.item.color))
 
@@ -2323,6 +2487,76 @@ export default {
       this.drawRaceMaterialPreviewActive = true
     },
 
+    async loadEvolvingChain() {
+      if (!this.item || Number(this.item.evoid) <= 0) {
+        this.evolvingDetails = []
+        this.evolvingChainError = ""
+        return
+      }
+
+      this.evolvingChainLoading = true
+      this.evolvingChainError   = ""
+
+      try {
+        await Zones.getZones()
+
+        const result = await (new ItemsEvolvingDetailApi(...SpireApi.cfg())).listItemsEvolvingDetails(
+          (new SpireQueryBuilder())
+            .where("item_evo_id", "=", this.item.evoid)
+            .orderBy(["item_evolve_level"])
+            .limit(200)
+            .get()
+        )
+
+        this.evolvingDetails = sortEvolvingDetails(result.data || [])
+
+        const ids = [...new Set(this.evolvingDetails.map((detail) => Number(detail.item_id)).filter((id) => id > 0))]
+        if (ids.length > 0) {
+          await Items.loadItemsBulk(ids)
+        }
+      } catch (err) {
+        this.evolvingDetails = []
+        if (err.response && err.response.data && err.response.data.error) {
+          this.evolvingChainError = err.response.data.error
+        } else {
+          this.evolvingChainError = "Failed to load evolving chain details."
+        }
+      } finally {
+        this.evolvingChainLoading = false
+      }
+    },
+    evolvingTypeLabel(type) {
+      return getEvolvingTypeLabel(type)
+    },
+    formatEvolutionSubtype(detail) {
+      return getEvolutionSubtypeLabel(detail)
+    },
+    evolvingItemName(itemId) {
+      return getCachedItemName(itemId)
+    },
+    isCurrentEvolutionDetail(detail) {
+      if (!this.item) {
+        return false
+      }
+
+      return this.currentEvolutionDetail && Number(this.currentEvolutionDetail.id) === Number(detail.id)
+    },
+    itemEditorPath(itemId) {
+      return util.format(ROUTE.ITEM_EDIT, itemId)
+    },
+    manageEvolution() {
+      if (!this.item || Number(this.item.evoid) <= 0) {
+        return
+      }
+
+      this.$router.push({
+        path: ROUTE.ITEMS_EVOLVING,
+        query: {
+          evoId: this.item.evoid
+        }
+      }).catch(() => {
+      })
+    },
     getTargetTypeColor(targetType) {
       return Items.getTargetTypeColor(targetType);
     },
@@ -2343,5 +2577,9 @@ export default {
   margin-top: 3px;
   margin-bottom: 3px;
   height: 30px;
+}
+
+.evolving-chain-current-row {
+  background: rgba(232, 197, 109, 0.18);
 }
 </style>
