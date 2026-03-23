@@ -544,84 +544,113 @@
 
             <eq-tab name="Evolving" class="minified-inputs">
               <div class="row">
-                <div class="col-3">
-                  Evolving Flag
-                  <b-form-checkbox
-                    id="evoitem"
-                    v-model="item.evoitem"
-                    :value="1"
-                    :unchecked-value="0"
-                    switch
-                    v-b-tooltip.hover.v-dark.right
-                    :title="getFieldDescription('evoitem')"
-                    @change="setFieldModifiedById('evoitem')"
-                  >Enabled</b-form-checkbox>
-                </div>
-                <div class="col-3" @click="drawEvolvingChainSelector">
-                  Evolution ID
-                  <b-input-group>
-                    <b-form-input
-                      id="evoid"
-                      v-model.number="item.evoid"
-                      v-b-tooltip.hover.v-dark.right
-                      :title="getFieldDescription('evoid')"
-                    />
-                    <b-input-group-append>
+                <div class="col-12 col-xl-8">
+                  <eq-window-simple class="item-evolving-panel p-3">
+                    <div class="item-evolving-section-title">Evolution Settings</div>
+                    <div class="row">
+                      <div class="col-12 col-lg-3">
+                        Evolving Flag
+                        <b-form-checkbox
+                          id="evoitem"
+                          v-model="item.evoitem"
+                          :value="1"
+                          :unchecked-value="0"
+                          switch
+                          class="item-evolving-flag-toggle"
+                          v-b-tooltip.hover.v-dark.right
+                          :title="getFieldDescription('evoitem')"
+                          @change="setFieldModifiedById('evoitem')"
+                        >Enabled</b-form-checkbox>
+                      </div>
+                      <div class="col-12 col-lg-3" @click="drawEvolvingChainSelector">
+                        Evolution ID
+                        <b-input-group>
+                          <b-form-input
+                            id="evoid"
+                            v-model.number="item.evoid"
+                            v-b-tooltip.hover.v-dark.right
+                            :title="getFieldDescription('evoid')"
+                          />
+                          <b-input-group-append>
+                            <b-button
+                              size="sm"
+                              variant="outline-warning"
+                              class="item-editor-evolving-search-btn"
+                              @click.stop="drawEvolvingChainSelector"
+                            >
+                              <i class="fa fa-search"></i>
+                            </b-button>
+                          </b-input-group-append>
+                        </b-input-group>
+                      </div>
+                      <div class="col-12 col-lg-3">
+                        Evolving Level
+                        <b-form-input
+                          id="evolvinglevel"
+                          v-model.number="item.evolvinglevel"
+                          v-b-tooltip.hover.v-dark.right
+                          :title="getFieldDescription('evolvinglevel')"
+                        />
+                      </div>
+                      <div class="col-12 col-lg-3">
+                        Evo Max
+                        <b-form-input
+                          id="evomax"
+                          v-model.number="item.evomax"
+                          v-b-tooltip.hover.v-dark.right
+                          :title="getFieldDescription('evomax')"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="d-flex align-items-center flex-wrap mt-2">
                       <b-button
+                        id="item-editor-refresh-evolving-chain-btn"
                         size="sm"
                         variant="outline-warning"
-                        class="item-editor-evolving-search-btn"
-                        @click.stop="drawEvolvingChainSelector"
+                        class="mr-2 mb-2"
+                        @click="loadEvolvingChain"
                       >
-                        <i class="fa fa-search"></i>
+                        <i class="fa fa-refresh mr-1"/>Refresh Chain
                       </b-button>
-                    </b-input-group-append>
-                  </b-input-group>
+                      <b-button
+                        id="item-editor-manage-evolution-btn"
+                        size="sm"
+                        variant="outline-info"
+                        class="mr-2 mb-2"
+                        :disabled="!item.evoid"
+                        @click="manageEvolution"
+                      >
+                        <i class="fa fa-external-link mr-1"/>Manage Evolution
+                      </b-button>
+                      <span class="text-muted small mb-2">
+                        Use the search button on Evolution ID to browse existing chains.
+                      </span>
+                    </div>
+                  </eq-window-simple>
                 </div>
-                <div class="col-3">
-                  Evolving Level
-                  <b-form-input
-                    id="evolvinglevel"
-                    v-model.number="item.evolvinglevel"
-                    v-b-tooltip.hover.v-dark.right
-                    :title="getFieldDescription('evolvinglevel')"
-                  />
-                </div>
-                <div class="col-3">
-                  Evo Max
-                  <b-form-input
-                    id="evomax"
-                    v-model.number="item.evomax"
-                    v-b-tooltip.hover.v-dark.right
-                    :title="getFieldDescription('evomax')"
-                  />
-                </div>
-              </div>
-
-              <div class="row mt-2">
-                <div class="col-12 d-flex align-items-center flex-wrap">
-                  <b-button
-                    id="item-editor-refresh-evolving-chain-btn"
-                    size="sm"
-                    variant="outline-warning"
-                    class="mr-2 mb-2"
-                    @click="loadEvolvingChain"
-                  >
-                    <i class="fa fa-refresh mr-1"/>Refresh Chain
-                  </b-button>
-                  <b-button
-                    id="item-editor-manage-evolution-btn"
-                    size="sm"
-                    variant="outline-info"
-                    class="mr-2 mb-2"
-                    :disabled="!item.evoid"
-                    @click="manageEvolution"
-                  >
-                    <i class="fa fa-external-link mr-1"/>Manage Evolution
-                  </b-button>
-                  <small class="text-muted mb-2" v-if="evolvingChain.length > 0">
-                    {{ evolvingChain.length }} levels loaded for evolution {{ item.evoid }}
-                  </small>
+                <div class="col-12 col-xl-4 mt-3 mt-xl-0">
+                  <eq-window-simple class="item-evolving-panel item-evolving-summary p-3">
+                    <div class="item-evolving-section-title">Chain Status</div>
+                    <div class="item-evolving-summary-row">
+                      <span class="text-muted">Evolution</span>
+                      <strong>{{ item.evoid || "-" }}</strong>
+                    </div>
+                    <div class="item-evolving-summary-row">
+                      <span class="text-muted">Levels Loaded</span>
+                      <strong>{{ evolvingChain.length }}</strong>
+                    </div>
+                    <div class="item-evolving-summary-row">
+                      <span class="text-muted">Current Item</span>
+                      <strong>{{ currentEvolutionDetail ? `Level ${currentEvolutionDetail.item_evolve_level}` : "Not in chain" }}</strong>
+                    </div>
+                    <div class="item-evolving-summary-row">
+                      <span class="text-muted">State</span>
+                      <b-badge :variant="evolvingMisconfiguration ? 'warning' : (evolvingChain.length > 0 ? 'success' : 'secondary')">
+                        {{ evolvingMisconfiguration ? "Needs Review" : (evolvingChain.length > 0 ? "Configured" : "Unconfigured") }}
+                      </b-badge>
+                    </div>
+                  </eq-window-simple>
                 </div>
               </div>
 
@@ -639,47 +668,66 @@
               <app-loader :is-loading="evolvingChainLoading" class="mt-3 mb-3"/>
 
               <div class="mt-3" v-if="!evolvingChainLoading && evolvingChain.length === 0">
-                <div class="text-muted">
-                  No evolving chain entries are loaded for this item.
-                </div>
+                <eq-window-simple class="item-evolving-panel p-4 text-center">
+                  <div class="item-evolving-empty-title mb-2">No Evolution Chain Loaded</div>
+                  <div class="text-muted">
+                    Set an Evolution ID or use the selector to attach this item to an existing chain.
+                  </div>
+                </eq-window-simple>
               </div>
 
               <div class="mt-3" v-if="evolvingChain.length > 0">
-                <table id="item-editor-evolving-chain-table" class="eq-table eq-highlight-rows bordered">
-                  <thead>
-                  <tr>
-                    <th style="width: 70px; text-align: center;">Level</th>
-                    <th style="width: 90px; text-align: center;">Item ID</th>
-                    <th>Item</th>
-                    <th style="width: 120px; text-align: center;">Type</th>
-                    <th>Subtype</th>
-                    <th style="width: 110px; text-align: center;">Required</th>
-                    <th style="width: 110px; text-align: center;">Editor</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <tr
-                    v-for="detail in evolvingChain"
-                    :key="detail.id"
-                    :class="isCurrentEvolutionDetail(detail) ? 'evolving-chain-current-row' : ''"
-                  >
-                    <td style="text-align: center;">{{ detail.item_evolve_level }}</td>
-                    <td style="text-align: center;">{{ detail.item_id }}</td>
-                    <td>{{ evolvingItemName(detail.item_id) }}</td>
-                    <td style="text-align: center;">{{ evolvingTypeLabel(detail.type) }}</td>
-                    <td>{{ formatEvolutionSubtype(detail) }}</td>
-                    <td style="text-align: center;">{{ detail.required_amount }}</td>
-                    <td style="text-align: center;">
-                      <router-link
-                        class="btn btn-sm btn-outline-info"
-                        :to="itemEditorPath(detail.item_id)"
-                      >
-                        Open
-                      </router-link>
-                    </td>
-                  </tr>
-                  </tbody>
-                </table>
+                <eq-window-simple class="item-evolving-panel p-0">
+                  <div class="d-flex align-items-center justify-content-between flex-wrap p-3 pb-2">
+                    <div class="item-evolving-section-title mb-1">Evolution Chain</div>
+                    <small class="text-muted mb-1">
+                      {{ evolvingChain.length }} levels in evolution {{ item.evoid }}
+                    </small>
+                  </div>
+
+                  <table id="item-editor-evolving-chain-table" class="eq-table eq-highlight-rows bordered mb-0">
+                    <thead>
+                    <tr>
+                      <th style="width: 70px; text-align: center;">Level</th>
+                      <th style="width: 90px; text-align: center;">Item ID</th>
+                      <th>Item</th>
+                      <th style="width: 120px; text-align: center;">Type</th>
+                      <th>Subtype</th>
+                      <th style="width: 110px; text-align: center;">Required</th>
+                      <th style="width: 110px; text-align: center;">Editor</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr
+                      v-for="detail in evolvingChain"
+                      :key="detail.id"
+                      :class="isCurrentEvolutionDetail(detail) ? 'evolving-chain-current-row' : ''"
+                    >
+                      <td style="text-align: center;">{{ detail.item_evolve_level }}</td>
+                      <td style="text-align: center;">{{ detail.item_id }}</td>
+                      <td class="text-left">
+                        <item-popover
+                          v-if="getCachedEvolutionItem(detail.item_id)"
+                          :item="getCachedEvolutionItem(detail.item_id)"
+                          size="sm"
+                        />
+                        <span v-else>{{ evolvingItemName(detail.item_id) }}</span>
+                      </td>
+                      <td style="text-align: center;">{{ evolvingTypeLabel(detail.type) }}</td>
+                      <td>{{ formatEvolutionSubtype(detail) }}</td>
+                      <td style="text-align: center;">{{ detail.required_amount }}</td>
+                      <td style="text-align: center;">
+                        <router-link
+                          class="btn btn-sm btn-outline-info"
+                          :to="itemEditorPath(detail.item_id)"
+                        >
+                          Open
+                        </router-link>
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </eq-window-simple>
               </div>
             </eq-tab>
 
@@ -1791,6 +1839,7 @@ import EqWindow                from "../../components/eq-ui/EQWindow";
 import EqTabs                  from "../../components/eq-ui/EQTabs";
 import EqTab                   from "../../components/eq-ui/EQTab";
 import EqItemPreview           from "../../components/preview/EQItemCardPreview";
+import ItemPopover             from "../../components/ItemPopover.vue";
 import EqCheckbox     from "../../components/eq-ui/EQCheckbox";
 import {
   SpireApi
@@ -1879,6 +1928,7 @@ export default {
     ItemModelPreview,
     FreeIdSelector,
     EqCheckbox,
+    ItemPopover,
     EqItemPreview,
     EqTab,
     EqTabs,
@@ -2571,6 +2621,9 @@ export default {
     evolvingItemName(itemId) {
       return getCachedItemName(itemId)
     },
+    getCachedEvolutionItem(itemId) {
+      return Items.cacheExists(Number(itemId))
+    },
     isCurrentEvolutionDetail(detail) {
       if (!this.item) {
         return false
@@ -2624,6 +2677,42 @@ export default {
 
 .evolving-chain-current-row {
   background: rgba(232, 197, 109, 0.18);
+}
+
+.item-evolving-panel {
+  border: 1px solid rgba(174, 189, 213, 0.14);
+  background: rgba(9, 16, 28, 0.34);
+}
+
+.item-evolving-section-title {
+  font-size: 21px;
+  line-height: 1.1;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.item-evolving-summary {
+  min-height: 100%;
+}
+
+.item-evolving-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.item-evolving-summary-row:last-child {
+  border-bottom: 0;
+}
+
+.item-evolving-empty-title {
+  font-size: 20px;
+}
+
+.item-evolving-flag-toggle {
+  margin-top: 12px;
 }
 
 .item-editor-evolving-search-btn {

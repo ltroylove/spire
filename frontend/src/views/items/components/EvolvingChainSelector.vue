@@ -3,7 +3,7 @@
     <eq-window-simple class="p-2">
       <div class="row">
         <div class="col-12">
-          <div class="text-center mb-2 eq-header">Evolution Selector</div>
+          <div class="text-center mb-2 eq-header evolving-selector-title">Evolution Selector</div>
           <b-form-input
             v-model.trim="search"
             placeholder="Search by evolution id, item id, or item name"
@@ -173,3 +173,10 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.evolving-selector-title {
+  font-size: 26px;
+  line-height: 1.1;
+}
+</style>

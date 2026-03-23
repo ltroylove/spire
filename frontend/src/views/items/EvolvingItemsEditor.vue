@@ -754,9 +754,9 @@ function subtypeLabel(detail) {
 }
 
 .evolving-section-header-collapsed {
-  padding-top: 4px;
-  padding-bottom: 4px;
-  min-height: 28px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  min-height: 14px;
 }
 
 .evolving-section-toggle {
@@ -811,6 +811,22 @@ function subtypeLabel(detail) {
   height: 30px;
   margin-top: 3px;
   line-height: 1;
+}
+
+.evolving-section-header-collapsed .evolving-section-title {
+  font-size: 18px;
+}
+
+.evolving-section-header-collapsed .evolving-section-toggle {
+  min-width: 64px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.evolving-section-header-collapsed .evolving-section-spacer {
+  min-width: 64px;
 }
 
 .minified-inputs input,
