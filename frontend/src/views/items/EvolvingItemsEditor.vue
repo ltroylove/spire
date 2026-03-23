@@ -62,7 +62,26 @@
               >
                 <td style="text-align: center;">{{ group.evoId }}</td>
                 <td style="text-align: center;">{{ group.details.length }}</td>
-                <td>{{ summarizeChain(group.details) }}</td>
+                <td>
+                  <div class="d-flex flex-wrap align-items-center">
+                    <div
+                      v-for="detail in group.details.slice(0, 3)"
+                      :key="`group-${group.evoId}-${detail.id}`"
+                      class="mr-3 mb-1 evolving-inline-item"
+                      @click.stop
+                    >
+                      <item-popover
+                        v-if="getCachedItem(detail.item_id)"
+                        :item="getCachedItem(detail.item_id)"
+                        size="sm"
+                      />
+                      <span v-else>{{ itemName(detail.item_id) }}</span>
+                    </div>
+                    <span v-if="group.details.length > 3" class="text-muted small">
+                      +{{ group.details.length - 3 }} more
+                    </span>
+                  </div>
+                </td>
                 <td style="text-align: center;">{{ typeLabel(group.details.length > 0 ? group.details[0].type : 0) }}</td>
               </tr>
               </tbody>
@@ -132,7 +151,14 @@
                   >
                     <td style="text-align: center;">{{ detail.item_evolve_level }}</td>
                     <td style="text-align: center;">{{ detail.item_id }}</td>
-                    <td>{{ itemName(detail.item_id) }}</td>
+                    <td class="text-left">
+                      <item-popover
+                        v-if="getCachedItem(detail.item_id)"
+                        :item="getCachedItem(detail.item_id)"
+                        size="sm"
+                      />
+                      <span v-else>{{ itemName(detail.item_id) }}</span>
+                    </td>
                     <td style="text-align: center;">{{ typeLabel(detail.type) }}</td>
                     <td>{{ subtypeLabel(detail) }}</td>
                     <td style="text-align: center;">{{ detail.required_amount }}</td>
@@ -149,11 +175,26 @@
                 </table>
               </div>
 
-              <eq-window-simple
-                :title="formMode === 'edit' ? 'Edit Evolution Entry' : 'Add Evolution Entry'"
-                class="evolving-form-window"
-              >
-                <div class="minified-inputs p-2 evolving-form">
+              <eq-window-simple class="evolving-form-window">
+                <div
+                  class="d-flex justify-content-between align-items-center evolving-section-header"
+                  @click="toggleFormSection"
+                >
+                  <div class="eq-header mb-0">
+                    {{ formMode === 'edit' ? 'Edit Evolution Entry' : 'Add Evolution Entry' }}
+                  </div>
+                  <b-button
+                    size="sm"
+                    variant="outline-warning"
+                    class="evolving-section-toggle"
+                    @click.stop="toggleFormSection"
+                  >
+                    <i :class="formSectionExpanded ? 'fa fa-chevron-up' : 'fa fa-chevron-down'"></i>
+                    {{ formSectionExpanded ? 'Collapse' : 'Expand' }}
+                  </b-button>
+                </div>
+
+                <div v-if="formSectionExpanded" class="minified-inputs p-2 evolving-form">
                   <div class="row">
                     <div class="col-6 col-md-2">
                       ID
@@ -174,11 +215,22 @@
                   </div>
 
                   <div class="row mt-2">
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-5">
                       Item ID
-                      <b-form-input id="evolving-detail-item-id" v-model.number="form.item_id"/>
+                      <b-input-group>
+                        <b-form-input id="evolving-detail-item-id" v-model.number="form.item_id"/>
+                        <b-input-group-append>
+                          <b-button
+                            id="evolving-detail-item-search-btn"
+                            variant="outline-warning"
+                            @click="toggleItemSelector"
+                          >
+                            <i class="fa fa-search"></i>
+                          </b-button>
+                        </b-input-group-append>
+                      </b-input-group>
                     </div>
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-3">
                       Type
                       <b-form-select id="evolving-detail-type" v-model.number="form.type" :options="EVOLVING_TYPE_OPTIONS"/>
                     </div>
@@ -196,9 +248,17 @@
 
                   <div class="row mt-3">
                     <div class="col-12 col-lg-8">
-                      <div class="text-muted small">
-                        <span class="mr-3"><strong>Item:</strong> {{ formItemName }}</span>
-                        <span><strong>Subtype Preview:</strong> {{ formSubtypePreview }}</span>
+                      <div class="text-muted small mb-2">
+                        <span class="mr-3"><strong>Subtype Preview:</strong> {{ formSubtypePreview }}</span>
+                      </div>
+                      <div v-if="getCachedItem(form.item_id)" class="mb-2">
+                        <item-popover
+                          :item="getCachedItem(form.item_id)"
+                          size="sm"
+                        />
+                      </div>
+                      <div v-else class="text-muted small">
+                        <strong>Item:</strong> {{ formItemName }}
                       </div>
                     </div>
                     <div class="col-12 col-lg-4 text-lg-right mt-2 mt-lg-0">
@@ -213,13 +273,24 @@
 
                   <div class="row mt-3" v-if="Number(form.item_id) > 0">
                     <div class="col-12">
-                      <router-link :to="itemEditorPath(form.item_id)" class="btn btn-sm btn-outline-info">
-                        Open Item {{ form.item_id }}
-                      </router-link>
+                      <a
+                        :href="itemEditorPath(form.item_id)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-center btn-xs eq-button-fancy evolving-open-item-link"
+                      >
+                        Open Item {{ form.item_id }} In New Tab
+                      </a>
                     </div>
                   </div>
                 </div>
               </eq-window-simple>
+
+              <div v-if="itemSelectorActive" class="fade-in mt-3">
+                <task-item-selector
+                  @input="selectFormItem($event)"
+                />
+              </div>
             </div>
           </div>
         </eq-window>
@@ -233,6 +304,8 @@ import EqWindow from "@/components/eq-ui/EQWindow.vue";
 import EqWindowSimple from "@/components/eq-ui/EQWindowSimple.vue";
 import ContentArea from "@/components/layout/ContentArea.vue";
 import InfoErrorBanner from "@/components/InfoErrorBanner.vue";
+import ItemPopover from "@/components/ItemPopover.vue";
+import TaskItemSelector from "@/views/tasks/components/TaskItemSelector.vue";
 import { ItemsEvolvingDetailApi } from "@/app/api";
 import { SpireApi } from "@/app/api/spire-api";
 import { SpireQueryBuilder } from "@/app/api/spire-query-builder";
@@ -262,6 +335,8 @@ export default {
     EqWindow,
     EqWindowSimple,
     InfoErrorBanner,
+    ItemPopover,
+    TaskItemSelector,
   },
   data() {
     return {
@@ -273,6 +348,8 @@ export default {
       formMode: "",
       editingId: 0,
       form: createNewEvolutionDraft(),
+      formSectionExpanded: false,
+      itemSelectorActive: false,
       notification: "",
       error: "",
       EVOLVING_TYPE_OPTIONS,
@@ -342,6 +419,9 @@ export default {
   methods: {
     itemEditorPath(itemId) {
       return util.format(ROUTE.ITEM_EDIT, itemId);
+    },
+    getCachedItem(itemId) {
+      return Items.cacheExists(Number(itemId));
     },
 
     typeLabel(type) {
@@ -459,6 +539,8 @@ export default {
       if (this.formMode !== "edit") {
         this.formMode = "";
         this.editingId = 0;
+        this.formSectionExpanded = false;
+        this.itemSelectorActive = false;
       }
       this.updateQueryState();
     },
@@ -468,6 +550,8 @@ export default {
       this.editingId = 0;
       this.form = createNewEvolutionDraft(this.details);
       this.selectedEvoId = Number(this.form.item_evo_id);
+      this.formSectionExpanded = true;
+      this.itemSelectorActive = false;
       this.error = "";
       this.updateQueryState();
     },
@@ -480,6 +564,8 @@ export default {
       this.formMode = "create";
       this.editingId = 0;
       this.form = createExistingEvolutionDraft(this.details, this.selectedEvoId);
+      this.formSectionExpanded = true;
+      this.itemSelectorActive = false;
       this.error = "";
       this.updateQueryState();
     },
@@ -489,6 +575,8 @@ export default {
       this.editingId = Number(detail.id);
       this.selectedEvoId = Number(detail.item_evo_id);
       this.form = cloneEvolvingDetail(detail);
+      this.formSectionExpanded = true;
+      this.itemSelectorActive = false;
       this.error = "";
 
       if (updateRoute) {
@@ -500,8 +588,23 @@ export default {
       this.formMode = "";
       this.editingId = 0;
       this.form = createNewEvolutionDraft(this.details);
+      this.formSectionExpanded = false;
+      this.itemSelectorActive = false;
       this.error = "";
       this.updateQueryState();
+    },
+    toggleFormSection() {
+      this.formSectionExpanded = !this.formSectionExpanded;
+    },
+    toggleItemSelector() {
+      this.itemSelectorActive = !this.itemSelectorActive;
+      if (this.itemSelectorActive) {
+        this.formSectionExpanded = true;
+      }
+    },
+    selectFormItem(item) {
+      this.form.item_id = item.id;
+      this.itemSelectorActive = false;
     },
 
     getPayload() {
@@ -641,6 +744,47 @@ function subtypeLabel(detail) {
 
 .evolving-form-window {
   margin-top: 10px;
+}
+
+.evolving-section-header {
+  cursor: pointer;
+  padding: 10px 12px 4px;
+}
+
+.evolving-section-toggle {
+  min-width: 110px;
+}
+
+.evolving-open-item-link {
+  display: inline-block;
+  line-height: 25px;
+  text-decoration: none;
+}
+
+.evolving-inline-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+#evolving-items-table tbody tr {
+  cursor: pointer;
+  user-select: none;
+}
+
+#evolving-items-table tbody tr td,
+.evolving-chain-row td,
+.evolving-inline-item,
+.evolving-open-item-link {
+  user-select: none;
+}
+
+::v-deep .evolving-inline-item [id$='-popover'],
+::v-deep .evolving-inline-item [id$='-popover'] span,
+::v-deep .evolving-chain-row [id$='-popover'],
+::v-deep .evolving-chain-row [id$='-popover'] span,
+::v-deep .evolving-form [id$='-popover'],
+::v-deep .evolving-form [id$='-popover'] span {
+  cursor: pointer;
 }
 
 .minified-inputs input,
