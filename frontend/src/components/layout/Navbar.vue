@@ -333,7 +333,7 @@ export default {
         routePrefixMatches: ["/items", "/item/"],
         navs: [
           {
-            title: "Browser",
+            title: "Items",
             to: ROUTE.ITEMS_LIST,
             icon: "ra ra-relic-blade mr-1",
             isNew: true,

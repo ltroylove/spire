@@ -63,20 +63,34 @@
                 <td style="text-align: center;">{{ group.evoId }}</td>
                 <td style="text-align: center;">{{ group.details.length }}</td>
                 <td>
-                  <div class="d-flex flex-wrap align-items-center">
+                  <div class="d-flex flex-wrap align-items-center evolving-inline-chain">
                     <div
-                      v-for="detail in group.details.slice(0, 3)"
+                      v-for="(detail, index) in group.details.slice(0, 3)"
                       :key="`group-${group.evoId}-${detail.id}`"
-                      class="mr-3 mb-1 evolving-inline-item"
+                      class="mb-1 d-inline-flex align-items-center"
                     >
-                      <item-popover
-                        v-if="getCachedItem(detail.item_id)"
-                        :item="getCachedItem(detail.item_id)"
-                        size="sm"
-                      />
-                      <span v-else>{{ itemName(detail.item_id) }}</span>
+                      <div class="evolving-inline-item">
+                        <item-popover
+                          v-if="getCachedItem(detail.item_id)"
+                          :item="getCachedItem(detail.item_id)"
+                          size="sm"
+                        />
+                        <span v-else>{{ itemName(detail.item_id) }}</span>
+                      </div>
+                      <span
+                        v-if="index < Math.min(group.details.length, 3) - 1"
+                        class="evolving-inline-arrow"
+                      >
+                        <i class="fa fa-long-arrow-right"></i>
+                      </span>
                     </div>
-                    <span v-if="group.details.length > 3" class="text-muted small">
+                    <span
+                      v-if="group.details.length > 3"
+                      class="text-muted small d-inline-flex align-items-center mb-1"
+                    >
+                      <span class="evolving-inline-arrow">
+                        <i class="fa fa-long-arrow-right"></i>
+                      </span>
                       +{{ group.details.length - 3 }} more
                     </span>
                   </div>
@@ -780,6 +794,21 @@ function subtypeLabel(detail) {
 .evolving-inline-item {
   display: inline-flex;
   align-items: center;
+}
+
+.evolving-inline-chain {
+  row-gap: 2px;
+}
+
+.evolving-inline-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 8px;
+  color: #e8c56d;
+  opacity: 0.85;
+  font-size: 13px;
+  line-height: 1;
 }
 
 #evolving-items-table tbody tr {
