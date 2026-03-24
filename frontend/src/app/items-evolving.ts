@@ -4,11 +4,11 @@ import { Items } from "@/app/items";
 import { Zones } from "@/app/zones";
 
 export const EVOLVING_TYPE_OPTIONS = [
-  { value: 1, text: "1) Experience" },
-  { value: 2, text: "2) Kills" },
-  { value: 3, text: "3) Race" },
-  { value: 4, text: "4) Zone" },
-  { value: 99, text: "99) UNK" },
+  { value: 1, text: "Experience" },
+  { value: 2, text: "Kills" },
+  { value: 3, text: "Mob Race" },
+  { value: 4, text: "Zone" },
+  { value: 99, text: "Unknown" },
 ];
 
 export const EVOLVING_EXPERIENCE_SUBTYPES = {
@@ -21,6 +21,44 @@ export const EVOLVING_EXPERIENCE_SUBTYPES = {
 function toNumber(value: any, fallback: number = 0): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeEvolutionType(type: any) {
+  const raw = `${type ?? ""}`.trim().toLowerCase();
+  const numeric = Number(raw);
+
+  if (Number.isFinite(numeric)) {
+    return numeric;
+  }
+
+  if (raw === "experience" || raw === "amount of exp" || raw === "exp") {
+    return 1;
+  }
+
+  if (raw === "kills" || raw === "number of kills" || raw === "kill") {
+    return 2;
+  }
+
+  if (raw === "mob race" || raw === "specific mob race" || raw === "race") {
+    return 3;
+  }
+
+  if (raw === "zone" || raw === "specific zone id" || raw === "zone id") {
+    return 4;
+  }
+
+  if (raw === "unk" || raw === "unknown") {
+    return 99;
+  }
+
+  return 0;
+}
+
+export function getEvolutionSubtypeValues(subType: any) {
+  return `${subType ?? ""}`
+    .split(/[.,|/;]+|\s+/)
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
 }
 
 export function cloneEvolvingDetail(detail: ModelsItemsEvolvingDetail | null | undefined): ModelsItemsEvolvingDetail {
@@ -65,9 +103,9 @@ export function groupEvolvingDetails(details: ModelsItemsEvolvingDetail[] = []) 
 }
 
 export function getEvolvingTypeLabel(type: any) {
-  const value = toNumber(type);
+  const value = normalizeEvolutionType(type);
   const option = EVOLVING_TYPE_OPTIONS.find((entry) => entry.value === value);
-  return option ? option.text.replace(/^\d+\)\s*/, "") : `${value || 0}`;
+  return option ? option.text : `${type || value || 0}`;
 }
 
 export function getEvolutionChain(details: ModelsItemsEvolvingDetail[] = [], evoId: any) {
@@ -87,27 +125,47 @@ export function getCurrentEvolutionDetail(item: any, details: ModelsItemsEvolvin
 }
 
 export function getEvolutionSubtypeLabel(detail: ModelsItemsEvolvingDetail) {
-  const type = toNumber(detail?.type);
-  const subType = `${detail?.sub_type ?? ""}`.trim();
+  const type = normalizeEvolutionType(detail?.type);
+  const values = getEvolutionSubtypeValues(detail?.sub_type);
 
-  if (subType.length === 0) {
+  if (values.length === 0) {
     return "-";
   }
 
   if (type === 1) {
-    return EVOLVING_EXPERIENCE_SUBTYPES[subType] || subType;
+    return EVOLVING_EXPERIENCE_SUBTYPES[values[0]] || values[0];
+  }
+
+  if (type === 2) {
+    const minimumLevel = toNumber(values[0]);
+    return minimumLevel > 0 ? `Mob level ${minimumLevel}+` : "Any mob level";
   }
 
   if (type === 3) {
-    return RACES[subType] ? `${subType}) ${RACES[subType]}` : subType;
+    return values
+      .map((value) => (RACES[value] ? `${RACES[value]} (${value})` : value))
+      .join(", ");
   }
 
   if (type === 4) {
-    const zone = Zones.getZoneByIdSync(toNumber(subType));
-    return zone && zone.long_name ? `${subType}) ${zone.long_name}` : subType;
+    return values
+      .map((value) => {
+        const zone = Zones.getZoneByIdSync(toNumber(value));
+        if (zone && zone.long_name) {
+          return `${zone.long_name} (${value})`;
+        }
+
+        const zoneByShortName = (Zones.zones || []).find((entry) => `${entry.short_name || ""}`.toLowerCase() === value.toLowerCase());
+        if (zoneByShortName && zoneByShortName.long_name) {
+          return `${zoneByShortName.long_name} (${zoneByShortName.short_name})`;
+        }
+
+        return value;
+      })
+      .join(", ");
   }
 
-  return subType;
+  return values.join(", ");
 }
 
 export function getCachedItemName(itemId: any) {

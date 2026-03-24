@@ -188,7 +188,7 @@
                 </table>
               </div>
 
-              <eq-window-simple class="evolving-form-window">
+              <eq-window-simple class="evolving-form-window" @click.native="handleCollapsedFormClick">
                 <div
                   :class="[
                     'd-flex justify-content-between align-items-center evolving-section-header',
@@ -255,11 +255,43 @@
                     <div class="col-12 col-md-4">
                       Subtype
                       <b-form-select
-                        v-if="Number(form.type) === 1"
+                        v-if="isExperienceType"
                         id="evolving-detail-subtype"
                         v-model="form.sub_type"
                         :options="experienceSubtypeOptions"
                       />
+                      <div v-else-if="isKillType">
+                        <b-form-input
+                          id="evolving-detail-subtype"
+                          v-model.number="killSubtypeValue"
+                          type="number"
+                          min="0"
+                        />
+                        <small class="text-muted d-block mt-1">
+                          Minimum mob level required. Use 0 to allow kills from any level.
+                        </small>
+                      </div>
+                      <div v-else-if="isMultiSubtypeType">
+                        <b-form-input
+                          id="evolving-detail-subtype-search"
+                          v-model.trim="subtypeSearch"
+                          :placeholder="subtypeSearchPlaceholder"
+                          class="mb-2"
+                        />
+                        <b-form-select
+                          id="evolving-detail-subtype"
+                          v-model="selectedSubtypeValues"
+                          :options="filteredSubtypeOptions"
+                          multiple
+                          :select-size="7"
+                        />
+                        <small class="text-muted d-block mt-1">
+                          Hold Cmd/Ctrl to select multiple {{ isRaceType ? "race ids" : "zone ids" }}.
+                        </small>
+                        <small v-if="selectedSubtypeSummary" class="text-muted d-block mt-1">
+                          {{ selectedSubtypeSummary }}
+                        </small>
+                      </div>
                       <b-form-input v-else id="evolving-detail-subtype" v-model="form.sub_type"/>
                     </div>
                   </div>
@@ -336,11 +368,13 @@ import {
   getCachedItemName,
   getEvolutionChain,
   getEvolutionSubtypeLabel,
+  getEvolutionSubtypeValues,
   getEvolvingTypeLabel,
   groupEvolvingDetails,
   sortEvolvingDetails,
   summarizeEvolutionChain,
 } from "@/app/items-evolving";
+import { RACES } from "@/app/constants/eq-race-constants";
 import { ROUTE } from "@/routes";
 import { Zones } from "@/app/zones";
 import * as util from "util";
@@ -368,6 +402,7 @@ export default {
       formRenderKey: 0,
       formSectionExpanded: false,
       itemSelectorActive: false,
+      subtypeSearch: "",
       notification: "",
       error: "",
       EVOLVING_TYPE_OPTIONS,
@@ -388,8 +423,118 @@ export default {
     experienceSubtypeOptions() {
       return Object.keys(EVOLVING_EXPERIENCE_SUBTYPES).map((key) => ({
         value: key,
-        text: `${key}) ${EVOLVING_EXPERIENCE_SUBTYPES[key]}`,
+        text: EVOLVING_EXPERIENCE_SUBTYPES[key],
       }));
+    },
+    isExperienceType() {
+      return Number(this.form.type) === 1;
+    },
+    isKillType() {
+      return Number(this.form.type) === 2;
+    },
+    isRaceType() {
+      return Number(this.form.type) === 3;
+    },
+    isZoneType() {
+      return Number(this.form.type) === 4;
+    },
+    isMultiSubtypeType() {
+      return this.isRaceType || this.isZoneType;
+    },
+    killSubtypeValue: {
+      get() {
+        const values = getEvolutionSubtypeValues(this.form.sub_type);
+        const value = Number(values.length > 0 ? values[0] : 0);
+        return Number.isFinite(value) && value >= 0 ? value : 0;
+      },
+      set(value) {
+        const parsed = Number(value);
+        this.form.sub_type = `${Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0}`;
+      },
+    },
+    selectedSubtypeValues: {
+      get() {
+        return getEvolutionSubtypeValues(this.form.sub_type);
+      },
+      set(values) {
+        this.form.sub_type = (values || [])
+          .map((value) => `${value}`.trim())
+          .filter((value, index, allValues) => value.length > 0 && allValues.indexOf(value) === index)
+          .join(".");
+      },
+    },
+    raceSubtypeOptions() {
+      return Object.keys(RACES)
+        .filter((key) => Number(key) > 0)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => ({
+          value: key,
+          text: `${RACES[key]} (${key})`,
+        }));
+    },
+    zoneSubtypeOptions() {
+      const zonesById = {};
+
+      (Zones.zones || []).forEach((zone) => {
+        const zoneId = Number(zone.zoneidnumber);
+        if (zoneId <= 0) {
+          return;
+        }
+
+        if (!zonesById[zoneId] || Number(zone.version) === 0) {
+          zonesById[zoneId] = zone;
+        }
+      });
+
+      return Object.keys(zonesById)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((zoneId) => {
+          const zone = zonesById[zoneId] || {};
+          const longName = zone.long_name || zone.short_name || `Zone ${zoneId}`;
+          const shortName = zone.short_name || zone.long_name || `${zoneId}`;
+          return {
+            value: `${zoneId}`,
+            text: `${longName} (${shortName}, ${zoneId})`,
+          };
+        });
+    },
+    allSubtypeOptions() {
+      if (this.isRaceType) {
+        return this.raceSubtypeOptions;
+      }
+
+      if (this.isZoneType) {
+        return this.zoneSubtypeOptions;
+      }
+
+      return [];
+    },
+    filteredSubtypeOptions() {
+      const search = this.subtypeSearch.toLowerCase().trim();
+      if (!search) {
+        return this.allSubtypeOptions;
+      }
+
+      return this.allSubtypeOptions.filter((option) => option.text.toLowerCase().includes(search));
+    },
+    subtypeSearchPlaceholder() {
+      return this.isRaceType ? "Filter race ids or names" : "Filter zone ids, short names, or long names";
+    },
+    selectedSubtypeSummary() {
+      if (!this.isMultiSubtypeType || this.selectedSubtypeValues.length === 0) {
+        return "";
+      }
+
+      return this.allSubtypeOptions
+        .filter((option) => this.selectedSubtypeValues.includes(option.value))
+        .map((option) => option.text)
+        .join(", ");
+    },
+    zoneSubtypeLookup() {
+      return this.zoneSubtypeOptions.reduce((lookup, option) => {
+        lookup[option.value] = option.text;
+        return lookup;
+      }, {});
     },
     typeFilterOptions() {
       return [{ value: -1, text: "All Types" }].concat(EVOLVING_TYPE_OPTIONS);
@@ -430,6 +575,31 @@ export default {
   async created() {
     this.loadQueryState();
     await this.loadDetails();
+  },
+  watch: {
+    "form.type"(nextType) {
+      this.subtypeSearch = "";
+
+      const values = getEvolutionSubtypeValues(this.form.sub_type);
+      const numericType = Number(nextType);
+      if (numericType === 1) {
+        if (values.length !== 1 || !Object.prototype.hasOwnProperty.call(EVOLVING_EXPERIENCE_SUBTYPES, values[0])) {
+          this.form.sub_type = "0";
+        }
+      }
+
+      if (numericType === 2) {
+        if (values.length !== 1 || !/^\d+$/.test(values[0])) {
+          this.form.sub_type = "0";
+        }
+      }
+
+      // For Race (3) and Zone (4), normalize sub_type by removing invalid/non-positive ids.
+      if (numericType === 3 || numericType === 4) {
+        const validValues = values.filter((value) => /^\d+$/.test(value) && Number(value) > 0);
+        this.form.sub_type = validValues.length ? validValues.join(".") : "";
+      }
+    },
   },
   methods: {
     itemEditorPath(itemId) {
@@ -571,6 +741,7 @@ export default {
     applyFormDraft(form) {
       this.form = form;
       this.formRenderKey += 1;
+      this.subtypeSearch = "";
     },
 
     startNewEvolution() {
@@ -628,6 +799,11 @@ export default {
         this.seedCreateForm();
       }
     },
+    handleCollapsedFormClick() {
+      if (!this.formSectionExpanded) {
+        this.toggleFormSection();
+      }
+    },
     toggleItemSelector() {
       this.itemSelectorActive = !this.itemSelectorActive;
       if (this.itemSelectorActive) {
@@ -640,13 +816,22 @@ export default {
     },
 
     getPayload() {
+      const type = Number(this.form.type || 0);
+      let sub_type = `${typeof this.form.sub_type !== "undefined" && this.form.sub_type !== null ? this.form.sub_type : ""}`;
+
+      // For Race (3) and Zone (4), deduplicate sub_type values before saving.
+      if (type === 3 || type === 4) {
+        const values = getEvolutionSubtypeValues(sub_type);
+        sub_type = values.filter((value, index, allValues) => allValues.indexOf(value) === index).join(".");
+      }
+
       return {
         id: Number(this.form.id || 0),
         item_evo_id: Number(this.form.item_evo_id || 0),
         item_evolve_level: Number(this.form.item_evolve_level || 0),
         item_id: Number(this.form.item_id || 0),
-        type: Number(this.form.type || 0),
-        sub_type: `${typeof this.form.sub_type !== "undefined" && this.form.sub_type !== null ? this.form.sub_type : ""}`,
+        type,
+        sub_type,
         required_amount: Number(this.form.required_amount || 0),
       };
     },
@@ -664,6 +849,11 @@ export default {
         return "Item id must be greater than 0.";
       }
 
+      const subtypeValidationError = this.validateSubtype(payload);
+      if (subtypeValidationError.length > 0) {
+        return subtypeValidationError;
+      }
+
       const duplicate = this.details.find((detail) => {
         const sameChain = Number(detail.item_evo_id) === payload.item_evo_id;
         const sameLevel = Number(detail.item_evolve_level) === payload.item_evolve_level;
@@ -673,6 +863,47 @@ export default {
 
       if (duplicate) {
         return "This evolution chain already has an entry for the selected level.";
+      }
+
+      return "";
+    },
+
+    validateSubtype(payload) {
+      const type = Number(payload.type);
+      const values = getEvolutionSubtypeValues(payload.sub_type);
+
+      if (type === 1) {
+        if (values.length !== 1 || !Object.prototype.hasOwnProperty.call(EVOLVING_EXPERIENCE_SUBTYPES, values[0])) {
+          return "Experience subtype must be All EXP, Solo EXP, Group EXP, or Raid EXP.";
+        }
+      }
+
+      if (type === 2) {
+        if (values.length !== 1 || !/^\d+$/.test(values[0])) {
+          return "Kill subtype must be a whole number representing the minimum mob level.";
+        }
+      }
+
+      if (type === 3) {
+        if (values.length === 0) {
+          return "Select at least one mob race subtype.";
+        }
+
+        const invalidRace = values.find((value) => !Object.prototype.hasOwnProperty.call(RACES, value) || Number(value) <= 0);
+        if (invalidRace) {
+          return `Mob race subtype ${invalidRace} is not a valid race id.`;
+        }
+      }
+
+      if (type === 4) {
+        if (values.length === 0) {
+          return "Select at least one zone subtype.";
+        }
+
+        const invalidZone = values.find((value) => !Object.prototype.hasOwnProperty.call(this.zoneSubtypeLookup, value));
+        if (invalidZone) {
+          return `Zone subtype ${invalidZone} is not a valid zone id.`;
+        }
       }
 
       return "";
