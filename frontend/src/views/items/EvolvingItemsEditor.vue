@@ -597,7 +597,7 @@ export default {
       // For Race (3) and Zone (4), normalize sub_type by removing invalid/non-positive ids.
       if (numericType === 3 || numericType === 4) {
         const validValues = values.filter((value) => /^\d+$/.test(value) && Number(value) > 0);
-        this.form.sub_type = validValues.length ? validValues.join("|") : "";
+        this.form.sub_type = validValues.length ? validValues.join(".") : "";
       }
     },
   },
@@ -816,13 +816,22 @@ export default {
     },
 
     getPayload() {
+      const type = Number(this.form.type || 0);
+      let sub_type = `${typeof this.form.sub_type !== "undefined" && this.form.sub_type !== null ? this.form.sub_type : ""}`;
+
+      // For Race (3) and Zone (4), deduplicate sub_type values before saving.
+      if (type === 3 || type === 4) {
+        const values = getEvolutionSubtypeValues(sub_type);
+        sub_type = values.filter((value, index, allValues) => allValues.indexOf(value) === index).join(".");
+      }
+
       return {
         id: Number(this.form.id || 0),
         item_evo_id: Number(this.form.item_evo_id || 0),
         item_evolve_level: Number(this.form.item_evolve_level || 0),
         item_id: Number(this.form.item_id || 0),
-        type: Number(this.form.type || 0),
-        sub_type: `${typeof this.form.sub_type !== "undefined" && this.form.sub_type !== null ? this.form.sub_type : ""}`,
+        type,
+        sub_type,
         required_amount: Number(this.form.required_amount || 0),
       };
     },
