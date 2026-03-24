@@ -106,12 +106,7 @@
               </router-link>
             </li>
 
-            <li class="nav-item">
-              <router-link class="nav-link " to="/items">
-                <i class="ra ra-relic-blade mr-1"></i> Items
-                <b-badge class="ml-3" variant="primary">NEW!</b-badge>
-              </router-link>
-            </li>
+            <nav-section-component :config="itemNav"/>
 
             <nav-section-component :config="npcNav"/>
 
@@ -329,6 +324,27 @@ export default {
             icon: "ra ra-regeneration mr-1",
             isAlpha: true,
             routes: ['bot-spells']
+          },
+        ]
+      },
+      itemNav: {
+        label: "Items",
+        labelIcon: "ra ra-relic-blade mr-1",
+        routePrefixMatches: ["/items", "/item/"],
+        navs: [
+          {
+            title: "Items",
+            to: ROUTE.ITEMS_LIST,
+            icon: "ra ra-relic-blade mr-1",
+            isNew: true,
+            routes: ['/items', '/item/']
+          },
+          {
+            title: "Evolving",
+            to: ROUTE.ITEMS_EVOLVING,
+            icon: "ra ra-player-upgrade mr-1",
+            isNew: true,
+            routes: ['/items/evolving']
           },
         ]
       },
@@ -649,6 +665,7 @@ export default {
       let navs = [
         this.adminNavs,
         [this.botNav],
+        [this.itemNav],
         [this.npcNav],
         [this.viewerNav],
         [this.spireApiNav],
@@ -663,7 +680,6 @@ export default {
       let manualRoutes = [
         { name: "Coffee", route: ROUTE.COFFEE },
         { name: "Tasks", route: ROUTE.TASKS },
-        { name: "Items", route: ROUTE.ITEMS_LIST },
         { name: "Spells", route: ROUTE.SPELLS_LIST },
         { name: "[Quest API] Explorer", route: ROUTE.QUEST_API_EXPLORER },
         { name: "[Quest API] Explorer (Perl)", route: `${ROUTE.QUEST_API_EXPLORER}?lang=perl` },
