@@ -67,12 +67,13 @@ type Features struct {
 
 // EnvResponse is a struct to hold the response for the env endpoint
 type EnvResponse struct {
-	Env              string           `json:"env"`
-	Version          string           `json:"version"`
-	OS               string           `json:"os"`
-	Features         Features         `json:"features"`
-	Settings         []models.Setting `json:"settings"`
-	SpireInitialized bool             `json:"is_spire_initialized"`
+	Env                          string           `json:"env"`
+	Version                      string           `json:"version"`
+	OS                           string           `json:"os"`
+	Features                     Features         `json:"features"`
+	Settings                     []models.Setting `json:"settings"`
+	SpireInitialized             bool             `json:"is_spire_initialized"`
+	HostedReadOnlyModeEnabled    bool             `json:"is_hosted_read_only_mode_enabled"`
 }
 
 // PackageJson is a struct to hold the package.json file
@@ -103,8 +104,9 @@ func (d *Controller) env(c echo.Context) error {
 			Features: Features{
 				GithubAuthEnabled: len(os.Getenv("GITHUB_CLIENT_ID")) > 0,
 			},
-			Settings:         d.settings.GetSettings(),
-			SpireInitialized: d.spireinit.IsInitialized(),
+			Settings:                  d.settings.GetSettings(),
+			SpireInitialized:          d.spireinit.IsInitialized(),
+			HostedReadOnlyModeEnabled: env.IsHostedReadOnlyModeEnabled(),
 		}
 
 		return c.JSON(http.StatusOK, echo.Map{"data": response})

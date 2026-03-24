@@ -87,6 +87,14 @@ export class AppEnv {
     this._version = value;
   }
 
+  static isHostedReadOnlyModeEnabled() {
+    return this._is_hosted_read_only_mode_enabled === true
+  }
+
+  static setHostedReadOnlyModeEnabled(value) {
+    this._is_hosted_read_only_mode_enabled = value;
+  }
+
   static isAppLocal() {
     return this.getEnv() !== AppEnvProduction &&
       ([AppEnvLocal, AppEnvDesktop, AppEnvDev].includes(this.getEnv()))
@@ -119,6 +127,7 @@ export class AppEnv {
   private static _features;
   private static _settings;
   private static _is_spire_initialized;
+  private static _is_hosted_read_only_mode_enabled;
 
   static async init() {
     const r = await SpireApi.v1().get("/app/env")
@@ -130,6 +139,7 @@ export class AppEnv {
       this.setFeatures(data.features)
       this.setSettings(data.settings)
       this.setIsSpireInitialized(data.is_spire_initialized)
+      this.setHostedReadOnlyModeEnabled(data.is_hosted_read_only_mode_enabled)
 
       // if a local install is not using auth but somehow the user still
       // has a JWT stored locally, let's purge it

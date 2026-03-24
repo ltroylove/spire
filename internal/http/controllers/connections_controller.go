@@ -6,6 +6,7 @@ import (
 	"github.com/EQEmuTools/spire/internal/connection"
 	"github.com/EQEmuTools/spire/internal/connection/contexts"
 	"github.com/EQEmuTools/spire/internal/database"
+	"github.com/EQEmuTools/spire/internal/env"
 	"github.com/EQEmuTools/spire/internal/http/request"
 	"github.com/EQEmuTools/spire/internal/http/routes"
 	"github.com/EQEmuTools/spire/internal/models"
@@ -276,10 +277,15 @@ func (cc *ConnectionsController) delete(c echo.Context) error {
 
 // gets default connection
 func (cc *ConnectionsController) getDefault(c echo.Context) error {
+	connectionName := "ProjectEQ Server Database (Local)"
+	if env.IsHostedReadOnlyModeEnabled() {
+		connectionName = "ProjectEQ Server Database (Read Only) (Local)"
+	}
+
 	result := models.UserServerDatabaseConnection{
 		ServerDatabaseConnection: models.ServerDatabaseConnection{
 			ID:         0,
-			Name:       "ProjectEQ Server Database (Read Only) (Local)",
+			Name:       connectionName,
 			DbHost:     os.Getenv("MYSQL_EQEMU_HOST"),
 			DbPort:     os.Getenv("MYSQL_EQEMU_PORT"),
 			DbName:     os.Getenv("MYSQL_EQEMU_DATABASE"),

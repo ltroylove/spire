@@ -30,7 +30,7 @@
 
                   {{ defaultConnection.database_connection.name }}
                 </h4>
-                <small class="text-muted">Latest of ProjectEQ data, active when not logged in, read-only</small>
+                <small class="text-muted">{{ defaultConnectionDescription }}</small>
 
               </div>
               <div class="card-body">
@@ -304,12 +304,24 @@ export default {
       connectionStatuses: {},
     }
   },
+  computed: {
+    defaultConnectionDescription() {
+      if (this.isHostedReadOnlyModeEnabled()) {
+        return "Latest of ProjectEQ data, active when not logged in, read-only"
+      }
+
+      return "Latest of ProjectEQ data, active when not logged in, editing enabled"
+    }
+  },
   async mounted() {
     await this.listConnections()
   },
   methods: {
     isAppProduction() {
       return AppEnv.isAppProduction()
+    },
+    isHostedReadOnlyModeEnabled() {
+      return AppEnv.isHostedReadOnlyModeEnabled()
     },
     canCreateNewConnection() {
       if (AppEnv.isAppProduction()) {
