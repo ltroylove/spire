@@ -309,7 +309,7 @@
                       </div>
                     </div>
                     <div class="col-12 col-lg-4 text-lg-right mt-2 mt-lg-0">
-                      <b-button id="cancel-evolution-entry-btn" size="sm" variant="outline-secondary" class="mr-2" @click="cancelForm">
+                      <b-button id="cancel-evolution-entry-btn" size="sm" variant="outline-secondary" class="mr-2" @click.stop="cancelForm">
                         Cancel
                       </b-button>
                       <b-button id="save-evolution-entry-btn" size="sm" variant="outline-success" @click="saveEntry">
