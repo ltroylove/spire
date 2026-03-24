@@ -200,6 +200,8 @@ export default {
       var timer    = setInterval(() => {
         if (win.closed) {
           clearInterval(timer);
+          UserContext.reset()
+          SpireApi.reloadAxios()
           this.$router.push({ path: '/' })
         }
       }, 100);
