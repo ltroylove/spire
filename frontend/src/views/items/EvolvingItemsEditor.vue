@@ -496,6 +496,14 @@ export default {
         await Items.loadItemsBulk(ids);
       }
     },
+    seedCreateForm(evoId = this.selectedEvoId) {
+      if (Number(evoId) > 0) {
+        this.applyFormDraft(createExistingEvolutionDraft(this.details, evoId));
+        return;
+      }
+
+      this.applyFormDraft(createNewEvolutionDraft(this.details));
+    },
 
     syncSelectionFromQuery() {
       if (this.editingId > 0) {
@@ -507,12 +515,12 @@ export default {
       }
 
       if (this.formMode === "create" && this.selectedEvoId === 0) {
-        this.applyFormDraft(createNewEvolutionDraft(this.details));
+        this.seedCreateForm(0);
         return;
       }
 
       if (this.selectedEvoId > 0 && this.formMode === "create") {
-        this.applyFormDraft(createExistingEvolutionDraft(this.details, this.selectedEvoId));
+        this.seedCreateForm(this.selectedEvoId);
       }
     },
 
@@ -554,6 +562,7 @@ export default {
       if (this.formMode !== "edit") {
         this.formMode = "";
         this.editingId = 0;
+        this.seedCreateForm(this.selectedEvoId);
         this.formSectionExpanded = false;
         this.itemSelectorActive = false;
       }
@@ -582,7 +591,7 @@ export default {
 
       this.formMode = "create";
       this.editingId = 0;
-      this.applyFormDraft(createExistingEvolutionDraft(this.details, this.selectedEvoId));
+      this.seedCreateForm(this.selectedEvoId);
       this.selectedEvoId = Number(this.form.item_evo_id);
       this.formSectionExpanded = true;
       this.itemSelectorActive = false;
@@ -615,6 +624,9 @@ export default {
     },
     toggleFormSection() {
       this.formSectionExpanded = !this.formSectionExpanded;
+      if (this.formSectionExpanded && this.formMode !== "edit") {
+        this.seedCreateForm();
+      }
     },
     toggleItemSelector() {
       this.itemSelectorActive = !this.itemSelectorActive;
