@@ -188,7 +188,7 @@
                 </table>
               </div>
 
-              <eq-window-simple class="evolving-form-window">
+              <eq-window-simple class="evolving-form-window" @click.native="handleCollapsedFormClick">
                 <div
                   :class="[
                     'd-flex justify-content-between align-items-center evolving-section-header',
@@ -785,6 +785,11 @@ export default {
       this.formSectionExpanded = !this.formSectionExpanded;
       if (this.formSectionExpanded && this.formMode !== "edit") {
         this.seedCreateForm();
+      }
+    },
+    handleCollapsedFormClick() {
+      if (!this.formSectionExpanded) {
+        this.toggleFormSection();
       }
     },
     toggleItemSelector() {
