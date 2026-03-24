@@ -342,7 +342,7 @@ export default {
           {
             title: "Evolving",
             to: ROUTE.ITEMS_EVOLVING,
-            icon: "ra ra-player-upgrade mr-1",
+            icon: "fa fa-level-up mr-1",
             isNew: true,
             routes: ['/items/evolving']
           },
