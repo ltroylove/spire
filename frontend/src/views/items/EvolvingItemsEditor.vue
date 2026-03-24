@@ -488,10 +488,15 @@ export default {
 
       return Object.keys(zonesById)
         .sort((a, b) => Number(a) - Number(b))
-        .map((zoneId) => ({
-          value: `${zoneId}`,
-          text: `${zonesById[zoneId].long_name} (${zonesById[zoneId].short_name}, ${zoneId})`,
-        }));
+        .map((zoneId) => {
+          const zone = zonesById[zoneId] || {};
+          const longName = zone.long_name || zone.short_name || `Zone ${zoneId}`;
+          const shortName = zone.short_name || zone.long_name || `${zoneId}`;
+          return {
+            value: `${zoneId}`,
+            text: `${longName} (${shortName}, ${zoneId})`,
+          };
+        });
     },
     allSubtypeOptions() {
       if (this.isRaceType) {
