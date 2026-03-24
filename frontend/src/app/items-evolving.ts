@@ -140,9 +140,26 @@ export function getNextEvolutionId(details: ModelsItemsEvolvingDetail[] = []) {
   return Math.max(...details.map((detail) => toNumber(detail.item_evo_id))) + 1;
 }
 
+export function getNextEvolutionDetailId(details: ModelsItemsEvolvingDetail[] = []) {
+  if (details.length === 0) {
+    return 1;
+  }
+
+  return Math.max(...details.map((detail) => toNumber(detail.id))) + 1;
+}
+
+export function getNextEvolutionLevel(details: ModelsItemsEvolvingDetail[] = [], evoId: any) {
+  const chain = getEvolutionChain(details, evoId);
+  if (chain.length === 0) {
+    return 1;
+  }
+
+  return Math.max(...chain.map((detail) => toNumber(detail.item_evolve_level))) + 1;
+}
+
 export function createNewEvolutionDraft(details: ModelsItemsEvolvingDetail[] = []) {
   return cloneEvolvingDetail({
-    id: 0,
+    id: getNextEvolutionDetailId(details),
     item_evo_id: getNextEvolutionId(details),
     item_evolve_level: 1,
     item_id: 0,
@@ -155,11 +172,13 @@ export function createNewEvolutionDraft(details: ModelsItemsEvolvingDetail[] = [
 export function createExistingEvolutionDraft(details: ModelsItemsEvolvingDetail[] = [], evoId: any) {
   const chain = getEvolutionChain(details, evoId);
   const lastEntry = chain.length > 0 ? chain[chain.length - 1] : null;
+  const nextLevel = getNextEvolutionLevel(details, evoId);
+  const nextEvoId = toNumber(lastEntry?.item_evo_id, toNumber(evoId));
 
   return cloneEvolvingDetail({
-    id: 0,
-    item_evo_id: toNumber(evoId),
-    item_evolve_level: chain.length + 1,
+    id: getNextEvolutionDetailId(details),
+    item_evo_id: nextEvoId,
+    item_evolve_level: nextLevel,
     item_id: 0,
     type: toNumber(lastEntry?.type, 1),
     sub_type: lastEntry?.sub_type ?? "0",

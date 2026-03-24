@@ -211,7 +211,7 @@
                   </b-button>
                 </div>
 
-                <div v-if="formSectionExpanded" class="minified-inputs p-2 evolving-form">
+                <div v-if="formSectionExpanded" :key="formRenderKey" class="minified-inputs p-2 evolving-form">
                   <div class="row">
                     <div class="col-6 col-md-2">
                       ID
@@ -365,6 +365,7 @@ export default {
       formMode: "",
       editingId: 0,
       form: createNewEvolutionDraft(),
+      formRenderKey: 0,
       formSectionExpanded: false,
       itemSelectorActive: false,
       notification: "",
@@ -506,12 +507,12 @@ export default {
       }
 
       if (this.formMode === "create" && this.selectedEvoId === 0) {
-        this.form = createNewEvolutionDraft(this.details);
+        this.applyFormDraft(createNewEvolutionDraft(this.details));
         return;
       }
 
       if (this.selectedEvoId > 0 && this.formMode === "create") {
-        this.form = createExistingEvolutionDraft(this.details, this.selectedEvoId);
+        this.applyFormDraft(createExistingEvolutionDraft(this.details, this.selectedEvoId));
       }
     },
 
@@ -558,11 +559,15 @@ export default {
       }
       this.updateQueryState();
     },
+    applyFormDraft(form) {
+      this.form = form;
+      this.formRenderKey += 1;
+    },
 
     startNewEvolution() {
       this.formMode = "create";
       this.editingId = 0;
-      this.form = createNewEvolutionDraft(this.details);
+      this.applyFormDraft(createNewEvolutionDraft(this.details));
       this.selectedEvoId = Number(this.form.item_evo_id);
       this.formSectionExpanded = true;
       this.itemSelectorActive = false;
@@ -577,7 +582,8 @@ export default {
 
       this.formMode = "create";
       this.editingId = 0;
-      this.form = createExistingEvolutionDraft(this.details, this.selectedEvoId);
+      this.applyFormDraft(createExistingEvolutionDraft(this.details, this.selectedEvoId));
+      this.selectedEvoId = Number(this.form.item_evo_id);
       this.formSectionExpanded = true;
       this.itemSelectorActive = false;
       this.error = "";
@@ -588,7 +594,7 @@ export default {
       this.formMode = "edit";
       this.editingId = Number(detail.id);
       this.selectedEvoId = Number(detail.item_evo_id);
-      this.form = cloneEvolvingDetail(detail);
+      this.applyFormDraft(cloneEvolvingDetail(detail));
       this.formSectionExpanded = true;
       this.itemSelectorActive = false;
       this.error = "";
@@ -601,7 +607,7 @@ export default {
     cancelForm() {
       this.formMode = "";
       this.editingId = 0;
-      this.form = createNewEvolutionDraft(this.details);
+      this.applyFormDraft(createNewEvolutionDraft(this.details));
       this.formSectionExpanded = false;
       this.itemSelectorActive = false;
       this.error = "";
