@@ -23,9 +23,40 @@ function toNumber(value: any, fallback: number = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function normalizeEvolutionType(type: any) {
+  const raw = `${type ?? ""}`.trim().toLowerCase();
+  const numeric = Number(raw);
+
+  if (Number.isFinite(numeric)) {
+    return numeric;
+  }
+
+  if (raw === "experience" || raw === "amount of exp" || raw === "exp") {
+    return 1;
+  }
+
+  if (raw === "kills" || raw === "number of kills" || raw === "kill") {
+    return 2;
+  }
+
+  if (raw === "mob race" || raw === "specific mob race" || raw === "race") {
+    return 3;
+  }
+
+  if (raw === "zone" || raw === "specific zone id" || raw === "zone id") {
+    return 4;
+  }
+
+  if (raw === "unk" || raw === "unknown") {
+    return 99;
+  }
+
+  return 0;
+}
+
 export function getEvolutionSubtypeValues(subType: any) {
   return `${subType ?? ""}`
-    .split(".")
+    .split(/[.,|/;]+|\s+/)
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
 }
@@ -72,9 +103,9 @@ export function groupEvolvingDetails(details: ModelsItemsEvolvingDetail[] = []) 
 }
 
 export function getEvolvingTypeLabel(type: any) {
-  const value = toNumber(type);
+  const value = normalizeEvolutionType(type);
   const option = EVOLVING_TYPE_OPTIONS.find((entry) => entry.value === value);
-  return option ? option.text : `${value || 0}`;
+  return option ? option.text : `${type || value || 0}`;
 }
 
 export function getEvolutionChain(details: ModelsItemsEvolvingDetail[] = [], evoId: any) {
@@ -94,7 +125,7 @@ export function getCurrentEvolutionDetail(item: any, details: ModelsItemsEvolvin
 }
 
 export function getEvolutionSubtypeLabel(detail: ModelsItemsEvolvingDetail) {
-  const type = toNumber(detail?.type);
+  const type = normalizeEvolutionType(detail?.type);
   const values = getEvolutionSubtypeValues(detail?.sub_type);
 
   if (values.length === 0) {
@@ -120,7 +151,16 @@ export function getEvolutionSubtypeLabel(detail: ModelsItemsEvolvingDetail) {
     return values
       .map((value) => {
         const zone = Zones.getZoneByIdSync(toNumber(value));
-        return zone && zone.long_name ? `${zone.long_name} (${value})` : value;
+        if (zone && zone.long_name) {
+          return `${zone.long_name} (${value})`;
+        }
+
+        const zoneByShortName = (Zones.zones || []).find((entry) => `${entry.short_name || ""}`.toLowerCase() === value.toLowerCase());
+        if (zoneByShortName && zoneByShortName.long_name) {
+          return `${zoneByShortName.long_name} (${zoneByShortName.short_name})`;
+        }
+
+        return value;
       })
       .join(", ");
   }
