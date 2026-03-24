@@ -423,7 +423,7 @@ export default {
     experienceSubtypeOptions() {
       return Object.keys(EVOLVING_EXPERIENCE_SUBTYPES).map((key) => ({
         value: key,
-        text: `${key}) ${EVOLVING_EXPERIENCE_SUBTYPES[key]}`,
+        text: EVOLVING_EXPERIENCE_SUBTYPES[key],
       }));
     },
     isExperienceType() {
@@ -469,7 +469,7 @@ export default {
         .sort((a, b) => Number(a) - Number(b))
         .map((key) => ({
           value: key,
-          text: `${key}) ${RACES[key]}`,
+          text: `${RACES[key]} (${key})`,
         }));
     },
     zoneSubtypeOptions() {
@@ -490,7 +490,7 @@ export default {
         .sort((a, b) => Number(a) - Number(b))
         .map((zoneId) => ({
           value: `${zoneId}`,
-          text: `${zoneId}) ${zonesById[zoneId].long_name} (${zonesById[zoneId].short_name})`,
+          text: `${zonesById[zoneId].long_name} (${zonesById[zoneId].short_name}, ${zoneId})`,
         }));
     },
     allSubtypeOptions() {

@@ -4,11 +4,11 @@ import { Items } from "@/app/items";
 import { Zones } from "@/app/zones";
 
 export const EVOLVING_TYPE_OPTIONS = [
-  { value: 1, text: "1) Experience" },
-  { value: 2, text: "2) Kills" },
-  { value: 3, text: "3) Race" },
-  { value: 4, text: "4) Zone" },
-  { value: 99, text: "99) UNK" },
+  { value: 1, text: "Experience" },
+  { value: 2, text: "Kills" },
+  { value: 3, text: "Mob Race" },
+  { value: 4, text: "Zone" },
+  { value: 99, text: "Unknown" },
 ];
 
 export const EVOLVING_EXPERIENCE_SUBTYPES = {
@@ -74,7 +74,7 @@ export function groupEvolvingDetails(details: ModelsItemsEvolvingDetail[] = []) 
 export function getEvolvingTypeLabel(type: any) {
   const value = toNumber(type);
   const option = EVOLVING_TYPE_OPTIONS.find((entry) => entry.value === value);
-  return option ? option.text.replace(/^\d+\)\s*/, "") : `${value || 0}`;
+  return option ? option.text : `${value || 0}`;
 }
 
 export function getEvolutionChain(details: ModelsItemsEvolvingDetail[] = [], evoId: any) {
@@ -112,7 +112,7 @@ export function getEvolutionSubtypeLabel(detail: ModelsItemsEvolvingDetail) {
 
   if (type === 3) {
     return values
-      .map((value) => (RACES[value] ? `${value}) ${RACES[value]}` : value))
+      .map((value) => (RACES[value] ? `${RACES[value]} (${value})` : value))
       .join(", ");
   }
 
@@ -120,7 +120,7 @@ export function getEvolutionSubtypeLabel(detail: ModelsItemsEvolvingDetail) {
     return values
       .map((value) => {
         const zone = Zones.getZoneByIdSync(toNumber(value));
-        return zone && zone.long_name ? `${value}) ${zone.long_name}` : value;
+        return zone && zone.long_name ? `${zone.long_name} (${value})` : value;
       })
       .join(", ");
   }
