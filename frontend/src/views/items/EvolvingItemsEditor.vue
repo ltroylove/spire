@@ -581,16 +581,23 @@ export default {
       this.subtypeSearch = "";
 
       const values = getEvolutionSubtypeValues(this.form.sub_type);
-      if (Number(nextType) === 1) {
+      const numericType = Number(nextType);
+      if (numericType === 1) {
         if (values.length !== 1 || !Object.prototype.hasOwnProperty.call(EVOLVING_EXPERIENCE_SUBTYPES, values[0])) {
           this.form.sub_type = "0";
         }
       }
 
-      if (Number(nextType) === 2) {
+      if (numericType === 2) {
         if (values.length !== 1 || !/^\d+$/.test(values[0])) {
           this.form.sub_type = "0";
         }
+      }
+
+      // For Race (3) and Zone (4), normalize sub_type by removing invalid/non-positive ids.
+      if (numericType === 3 || numericType === 4) {
+        const validValues = values.filter((value) => /^\d+$/.test(value) && Number(value) > 0);
+        this.form.sub_type = validValues.length ? validValues.join("|") : "";
       }
     },
   },
