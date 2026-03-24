@@ -23,6 +23,13 @@ function toNumber(value: any, fallback: number = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+export function getEvolutionSubtypeValues(subType: any) {
+  return `${subType ?? ""}`
+    .split(".")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
 export function cloneEvolvingDetail(detail: ModelsItemsEvolvingDetail | null | undefined): ModelsItemsEvolvingDetail {
   return {
     id: toNumber(detail?.id),
@@ -88,26 +95,37 @@ export function getCurrentEvolutionDetail(item: any, details: ModelsItemsEvolvin
 
 export function getEvolutionSubtypeLabel(detail: ModelsItemsEvolvingDetail) {
   const type = toNumber(detail?.type);
-  const subType = `${detail?.sub_type ?? ""}`.trim();
+  const values = getEvolutionSubtypeValues(detail?.sub_type);
 
-  if (subType.length === 0) {
+  if (values.length === 0) {
     return "-";
   }
 
   if (type === 1) {
-    return EVOLVING_EXPERIENCE_SUBTYPES[subType] || subType;
+    return EVOLVING_EXPERIENCE_SUBTYPES[values[0]] || values[0];
+  }
+
+  if (type === 2) {
+    const minimumLevel = toNumber(values[0]);
+    return minimumLevel > 0 ? `Mob level ${minimumLevel}+` : "Any mob level";
   }
 
   if (type === 3) {
-    return RACES[subType] ? `${subType}) ${RACES[subType]}` : subType;
+    return values
+      .map((value) => (RACES[value] ? `${value}) ${RACES[value]}` : value))
+      .join(", ");
   }
 
   if (type === 4) {
-    const zone = Zones.getZoneByIdSync(toNumber(subType));
-    return zone && zone.long_name ? `${subType}) ${zone.long_name}` : subType;
+    return values
+      .map((value) => {
+        const zone = Zones.getZoneByIdSync(toNumber(value));
+        return zone && zone.long_name ? `${value}) ${zone.long_name}` : value;
+      })
+      .join(", ");
   }
 
-  return subType;
+  return values.join(", ");
 }
 
 export function getCachedItemName(itemId: any) {
