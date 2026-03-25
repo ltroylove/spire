@@ -1,3 +1,10 @@
+## [4.23.5] 3/25/2026
+
+* **Items** Add the evolving items editor with improved chain editing, subtype selectors, clearer labels, and smoother panel interactions.
+* **Auth** Refresh API auth state correctly after GitHub login.
+* **Infrastructure** Improve Railway and dev deployment behavior with safer startup validation, better defaults, and a non-root runtime.
+* **Build** Fix Swagger generation compatibility with the pinned `swag` version.
+
 ## [4.23.4] 10/15/2025
 
 * Updated external asset references and GitHub URLs.

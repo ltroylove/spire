@@ -8,6 +8,7 @@ import (
 	"github.com/EQEmuTools/spire/internal/http/routes"
 	"github.com/EQEmuTools/spire/internal/models"
 	"github.com/EQEmuTools/spire/internal/spire"
+	"github.com/EQEmuTools/spire/internal/spirechangelog"
 	"github.com/EQEmuTools/spire/internal/updater"
 	"github.com/EQEmuTools/spire/internal/user"
 	"github.com/labstack/echo/v4"
@@ -20,11 +21,12 @@ import (
 
 // Controller is the controller for the app
 type Controller struct {
-	cache     *gocache.Cache
-	spireinit *spire.Init
-	spireuser *user.User
-	settings  *spire.Settings
-	db        *database.Resolver
+	cache            *gocache.Cache
+	spireinit        *spire.Init
+	spireuser        *user.User
+	settings         *spire.Settings
+	db               *database.Resolver
+	changelogService *spirechangelog.Service
 }
 
 // NewController returns a new app controller
@@ -34,13 +36,15 @@ func NewController(
 	spireuser *user.User,
 	settings *spire.Settings,
 	db *database.Resolver,
+	changelog *spirechangelog.Service,
 ) *Controller {
 	return &Controller{
-		cache:     cache,
-		spireinit: spireinit,
-		spireuser: spireuser,
-		settings:  settings,
-		db:        db,
+		cache:            cache,
+		spireinit:        spireinit,
+		spireuser:        spireuser,
+		settings:         settings,
+		db:               db,
+		changelogService: changelog,
 	}
 }
 
@@ -57,7 +61,11 @@ func (d *Controller) Routes() []*routes.Route {
 }
 
 func (d *Controller) changelog(c echo.Context) error {
-	changelog, _ := d.cache.Get("changelog")
+	changelog, _, err := d.changelogService.ReadChangelog()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
+	}
+
 	return c.JSON(200, echo.Map{"data": changelog})
 }
 
@@ -67,13 +75,13 @@ type Features struct {
 
 // EnvResponse is a struct to hold the response for the env endpoint
 type EnvResponse struct {
-	Env                          string           `json:"env"`
-	Version                      string           `json:"version"`
-	OS                           string           `json:"os"`
-	Features                     Features         `json:"features"`
-	Settings                     []models.Setting `json:"settings"`
-	SpireInitialized             bool             `json:"is_spire_initialized"`
-	HostedReadOnlyModeEnabled    bool             `json:"is_hosted_read_only_mode_enabled"`
+	Env                       string           `json:"env"`
+	Version                   string           `json:"version"`
+	OS                        string           `json:"os"`
+	Features                  Features         `json:"features"`
+	Settings                  []models.Setting `json:"settings"`
+	SpireInitialized          bool             `json:"is_spire_initialized"`
+	HostedReadOnlyModeEnabled bool             `json:"is_hosted_read_only_mode_enabled"`
 }
 
 // PackageJson is a struct to hold the package.json file

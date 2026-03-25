@@ -21,6 +21,7 @@ import (
 	"github.com/EQEmuTools/spire/internal/query"
 	"github.com/EQEmuTools/spire/internal/questapi"
 	"github.com/EQEmuTools/spire/internal/spire"
+	"github.com/EQEmuTools/spire/internal/spirechangelog"
 	"github.com/EQEmuTools/spire/internal/system"
 	"github.com/EQEmuTools/spire/internal/user"
 	"github.com/EQEmuTools/spire/internal/websocket"
@@ -49,6 +50,7 @@ var httpSet = wire.NewSet(
 	eqemuanalytics.NewController,
 	eqemuanalytics.NewAuthedController,
 	eqemuchangelog.NewController,
+	spirechangelog.NewController,
 	clientfiles.NewController,
 	assets.NewController,
 	permissions.NewController,
@@ -186,6 +188,7 @@ func provideControllers(
 	analyticsController *eqemuanalytics.Controller,
 	authedAnalyticsController *eqemuanalytics.AuthedController,
 	changelogController *eqemuchangelog.Controller,
+	spireChangelogController *spirechangelog.Controller,
 	assetsController *assets.Controller,
 	permissionsController *permissions.Controller,
 	usersController *user.Controller,
@@ -227,6 +230,7 @@ func provideControllers(
 			staticMaps,
 			assetsController,
 			changelogController,
+			spireChangelogController,
 			eqemuserverPublicController,
 			modelController,
 		},

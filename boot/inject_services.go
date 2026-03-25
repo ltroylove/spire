@@ -18,6 +18,7 @@ import (
 	"github.com/EQEmuTools/spire/internal/permissions"
 	"github.com/EQEmuTools/spire/internal/questapi"
 	"github.com/EQEmuTools/spire/internal/spire"
+	"github.com/EQEmuTools/spire/internal/spirechangelog"
 	"github.com/EQEmuTools/spire/internal/telnet"
 	"github.com/EQEmuTools/spire/internal/unzip"
 	"github.com/EQEmuTools/spire/internal/user"
@@ -44,6 +45,7 @@ var serviceSet = wire.NewSet(
 	auditlog.NewUserEvent,
 	assets.NewSpireAssets,
 	eqemuchangelog.NewChangelog,
+	spirechangelog.NewService,
 	eqemuanalytics.NewReleases,
 	user.NewUser,
 	spire.NewSettings,

@@ -184,6 +184,11 @@ const router = new Router({
           meta: {title: "Changelog"},
         },
         {
+          path: ROUTE.SPIRE_CHANGELOG,
+          component: () => import('./views/server-developer/SpireChangelog.vue'),
+          meta: {title: "Spire Changelog"},
+        },
+        {
           path: ROUTE.TRADESKILLS,
           component: () => import('./views/tradeskills/TradeskillList.vue'),
           meta: {title: "Tradeskills"},
