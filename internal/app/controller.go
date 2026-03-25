@@ -98,6 +98,8 @@ type PackageJson struct {
 
 // env returns the environment variables for the app
 func (d *Controller) env(c echo.Context) error {
+	state, stateErr := d.changelogService.LoadState()
+
 	data, _ := d.cache.Get("packageJson")
 	pJson, ok := data.([]byte)
 	if ok {
@@ -107,11 +109,22 @@ func (d *Controller) env(c echo.Context) error {
 			return err
 		}
 
+		version := pkg.Version
+		releaseRepository := release.ResolveRepository(os.Getenv("SPIRE_RELEASE_REPO"), pJson, nil)
+		if stateErr == nil && state != nil {
+			if state.PackageVersion != "" {
+				version = state.PackageVersion
+			}
+			if state.ReleaseRepository != "" {
+				releaseRepository = state.ReleaseRepository
+			}
+		}
+
 		response := EnvResponse{
 			Env:               env.Get("APP_ENV", "local"),
 			OS:                runtime.GOOS,
-			Version:           pkg.Version,
-			ReleaseRepository: release.ResolveRepository(os.Getenv("SPIRE_RELEASE_REPO"), pJson),
+			Version:           version,
+			ReleaseRepository: releaseRepository,
 			Features: Features{
 				GithubAuthEnabled: len(os.Getenv("GITHUB_CLIENT_ID")) > 0,
 			},

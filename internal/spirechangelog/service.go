@@ -17,6 +17,8 @@ import (
 
 var releaseHeadingRegexp = regexp.MustCompile(`(?m)^## \[([^\]]+)\] ([^\n]+)$`)
 var packageVersionRegexp = regexp.MustCompile(`(?m)("version"\s*:\s*")([^"]+)(")`)
+var packageRepositoryURLRegexp = regexp.MustCompile(`(?s)("repository"\s*:\s*\{.*?"url"\s*:\s*")([^"]+)(")`)
+var packageRepositoryStringRegexp = regexp.MustCompile(`(?m)("repository"\s*:\s*")([^"]+)(")`)
 var semverRegexp = regexp.MustCompile(`^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$`)
 
 type Service struct {
@@ -38,14 +40,18 @@ type ReleasePayload struct {
 }
 
 type LoadState struct {
-	Content           string         `json:"content"`
-	PackageVersion    string         `json:"package_version"`
-	ReleaseRepository string         `json:"release_repository"`
-	Writable          bool           `json:"writable"`
-	Source            string         `json:"source"`
-	TopRelease        ReleaseSection `json:"top_release"`
-	ReleasePayload    ReleasePayload `json:"release_payload"`
-	ValidationErrors  []string       `json:"validation_errors"`
+	Content                     string         `json:"content"`
+	PackageVersion              string         `json:"package_version"`
+	ReleaseRepository           string         `json:"release_repository"`
+	ConfiguredReleaseRepository string         `json:"configured_release_repository"`
+	ReleaseRepositorySource     string         `json:"release_repository_source"`
+	ReleaseRepositoryOverride   string         `json:"release_repository_override"`
+	ReleaseRepositoryCandidates []string       `json:"release_repository_candidates"`
+	Writable                    bool           `json:"writable"`
+	Source                      string         `json:"source"`
+	TopRelease                  ReleaseSection `json:"top_release"`
+	ReleasePayload              ReleasePayload `json:"release_payload"`
+	ValidationErrors            []string       `json:"validation_errors"`
 }
 
 type DraftResult struct {
@@ -62,6 +68,10 @@ type SaveRequest struct {
 
 type UpdatePackageVersionRequest struct {
 	Version string `json:"version"`
+}
+
+type UpdateReleaseRepositoryRequest struct {
+	Repository string `json:"repository"`
 }
 
 func NewService(cache *cache.Cache) *Service {
@@ -84,15 +94,26 @@ func (s *Service) LoadState() (*LoadState, error) {
 		return nil, err
 	}
 
+	releaseResolution := release.ResolveRepositoryDetails(
+		os.Getenv("SPIRE_RELEASE_REPO"),
+		packageJSONRaw,
+		s.gitRemoteLookup(),
+	)
+	configuredRepo := release.RepositoryFromPackageJSON(packageJSONRaw)
+
 	state := &LoadState{
-		Content:           content,
-		PackageVersion:    packageVersion,
-		ReleaseRepository: release.ResolveRepository(os.Getenv("SPIRE_RELEASE_REPO"), packageJSONRaw),
-		Writable:          s.IsWritable(),
-		Source:            source,
-		TopRelease:        s.ParseTopRelease(content),
-		ReleasePayload:    s.BuildReleasePayload(s.ParseTopRelease(content)),
-		ValidationErrors:  s.ValidateCurrentDocument(content, packageVersion),
+		Content:                     content,
+		PackageVersion:              packageVersion,
+		ReleaseRepository:           releaseResolution.Repository,
+		ConfiguredReleaseRepository: configuredRepo,
+		ReleaseRepositorySource:     releaseResolution.Source,
+		ReleaseRepositoryOverride:   release.NormalizeGitHubRepository(os.Getenv("SPIRE_RELEASE_REPO")),
+		ReleaseRepositoryCandidates: s.releaseRepositoryCandidates(packageJSONRaw),
+		Writable:                    s.IsWritable(),
+		Source:                      source,
+		TopRelease:                  s.ParseTopRelease(content),
+		ReleasePayload:              s.BuildReleasePayload(s.ParseTopRelease(content)),
+		ValidationErrors:            s.ValidateCurrentDocument(content, packageVersion),
 	}
 
 	return state, nil
@@ -234,6 +255,35 @@ func (s *Service) UpdatePackageVersion(req UpdatePackageVersionRequest) (*LoadSt
 	}
 
 	updated, changed, err := setPackageVersion(raw, version)
+	if err != nil {
+		return nil, err
+	}
+	if changed {
+		if err := writeFileAtomically(path, string(updated)); err != nil {
+			return nil, err
+		}
+	}
+
+	return s.LoadState()
+}
+
+func (s *Service) UpdateReleaseRepository(req UpdateReleaseRepositoryRequest) (*LoadState, error) {
+	path, ok := s.livePackageJSONPath()
+	if !ok {
+		return nil, errors.New("live package.json is unavailable in this environment")
+	}
+
+	repository := release.NormalizeGitHubRepository(req.Repository)
+	if repository == "" {
+		return nil, errors.New("Release repository must use owner/repo format or a GitHub repository URL.")
+	}
+
+	raw, _, err := s.readPackageJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	updated, changed, err := setPackageRepository(raw, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -507,6 +557,56 @@ func (s *Service) prefersLiveFiles() bool {
 	}
 }
 
+func (s *Service) gitRemoteLookup() release.RemoteLookup {
+	root, ok := s.projectRoot()
+	if !ok {
+		return nil
+	}
+
+	return func(name string) (string, error) {
+		lines, err := s.gitLines(root, "remote", "get-url", name)
+		if err != nil {
+			return "", err
+		}
+		if len(lines) == 0 {
+			return "", errors.New("git remote not found")
+		}
+		return lines[0], nil
+	}
+}
+
+func (s *Service) releaseRepositoryCandidates(packageJSONRaw []byte) []string {
+	candidates := make([]string, 0, 4)
+	seen := make(map[string]struct{}, 4)
+	addCandidate := func(value string) {
+		repo := release.NormalizeGitHubRepository(value)
+		if repo == "" {
+			return
+		}
+		if _, ok := seen[repo]; ok {
+			return
+		}
+		seen[repo] = struct{}{}
+		candidates = append(candidates, repo)
+	}
+
+	addCandidate(os.Getenv("SPIRE_RELEASE_REPO"))
+	addCandidate(release.RepositoryFromPackageJSON(packageJSONRaw))
+
+	if lookup := s.gitRemoteLookup(); lookup != nil {
+		for _, remoteName := range []string{"upstream", "origin"} {
+			remoteURL, err := lookup(remoteName)
+			if err != nil {
+				continue
+			}
+			addCandidate(remoteURL)
+		}
+	}
+
+	addCandidate(release.DefaultRepository)
+	return candidates
+}
+
 func (s *Service) latestLocalTag(root string) (string, error) {
 	lines, err := s.gitLines(root, "tag", "--list", "v*", "--sort=-version:refname")
 	if err != nil {
@@ -589,6 +689,42 @@ func setPackageVersion(raw []byte, version string) ([]byte, bool, error) {
 	}
 
 	return []byte(updated), true, nil
+}
+
+func setPackageRepository(raw []byte, repository string) ([]byte, bool, error) {
+	if len(raw) == 0 {
+		return nil, false, errors.New("package.json content is empty")
+	}
+
+	repositoryURL := fmt.Sprintf("https://github.com/%s.git", repository)
+	content := string(raw)
+
+	if packageRepositoryURLRegexp.MatchString(content) {
+		updated := packageRepositoryURLRegexp.ReplaceAllString(content, `${1}`+repositoryURL+`${3}`)
+		if updated == content {
+			return raw, false, nil
+		}
+		return []byte(updated), true, nil
+	}
+
+	if packageRepositoryStringRegexp.MatchString(content) {
+		updated := packageRepositoryStringRegexp.ReplaceAllString(content, `${1}`+repositoryURL+`${3}`)
+		if updated == content {
+			return raw, false, nil
+		}
+		return []byte(updated), true, nil
+	}
+
+	if packageVersionRegexp.MatchString(content) {
+		repositoryBlock := fmt.Sprintf("${1}${2}${3},\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"%s\"\n  }", repositoryURL)
+		updated := packageVersionRegexp.ReplaceAllString(content, repositoryBlock)
+		if updated == content {
+			return raw, false, nil
+		}
+		return []byte(updated), true, nil
+	}
+
+	return nil, false, errors.New("Unable to locate package.json repository field.")
 }
 
 func normalizeDraftSubject(subject string) (string, bool) {

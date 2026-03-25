@@ -128,7 +128,7 @@ func (s *Updater) CheckForUpdates(interactive bool) bool {
 	s.logger.Info().Any("executableName", executableName).Msg("Running as binary")
 	s.logger.Debug().Any("executableName", executableName).Msg("Checking for updates")
 
-	releaseRepo := release.ResolveRepository(os.Getenv("SPIRE_RELEASE_REPO"), s.packageJson)
+	releaseRepo := release.ResolveRepository(os.Getenv("SPIRE_RELEASE_REPO"), s.packageJson, nil)
 	repoParts := strings.SplitN(releaseRepo, "/", 2)
 	if len(repoParts) != 2 {
 		s.logger.Info().Any("repository", releaseRepo).Msg("Failed to resolve release repository")

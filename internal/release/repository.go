@@ -16,6 +16,13 @@ type packageJSON struct {
 	} `json:"repository"`
 }
 
+type RemoteLookup func(name string) (string, error)
+
+type Resolution struct {
+	Repository string
+	Source     string
+}
+
 func NormalizeGitHubRepository(value string) string {
 	repo := strings.TrimSpace(value)
 	if repo == "" {
@@ -47,14 +54,43 @@ func RepositoryFromPackageJSON(raw []byte) string {
 	return NormalizeGitHubRepository(pkg.Repository.URL)
 }
 
-func ResolveRepository(override string, packageJSONRaw []byte) string {
+func ResolveRepositoryDetails(override string, packageJSONRaw []byte, remoteLookup RemoteLookup) Resolution {
 	if repo := NormalizeGitHubRepository(override); repo != "" {
-		return repo
+		return Resolution{
+			Repository: repo,
+			Source:     "env",
+		}
 	}
 
 	if repo := RepositoryFromPackageJSON(packageJSONRaw); repo != "" {
-		return repo
+		return Resolution{
+			Repository: repo,
+			Source:     "package_json",
+		}
 	}
 
-	return DefaultRepository
+	if remoteLookup != nil {
+		for _, remoteName := range []string{"upstream", "origin"} {
+			remoteURL, err := remoteLookup(remoteName)
+			if err != nil {
+				continue
+			}
+
+			if repo := NormalizeGitHubRepository(remoteURL); repo != "" {
+				return Resolution{
+					Repository: repo,
+					Source:     "git_remote_" + remoteName,
+				}
+			}
+		}
+	}
+
+	return Resolution{
+		Repository: DefaultRepository,
+		Source:     "default",
+	}
+}
+
+func ResolveRepository(override string, packageJSONRaw []byte, remoteLookup RemoteLookup) string {
+	return ResolveRepositoryDetails(override, packageJSONRaw, remoteLookup).Repository
 }

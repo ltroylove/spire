@@ -321,6 +321,80 @@ func TestGenerateDraftUsesLatestLocalTag(t *testing.T) {
 	}
 }
 
+func TestLoadStateIncludesConfiguredReleaseRepositoryAndCandidates(t *testing.T) {
+	dir := t.TempDir()
+	mustWriteFile(t, filepath.Join(dir, "CHANGELOG.md"), "## [1.0.0] 1/1/2026\n\n* Existing entry\n")
+	mustWriteFile(t, filepath.Join(dir, "package.json"), "{\n  \"name\": \"spire\",\n  \"version\": \"1.0.0\",\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"https://github.com/ConfiguredOrg/spire.git\"\n  }\n}\n")
+	runGit(t, dir, "init")
+	runGit(t, dir, "config", "user.name", "Codex")
+	runGit(t, dir, "config", "user.email", "codex@example.com")
+	runGit(t, dir, "remote", "add", "upstream", "git@github.com:UpstreamOrg/spire.git")
+	runGit(t, dir, "remote", "add", "origin", "git@github.com:OriginOrg/spire.git")
+
+	oldWD, _ := os.Getwd()
+	defer os.Chdir(oldWD)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir failed: %v", err)
+	}
+	t.Setenv("APP_ENV", "local")
+	t.Setenv("SPIRE_RELEASE_REPO", "OverrideOrg/spire")
+
+	svc := NewService(gocache.New(0, 0))
+	state, err := svc.LoadState()
+	if err != nil {
+		t.Fatalf("LoadState returned error: %v", err)
+	}
+
+	if state.ReleaseRepository != "OverrideOrg/spire" {
+		t.Fatalf("expected active release repository OverrideOrg/spire, got %s", state.ReleaseRepository)
+	}
+	if state.ConfiguredReleaseRepository != "ConfiguredOrg/spire" {
+		t.Fatalf("expected configured repository ConfiguredOrg/spire, got %s", state.ConfiguredReleaseRepository)
+	}
+	if state.ReleaseRepositorySource != "env" {
+		t.Fatalf("expected release repository source env, got %s", state.ReleaseRepositorySource)
+	}
+	if len(state.ReleaseRepositoryCandidates) < 4 {
+		t.Fatalf("expected release repository candidates to include env/package/remotes/default, got %v", state.ReleaseRepositoryCandidates)
+	}
+}
+
+func TestUpdateReleaseRepositoryWritesLivePackageJSON(t *testing.T) {
+	dir := t.TempDir()
+	mustWriteFile(t, filepath.Join(dir, "CHANGELOG.md"), "## [1.0.0] 1/1/2026\n\n* Existing entry\n")
+	mustWriteFile(t, filepath.Join(dir, "package.json"), "{\n  \"name\": \"spire\",\n  \"version\": \"1.0.0\",\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"https://github.com/EQEmuTools/spire.git\"\n  }\n}\n")
+
+	oldWD, _ := os.Getwd()
+	defer os.Chdir(oldWD)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir failed: %v", err)
+	}
+	t.Setenv("APP_ENV", "local")
+
+	svc := NewService(gocache.New(0, 0))
+
+	state, err := svc.UpdateReleaseRepository(UpdateReleaseRepositoryRequest{Repository: "Valorith/spire"})
+	if err != nil {
+		t.Fatalf("UpdateReleaseRepository returned error: %v", err)
+	}
+
+	if state.ConfiguredReleaseRepository != "Valorith/spire" {
+		t.Fatalf("expected configured repository Valorith/spire, got %s", state.ConfiguredReleaseRepository)
+	}
+	if state.ReleaseRepository != "Valorith/spire" {
+		t.Fatalf("expected active repository Valorith/spire, got %s", state.ReleaseRepository)
+	}
+
+	body, err := os.ReadFile(filepath.Join(dir, "package.json"))
+	if err != nil {
+		t.Fatalf("failed reading package.json: %v", err)
+	}
+
+	if !strings.Contains(string(body), "\"url\": \"https://github.com/Valorith/spire.git\"") {
+		t.Fatalf("expected package.json repository update, got %q", string(body))
+	}
+}
+
 func mustWriteFile(t *testing.T, path string, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
