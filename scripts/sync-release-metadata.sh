@@ -3,7 +3,8 @@
 set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-REPO_API="https://api.github.com/repos/EQEmuTools/spire"
+RELEASE_REPO=$("$ROOT_DIR/scripts/resolve-release-repo.sh")
+REPO_API="https://api.github.com/repos/$RELEASE_REPO"
 
 if ! command -v curl >/dev/null 2>&1; then
   echo "curl is required to sync GitHub release metadata" >&2

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/EQEmuTools/spire/internal/env"
+	"github.com/EQEmuTools/spire/internal/release"
 	"github.com/patrickmn/go-cache"
 	"os"
 	"os/exec"
@@ -37,13 +38,14 @@ type ReleasePayload struct {
 }
 
 type LoadState struct {
-	Content          string         `json:"content"`
-	PackageVersion   string         `json:"package_version"`
-	Writable         bool           `json:"writable"`
-	Source           string         `json:"source"`
-	TopRelease       ReleaseSection `json:"top_release"`
-	ReleasePayload   ReleasePayload `json:"release_payload"`
-	ValidationErrors []string       `json:"validation_errors"`
+	Content           string         `json:"content"`
+	PackageVersion    string         `json:"package_version"`
+	ReleaseRepository string         `json:"release_repository"`
+	Writable          bool           `json:"writable"`
+	Source            string         `json:"source"`
+	TopRelease        ReleaseSection `json:"top_release"`
+	ReleasePayload    ReleasePayload `json:"release_payload"`
+	ValidationErrors  []string       `json:"validation_errors"`
 }
 
 type DraftResult struct {
@@ -77,14 +79,20 @@ func (s *Service) LoadState() (*LoadState, error) {
 		return nil, err
 	}
 
+	packageJSONRaw, _, err := s.readPackageJSON()
+	if err != nil {
+		return nil, err
+	}
+
 	state := &LoadState{
-		Content:          content,
-		PackageVersion:   packageVersion,
-		Writable:         s.IsWritable(),
-		Source:           source,
-		TopRelease:       s.ParseTopRelease(content),
-		ReleasePayload:   s.BuildReleasePayload(s.ParseTopRelease(content)),
-		ValidationErrors: s.ValidateCurrentDocument(content, packageVersion),
+		Content:           content,
+		PackageVersion:    packageVersion,
+		ReleaseRepository: release.ResolveRepository(os.Getenv("SPIRE_RELEASE_REPO"), packageJSONRaw),
+		Writable:          s.IsWritable(),
+		Source:            source,
+		TopRelease:        s.ParseTopRelease(content),
+		ReleasePayload:    s.BuildReleasePayload(s.ParseTopRelease(content)),
+		ValidationErrors:  s.ValidateCurrentDocument(content, packageVersion),
 	}
 
 	return state, nil

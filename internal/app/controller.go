@@ -7,6 +7,7 @@ import (
 	"github.com/EQEmuTools/spire/internal/env"
 	"github.com/EQEmuTools/spire/internal/http/routes"
 	"github.com/EQEmuTools/spire/internal/models"
+	"github.com/EQEmuTools/spire/internal/release"
 	"github.com/EQEmuTools/spire/internal/spire"
 	"github.com/EQEmuTools/spire/internal/spirechangelog"
 	"github.com/EQEmuTools/spire/internal/updater"
@@ -77,6 +78,7 @@ type Features struct {
 type EnvResponse struct {
 	Env                       string           `json:"env"`
 	Version                   string           `json:"version"`
+	ReleaseRepository         string           `json:"release_repository"`
 	OS                        string           `json:"os"`
 	Features                  Features         `json:"features"`
 	Settings                  []models.Setting `json:"settings"`
@@ -106,9 +108,10 @@ func (d *Controller) env(c echo.Context) error {
 		}
 
 		response := EnvResponse{
-			Env:     env.Get("APP_ENV", "local"),
-			OS:      runtime.GOOS,
-			Version: pkg.Version,
+			Env:               env.Get("APP_ENV", "local"),
+			OS:                runtime.GOOS,
+			Version:           pkg.Version,
+			ReleaseRepository: release.ResolveRepository(os.Getenv("SPIRE_RELEASE_REPO"), pJson),
 			Features: Features{
 				GithubAuthEnabled: len(os.Getenv("GITHUB_CLIENT_ID")) > 0,
 			},

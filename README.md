@@ -170,6 +170,13 @@ When looking to cut a new release of Spire, use `/dev/spirechangelog` from a liv
 
 `CHANGELOG.md` is the source of truth for the main page and for GitHub release notes. During release publishing, the top changelog section is exported and synced to the GitHub Release body so the desktop updater modal and homepage stay aligned.
 
+The target GitHub repository for publishing and updater checks is resolved in this order:
+1. `SPIRE_RELEASE_REPO`
+2. `package.json.repository.url`
+3. `git remote upstream`
+4. `git remote origin`
+5. fallback to `EQEmuTools/spire`
+
 ![image](https://user-images.githubusercontent.com/3319450/192076389-0c18c58c-21de-4319-b5eb-d41801a0a063.png)
 
 
