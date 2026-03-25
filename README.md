@@ -166,7 +166,9 @@ Want to help contribute to Spire? Anyone can submit [pull requests](https://gith
 
 ### Contributing - Cutting a Release
 
-When looking to cut a new release of Spire, a PR will need to be made that resembles the following [example here](https://github.com/EQEmuTools/spire/commit/a5327c4968a08165434620bcedebe438a6500bb6). A version tag will need to be declared in both `CHANGELOG.md` containing proper release notes and the same version number will need to be updated in `package.json`.
+When looking to cut a new release of Spire, use `/dev/spirechangelog` from a live repo checkout to manage the release draft. The tool can bump `package.json`, scaffold the next top section in `CHANGELOG.md`, generate a draft from recent commits, and preview the exact GitHub release payload that will be published.
+
+`CHANGELOG.md` is the source of truth for the main page and for GitHub release notes. During release publishing, the top changelog section is exported and synced to the GitHub Release body so the desktop updater modal and homepage stay aligned.
 
 ![image](https://user-images.githubusercontent.com/3319450/192076389-0c18c58c-21de-4319-b5eb-d41801a0a063.png)
 

@@ -15,6 +15,8 @@ import (
 )
 
 var releaseHeadingRegexp = regexp.MustCompile(`(?m)^## \[([^\]]+)\] ([^\n]+)$`)
+var packageVersionRegexp = regexp.MustCompile(`(?m)("version"\s*:\s*")([^"]+)(")`)
+var semverRegexp = regexp.MustCompile(`^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$`)
 
 type Service struct {
 	cache *cache.Cache
@@ -26,12 +28,21 @@ type ReleaseSection struct {
 	Body        string `json:"body"`
 }
 
+type ReleasePayload struct {
+	Version     string `json:"version"`
+	TagName     string `json:"tag_name"`
+	Title       string `json:"title"`
+	Body        string `json:"body"`
+	ReleaseDate string `json:"release_date"`
+}
+
 type LoadState struct {
 	Content          string         `json:"content"`
 	PackageVersion   string         `json:"package_version"`
 	Writable         bool           `json:"writable"`
 	Source           string         `json:"source"`
 	TopRelease       ReleaseSection `json:"top_release"`
+	ReleasePayload   ReleasePayload `json:"release_payload"`
 	ValidationErrors []string       `json:"validation_errors"`
 }
 
@@ -45,6 +56,10 @@ type SaveRequest struct {
 	Version     string `json:"version"`
 	ReleaseDate string `json:"release_date"`
 	Body        string `json:"body"`
+}
+
+type UpdatePackageVersionRequest struct {
+	Version string `json:"version"`
 }
 
 func NewService(cache *cache.Cache) *Service {
@@ -68,6 +83,7 @@ func (s *Service) LoadState() (*LoadState, error) {
 		Writable:         s.IsWritable(),
 		Source:           source,
 		TopRelease:       s.ParseTopRelease(content),
+		ReleasePayload:   s.BuildReleasePayload(s.ParseTopRelease(content)),
 		ValidationErrors: s.ValidateCurrentDocument(content, packageVersion),
 	}
 
@@ -96,27 +112,9 @@ func (s *Service) ReadChangelog() (string, string, error) {
 }
 
 func (s *Service) ReadPackageVersion() (string, error) {
-	var raw []byte
-
-	if path, ok := s.livePackageJSONPath(); ok {
-		body, err := os.ReadFile(path)
-		if err == nil {
-			raw = body
-		}
-	}
-
-	if len(raw) == 0 {
-		pkgJSON, ok := s.cache.Get("packageJson")
-		if !ok {
-			return "", errors.New("embedded package.json unavailable")
-		}
-
-		value, ok := pkgJSON.([]byte)
-		if !ok {
-			return "", errors.New("embedded package.json has unexpected type")
-		}
-
-		raw = value
+	raw, _, err := s.readPackageJSON()
+	if err != nil {
+		return "", err
 	}
 
 	var payload struct {
@@ -128,6 +126,27 @@ func (s *Service) ReadPackageVersion() (string, error) {
 	}
 
 	return strings.TrimSpace(payload.Version), nil
+}
+
+func (s *Service) readPackageJSON() ([]byte, string, error) {
+	if path, ok := s.livePackageJSONPath(); ok {
+		body, err := os.ReadFile(path)
+		if err == nil {
+			return body, "live", nil
+		}
+	}
+
+	pkgJSON, ok := s.cache.Get("packageJson")
+	if !ok {
+		return nil, "", errors.New("embedded package.json unavailable")
+	}
+
+	value, ok := pkgJSON.([]byte)
+	if !ok {
+		return nil, "", errors.New("embedded package.json has unexpected type")
+	}
+
+	return value, "embedded", nil
 }
 
 func (s *Service) IsWritable() bool {
@@ -187,6 +206,38 @@ func (s *Service) GenerateDraft() (*DraftResult, error) {
 	}, nil
 }
 
+func (s *Service) UpdatePackageVersion(req UpdatePackageVersionRequest) (*LoadState, error) {
+	path, ok := s.livePackageJSONPath()
+	if !ok {
+		return nil, errors.New("live package.json is unavailable in this environment")
+	}
+
+	version := strings.TrimSpace(req.Version)
+	if version == "" {
+		return nil, errors.New("Version is required.")
+	}
+	if !isValidVersion(version) {
+		return nil, errors.New("Version must use semantic version format, such as 4.23.6.")
+	}
+
+	raw, _, err := s.readPackageJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	updated, changed, err := setPackageVersion(raw, version)
+	if err != nil {
+		return nil, err
+	}
+	if changed {
+		if err := writeFileAtomically(path, string(updated)); err != nil {
+			return nil, err
+		}
+	}
+
+	return s.LoadState()
+}
+
 func (s *Service) SaveRelease(req SaveRequest) (*LoadState, error) {
 	path, ok := s.liveChangelogPath()
 	if !ok {
@@ -202,12 +253,22 @@ func (s *Service) SaveRelease(req SaveRequest) (*LoadState, error) {
 		return nil, err
 	}
 
+	packagePath, packagePathExists := s.livePackageJSONPath()
+	if !packagePathExists {
+		return nil, errors.New("live package.json is unavailable in this environment")
+	}
+
+	packageRaw, _, err := s.readPackageJSON()
+	if err != nil {
+		return nil, err
+	}
+
 	packageVersion, err := s.ReadPackageVersion()
 	if err != nil {
 		return nil, err
 	}
 
-	validationErrors := s.ValidateProposedRelease(req, currentContent, packageVersion)
+	validationErrors := s.ValidateProposedRelease(req, currentContent, packageVersion, true)
 	if len(validationErrors) > 0 {
 		return nil, errors.New(strings.Join(validationErrors, "\n"))
 	}
@@ -219,7 +280,27 @@ func (s *Service) SaveRelease(req SaveRequest) (*LoadState, error) {
 	}
 	updatedContent += "\n"
 
+	updatedPackage := packageRaw
+	packageChanged := false
+	if strings.TrimSpace(req.Version) != packageVersion {
+		updatedPackage, packageChanged, err = setPackageVersion(packageRaw, strings.TrimSpace(req.Version))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if packageChanged {
+		if err := writeFileAtomically(packagePath, string(updatedPackage)); err != nil {
+			return nil, err
+		}
+	}
+
 	if err := writeFileAtomically(path, updatedContent); err != nil {
+		if packageChanged {
+			if rollbackErr := writeFileAtomically(packagePath, string(packageRaw)); rollbackErr != nil {
+				return nil, fmt.Errorf("%v (rollback package.json failed: %v)", err, rollbackErr)
+			}
+		}
 		return nil, err
 	}
 
@@ -248,7 +329,7 @@ func (s *Service) ValidateCurrentDocument(content string, packageVersion string)
 	return issues
 }
 
-func (s *Service) ValidateProposedRelease(req SaveRequest, currentContent string, packageVersion string) []string {
+func (s *Service) ValidateProposedRelease(req SaveRequest, currentContent string, packageVersion string, allowPackageVersionUpdate bool) []string {
 	var issues []string
 
 	version := strings.TrimSpace(req.Version)
@@ -257,6 +338,8 @@ func (s *Service) ValidateProposedRelease(req SaveRequest, currentContent string
 
 	if version == "" {
 		issues = append(issues, "Version is required.")
+	} else if !isValidVersion(version) {
+		issues = append(issues, "Version must use semantic version format, such as 4.23.6.")
 	}
 	if releaseDate == "" {
 		issues = append(issues, "Release date is required.")
@@ -266,7 +349,7 @@ func (s *Service) ValidateProposedRelease(req SaveRequest, currentContent string
 	if body == "" {
 		issues = append(issues, "Release notes body is required.")
 	}
-	if packageVersion != "" && version != packageVersion {
+	if packageVersion != "" && version != packageVersion && !allowPackageVersionUpdate {
 		issues = append(issues, fmt.Sprintf("Version [%s] does not match package.json version [%s].", version, packageVersion))
 	}
 	if version != "" && containsVersion(s.ListVersions(currentContent), version) {
@@ -292,6 +375,24 @@ func (s *Service) ParseTopRelease(content string) ReleaseSection {
 		Version:     content[first[2]:first[3]],
 		ReleaseDate: strings.TrimSpace(content[first[4]:first[5]]),
 		Body:        strings.TrimSpace(content[first[1]:nextStart]),
+	}
+}
+
+func (s *Service) BuildReleasePayload(release ReleaseSection) ReleasePayload {
+	version := strings.TrimSpace(release.Version)
+	if version == "" {
+		return ReleasePayload{}
+	}
+
+	releaseDate := strings.TrimSpace(release.ReleaseDate)
+	body := BuildReleaseSection(version, releaseDate, release.Body)
+
+	return ReleasePayload{
+		Version:     version,
+		TagName:     fmt.Sprintf("v%s", version),
+		Title:       fmt.Sprintf("Spire v%s", version),
+		Body:        body,
+		ReleaseDate: releaseDate,
 	}
 }
 
@@ -460,6 +561,26 @@ func fileExists(path string) bool {
 func isValidReleaseDate(v string) bool {
 	matched, _ := regexp.MatchString(`^\d{1,2}/\d{1,2}/\d{4}$`, strings.TrimSpace(v))
 	return matched
+}
+
+func isValidVersion(v string) bool {
+	return semverRegexp.MatchString(strings.TrimSpace(v))
+}
+
+func setPackageVersion(raw []byte, version string) ([]byte, bool, error) {
+	if len(raw) == 0 {
+		return nil, false, errors.New("package.json content is empty")
+	}
+
+	updated := packageVersionRegexp.ReplaceAllString(string(raw), `${1}`+version+`${3}`)
+	if updated == string(raw) {
+		if !packageVersionRegexp.MatchString(string(raw)) {
+			return nil, false, errors.New("Unable to locate package.json version field.")
+		}
+		return raw, false, nil
+	}
+
+	return []byte(updated), true, nil
 }
 
 func normalizeDraftSubject(subject string) (string, bool) {

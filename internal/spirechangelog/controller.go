@@ -18,6 +18,7 @@ func (a *Controller) Routes() []*routes.Route {
 	return []*routes.Route{
 		routes.RegisterRoute(http.MethodGet, "spirechangelog", a.getState, nil),
 		routes.RegisterRoute(http.MethodPost, "spirechangelog/draft", a.generateDraft, nil),
+		routes.RegisterRoute(http.MethodPost, "spirechangelog/version", a.updatePackageVersion, nil),
 		routes.RegisterRoute(http.MethodPost, "spirechangelog/save", a.saveRelease, nil),
 	}
 }
@@ -53,6 +54,23 @@ func (a *Controller) saveRelease(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "Spire changelog saved successfully",
+		"data":    state,
+	})
+}
+
+func (a *Controller) updatePackageVersion(c echo.Context) error {
+	var req UpdatePackageVersionRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
+	}
+
+	state, err := a.service.UpdatePackageVersion(req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "package.json version updated successfully",
 		"data":    state,
 	})
 }

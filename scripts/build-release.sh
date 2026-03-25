@@ -6,6 +6,7 @@ cwd=$(pwd)
 if [ $(curl -s "https://api.github.com/repos/EQEmuTools/spire/tags" | jq -r '.[0].name' | sed 's/v//') = $(cat package.json | jq -r '.version') ]; then echo "Version tag is same as latest release exiting build"; exit; else echo "Local version different from remote, building..."; fi
 
 ./scripts/validate-changelog.sh
+./scripts/export-release-notes.sh >/dev/null
 
 # packr for packing web assets into binary
 #go install github.com/gobuffalo/packr/packr
@@ -27,3 +28,4 @@ cd "$cwd/frontend" && npm install && npm run build
 cd "$cwd" && make build-binary
 cd "$cwd" && make build-installer-binary
 cd "$cwd" && make release-binary
+cd "$cwd" && ./scripts/sync-release-metadata.sh

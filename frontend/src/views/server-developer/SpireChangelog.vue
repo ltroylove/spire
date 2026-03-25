@@ -6,7 +6,7 @@
       <div class="row">
         <div class="col-12 col-lg-8">
           <div class="eq-alert mb-3">
-            Edit the main-page Spire changelog from the repo checkout. This page reads and writes <code>CHANGELOG.md</code> when a live checkout is available and falls back to read-only embedded content otherwise.
+            Manage the main-page Spire changelog from the repo checkout. This page can bump <code>package.json</code>, draft a new top release section, preview the rendered markdown, and save <code>CHANGELOG.md</code> when a live checkout is available. Embedded environments stay read-only.
           </div>
         </div>
         <div class="col-12 col-lg-4">
@@ -39,13 +39,25 @@
         <div class="col-12 col-xl-6">
           <eq-window-simple class="p-3 h-100">
             <div class="d-flex flex-wrap align-items-center mb-3">
-              <button class="btn btn-sm btn-dark mr-2 mb-2" @click="startNewRelease()">
-                <i class="fa fa-plus mr-1"></i> Start New Release
+              <button class="btn btn-sm btn-dark mr-2 mb-2" @click="prepareVersionBump('patch')" :disabled="!writable || versionActionPending">
+                <i class="fa fa-level-up mr-1"></i> Patch Release
+              </button>
+              <button class="btn btn-sm btn-dark mr-2 mb-2" @click="prepareVersionBump('minor')" :disabled="!writable || versionActionPending">
+                <i class="fa fa-level-up mr-1"></i> Minor Release
+              </button>
+              <button class="btn btn-sm btn-dark mr-2 mb-2" @click="prepareVersionBump('major')" :disabled="!writable || versionActionPending">
+                <i class="fa fa-level-up mr-1"></i> Major Release
+              </button>
+              <button class="btn btn-sm btn-secondary mr-2 mb-2" @click="startNewRelease()" :disabled="versionActionPending">
+                <i class="fa fa-plus mr-1"></i> Use Current Version
+              </button>
+              <button class="btn btn-sm btn-outline-light mr-2 mb-2" @click="applyVersion()" :disabled="!writable || versionActionPending || !version">
+                <i class="fa fa-tag mr-1"></i> {{ versionActionPending ? "Applying..." : "Apply Version" }}
               </button>
               <button class="btn btn-sm btn-primary mr-2 mb-2" @click="generateDraft()" :disabled="!canGenerateDraft">
                 <i class="fa fa-magic mr-1"></i> Generate Draft
               </button>
-              <button class="btn btn-sm btn-success mb-2" @click="saveRelease()" :disabled="!writable || saving">
+              <button class="btn btn-sm btn-success mb-2" @click="saveRelease()" :disabled="!writable || saving || versionActionPending">
                 <i class="fa fa-save mr-1"></i> {{ saving ? "Saving..." : "Save CHANGELOG.md" }}
               </button>
             </div>
@@ -73,7 +85,23 @@
         </div>
 
         <div class="col-12 col-xl-6 mt-3 mt-xl-0">
-          <eq-window-simple class="p-3 h-100">
+          <eq-window-simple class="p-3 mb-3">
+            <div class="font-weight-bold mb-3">GitHub Release Payload</div>
+            <div class="small mb-2"><strong>Tag</strong> {{ releasePayloadPreview.tag_name || "-" }}</div>
+            <div class="small mb-3"><strong>Title</strong> {{ releasePayloadPreview.title || "-" }}</div>
+            <div class="form-group mb-0">
+              <label class="font-weight-bold small">Release Body</label>
+              <b-textarea
+                :value="releasePayloadPreview.body || ''"
+                rows="10"
+                max-rows="16"
+                no-resize
+                readonly
+              />
+            </div>
+          </eq-window-simple>
+
+          <eq-window-simple class="p-3">
             <div class="font-weight-bold mb-3">Preview</div>
             <div
               ref="previewRoot"
@@ -108,6 +136,7 @@ export default {
     return {
       loading: false,
       saving: false,
+      versionActionPending: false,
       notification: "",
       error: "",
       version: "",
@@ -118,6 +147,7 @@ export default {
       writable: false,
       source: "",
       currentTopRelease: {},
+      currentReleasePayload: {},
       documentValidationErrors: [],
       draftStarted: false,
     };
@@ -130,7 +160,7 @@ export default {
       return "-";
     },
     canGenerateDraft() {
-      return this.writable;
+      return this.writable && !this.versionActionPending;
     },
     editorValidationErrors() {
       if (!this.draftStarted && !this.body) {
@@ -149,9 +179,6 @@ export default {
       }
       if (!this.body || !this.body.trim()) {
         issues.push("Release notes body is required.");
-      }
-      if (this.packageVersion && this.version && this.packageVersion !== this.version) {
-        issues.push(`Version [${this.version}] does not match package.json version [${this.packageVersion}].`);
       }
       if (this.version && this.existingVersions.includes(this.version)) {
         issues.push(`Changelog version [${this.version}] already exists.`);
@@ -180,6 +207,25 @@ export default {
     },
     previewHtml() {
       return renderChangelogMarkdown(this.previewMarkdown);
+    },
+    releasePayloadPreview() {
+      const version = (this.version || "").trim();
+      const releaseDate = (this.releaseDate || "").trim();
+      const body = (this.body || "").trim();
+
+      if (!version && !releaseDate && !body) {
+        return this.currentReleasePayload || {};
+      }
+
+      const fallbackVersion = this.currentTopRelease && this.currentTopRelease.version ? this.currentTopRelease.version : "";
+      const fallbackDate = this.currentTopRelease && this.currentTopRelease.release_date ? this.currentTopRelease.release_date : "";
+      const fallbackBody = this.currentTopRelease && this.currentTopRelease.body ? this.currentTopRelease.body : "";
+
+      return this.buildReleasePayload(
+        version || this.packageVersion || fallbackVersion,
+        releaseDate || fallbackDate,
+        body || fallbackBody
+      );
     }
   },
   watch: {
@@ -211,6 +257,7 @@ export default {
       this.writable = !!state.writable;
       this.source = state.source || "";
       this.currentTopRelease = state.top_release || {};
+      this.currentReleasePayload = state.release_payload || {};
       this.documentValidationErrors = state.validation_errors || [];
     },
     startNewRelease() {
@@ -220,6 +267,102 @@ export default {
       this.body = "";
       this.notification = "Ready to draft a new top release section.";
       this.error = "";
+    },
+    nextVersion(kind) {
+      const parsed = this.parseVersion(this.packageVersion);
+      if (!parsed) {
+        return "";
+      }
+
+      const next = {...parsed};
+      if (kind === "patch") {
+        next.patch += 1;
+      }
+      if (kind === "minor") {
+        next.minor += 1;
+        next.patch = 0;
+      }
+      if (kind === "major") {
+        next.major += 1;
+        next.minor = 0;
+        next.patch = 0;
+      }
+
+      return `${next.major}.${next.minor}.${next.patch}`;
+    },
+    parseVersion(version) {
+      const match = (version || "").trim().match(/^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/);
+      if (!match) {
+        return null;
+      }
+
+      return {
+        major: parseInt(match[1], 10),
+        minor: parseInt(match[2], 10),
+        patch: parseInt(match[3], 10),
+      };
+    },
+    buildReleasePayload(version, releaseDate, body) {
+      const cleanVersion = (version || "").trim();
+      if (!cleanVersion) {
+        return {};
+      }
+
+      const cleanDate = (releaseDate || "").trim();
+      const cleanBody = (body || "").trim();
+
+      return {
+        version: cleanVersion,
+        tag_name: `v${cleanVersion}`,
+        title: `Spire v${cleanVersion}`,
+        release_date: cleanDate,
+        body: `## [${cleanVersion}] ${cleanDate || "M/D/YYYY"}\n\n${cleanBody}`.trim()
+      };
+    },
+    async prepareVersionBump(kind) {
+      const nextVersion = this.nextVersion(kind);
+      if (!nextVersion) {
+        this.error = "Current package version could not be parsed for automatic bumping.";
+        return;
+      }
+
+      this.version = nextVersion;
+      await this.applyVersion({
+        versionOverride: nextVersion,
+        notification: `package.json bumped to ${nextVersion}. Ready to draft a new release.`,
+        resetBody: true
+      });
+    },
+    async applyVersion(options = {}) {
+      const version = (options.versionOverride || this.version || "").trim();
+      if (!version) {
+        this.error = "Version is required.";
+        return false;
+      }
+
+      this.versionActionPending = true;
+      this.error = "";
+
+      try {
+        const response = await SpireApi.v1().post("spirechangelog/version", {
+          version
+        });
+
+        this.applyState(response.data.data);
+        this.draftStarted = true;
+        this.version = version;
+        this.releaseDate = this.releaseDate || todaysDate();
+        if (options.resetBody) {
+          this.body = "";
+        }
+        this.notification = options.notification || `package.json updated to ${version}.`;
+        return true;
+      } catch (e) {
+        this.error = e.response?.data?.error || "Failed to update package.json version.";
+        return false;
+      } finally {
+        this.versionActionPending = false;
+      }
     },
     async generateDraft() {
       this.error = "";
@@ -246,6 +389,16 @@ export default {
       if (this.editorValidationErrors.length > 0) {
         this.error = this.editorValidationErrors[0];
         return;
+      }
+
+      if (this.packageVersion && this.version && this.packageVersion !== this.version) {
+        const synced = await this.applyVersion({
+          versionOverride: this.version,
+          notification: `package.json updated to ${this.version}.`
+        });
+        if (!synced) {
+          return;
+        }
       }
 
       this.saving = true;

@@ -123,6 +123,9 @@ func TestSaveReleasePrependsNewTopSection(t *testing.T) {
 	if state.TopRelease.Version != "1.0.1" {
 		t.Fatalf("expected top release version 1.0.1, got %s", state.TopRelease.Version)
 	}
+	if state.ReleasePayload.TagName != "v1.0.1" {
+		t.Fatalf("expected release payload tag v1.0.1, got %s", state.ReleasePayload.TagName)
+	}
 
 	body, err := os.ReadFile(filepath.Join(dir, "CHANGELOG.md"))
 	if err != nil {
@@ -135,6 +138,59 @@ func TestSaveReleasePrependsNewTopSection(t *testing.T) {
 	}
 	if !strings.Contains(content, "## [1.0.0] 1/1/2026") {
 		t.Fatalf("expected original content to remain, got %q", content)
+	}
+}
+
+func TestBuildReleasePayloadFromTopSection(t *testing.T) {
+	svc := NewService(gocache.New(0, 0))
+
+	payload := svc.BuildReleasePayload(ReleaseSection{
+		Version:     "4.23.6",
+		ReleaseDate: "3/25/2026",
+		Body:        "* Added unified release notes",
+	})
+
+	if payload.TagName != "v4.23.6" {
+		t.Fatalf("expected tag v4.23.6, got %s", payload.TagName)
+	}
+	if payload.Title != "Spire v4.23.6" {
+		t.Fatalf("expected title Spire v4.23.6, got %s", payload.Title)
+	}
+	if !strings.Contains(payload.Body, "## [4.23.6] 3/25/2026") {
+		t.Fatalf("expected payload body to include changelog heading, got %q", payload.Body)
+	}
+}
+
+func TestUpdatePackageVersionWritesLivePackageJSON(t *testing.T) {
+	dir := t.TempDir()
+	mustWriteFile(t, filepath.Join(dir, "CHANGELOG.md"), "## [1.0.0] 1/1/2026\n\n* Existing entry\n")
+	mustWriteFile(t, filepath.Join(dir, "package.json"), "{\n  \"name\": \"spire\",\n  \"version\": \"1.0.0\"\n}\n")
+
+	oldWD, _ := os.Getwd()
+	defer os.Chdir(oldWD)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir failed: %v", err)
+	}
+	t.Setenv("APP_ENV", "local")
+
+	svc := NewService(gocache.New(0, 0))
+
+	state, err := svc.UpdatePackageVersion(UpdatePackageVersionRequest{Version: "1.0.1"})
+	if err != nil {
+		t.Fatalf("UpdatePackageVersion returned error: %v", err)
+	}
+
+	if state.PackageVersion != "1.0.1" {
+		t.Fatalf("expected package version 1.0.1, got %s", state.PackageVersion)
+	}
+
+	body, err := os.ReadFile(filepath.Join(dir, "package.json"))
+	if err != nil {
+		t.Fatalf("failed reading package.json: %v", err)
+	}
+
+	if !strings.Contains(string(body), `"version": "1.0.1"`) {
+		t.Fatalf("expected package.json version update, got %q", string(body))
 	}
 }
 
@@ -162,7 +218,7 @@ func TestSaveReleaseRejectsDuplicateVersion(t *testing.T) {
 	}
 }
 
-func TestSaveReleaseRejectsPackageVersionMismatch(t *testing.T) {
+func TestSaveReleaseUpdatesPackageVersionWhenNeeded(t *testing.T) {
 	dir := t.TempDir()
 	mustWriteFile(t, filepath.Join(dir, "CHANGELOG.md"), "## [1.0.0] 1/1/2026\n\n* Existing entry\n")
 	mustWriteFile(t, filepath.Join(dir, "package.json"), `{"version":"1.0.2"}`)
@@ -176,13 +232,48 @@ func TestSaveReleaseRejectsPackageVersionMismatch(t *testing.T) {
 
 	svc := NewService(gocache.New(0, 0))
 
-	_, err := svc.SaveRelease(SaveRequest{
+	state, err := svc.SaveRelease(SaveRequest{
 		Version:     "1.0.1",
 		ReleaseDate: "3/25/2026",
 		Body:        "* Mismatch version",
 	})
-	if err == nil || !strings.Contains(err.Error(), "does not match package.json version") {
-		t.Fatalf("expected package version mismatch error, got %v", err)
+	if err != nil {
+		t.Fatalf("expected save to update package version, got %v", err)
+	}
+	if state.PackageVersion != "1.0.1" {
+		t.Fatalf("expected package version to update to 1.0.1, got %s", state.PackageVersion)
+	}
+
+	body, err := os.ReadFile(filepath.Join(dir, "package.json"))
+	if err != nil {
+		t.Fatalf("failed reading package.json: %v", err)
+	}
+	if !strings.Contains(string(body), `"version":"1.0.1"`) {
+		t.Fatalf("expected package.json version update, got %q", string(body))
+	}
+}
+
+func TestSaveReleaseRejectsInvalidVersion(t *testing.T) {
+	dir := t.TempDir()
+	mustWriteFile(t, filepath.Join(dir, "CHANGELOG.md"), "## [1.0.0] 1/1/2026\n\n* Existing entry\n")
+	mustWriteFile(t, filepath.Join(dir, "package.json"), `{"version":"1.0.0"}`)
+
+	oldWD, _ := os.Getwd()
+	defer os.Chdir(oldWD)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir failed: %v", err)
+	}
+	t.Setenv("APP_ENV", "local")
+
+	svc := NewService(gocache.New(0, 0))
+
+	_, err := svc.SaveRelease(SaveRequest{
+		Version:     "next-release",
+		ReleaseDate: "3/25/2026",
+		Body:        "* Invalid version",
+	})
+	if err == nil || !strings.Contains(err.Error(), "semantic version format") {
+		t.Fatalf("expected invalid version error, got %v", err)
 	}
 }
 
