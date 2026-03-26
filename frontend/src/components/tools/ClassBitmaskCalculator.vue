@@ -31,6 +31,7 @@
           All
         </div>
         <div
+          v-if="displayNoneButton"
           :class="'text-center mt-2 btn-xs eq-button-fancy ' + (normalizeMask(mask) === noneMaskValue && !this.isOnlySelectedAndEnabled() ? 'eq-button-fancy-highlighted' : '')"
           @click="selectNone()"
         >
@@ -59,6 +60,7 @@
           All
         </div>
         <div
+          v-if="displayNoneButton"
           class="d-inline-block"
           :class="'btn-xs eq-button-fancy ' + (normalizeMask(mask) === noneMaskValue && !this.isOnlySelectedAndEnabled() ? 'eq-button-fancy-highlighted' : '')"
           @click="selectNone()"
@@ -145,6 +147,16 @@ export default {
       required: false,
       default: 0,
     },
+    displayNoneButton: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
+    allowEmptySelection: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
   },
   watch: {
     mask: {
@@ -209,6 +221,9 @@ export default {
     noClassesSelected() {
       return Object.keys(this.classes).every((classId) => !this.selectedClasses[classId])
     },
+    selectedClassCount() {
+      return Object.keys(this.classes).filter((classId) => this.selectedClasses[classId]).length
+    },
     selectOnly() {
       this.selectNone()
       console.log("selecting only")
@@ -243,6 +258,14 @@ export default {
       }
 
       if (normalizedMask === this.noneMaskValue) {
+        if (!this.allowEmptySelection) {
+          Object.keys(this.classes).reverse().forEach((classId) => {
+            this.selectedClasses[classId] = true
+          });
+          this.$forceUpdate()
+          return
+        }
+
         Object.keys(this.classes).reverse().forEach((classId) => {
           this.selectedClasses[classId] = false
         });
@@ -277,7 +300,7 @@ export default {
       }
 
       if (this.noClassesSelected()) {
-        bitmask = this.noneMaskValue
+        bitmask = this.allowEmptySelection ? this.noneMaskValue : this.emitAllMaskValue
       }
 
       this.$emit("update:inputData", parseInt(bitmask));
@@ -286,6 +309,9 @@ export default {
       this.$emit("fired", "true");
     },
     selectClass: function (classId) {
+      if (!this.allowEmptySelection && this.selectedClasses[classId] && this.selectedClassCount() === 1) {
+        return
+      }
 
       // if the only button is enabled, we need to unselect all other classes before
       // selecting a class

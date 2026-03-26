@@ -422,7 +422,8 @@
                               :icon-scale="1.7"
                               :all-mask-values="[0, 65535]"
                               :emit-all-mask-value="0"
-                              :none-mask-value="-1"
+                              :display-none-button="false"
+                              :allow-empty-selection="false"
                               @update:inputData="handleTaskAllowedClassesUpdate"
                             />
                           </div>
@@ -1349,7 +1350,11 @@ export default {
     normalizeTaskAllowedClasses(value) {
       const parsedValue = parseInt(value)
 
-      return Number.isNaN(parsedValue) ? 0 : parsedValue
+      if (Number.isNaN(parsedValue) || parsedValue < 0) {
+        return 0
+      }
+
+      return parsedValue
     },
 
     handleTaskAllowedClassesUpdate(value) {
