@@ -255,6 +255,12 @@
                          col: 'col-2',
                        },
                        {
+                         description: 'Allowed Classes',
+                         field: 'allowed_classes',
+                         fieldType: 'allowed-classes',
+                         col: 'col-12',
+                       },
+                       {
                          description: 'Completion Emote',
                          field: 'completion_emote',
                          itemIcon: '653',
@@ -368,6 +374,13 @@
                           style="display: inline-block"
                         />
                         {{ field.description }}
+                        <i
+                          v-if="field.field === 'allowed_classes'"
+                          v-b-tooltip.hover.v-dark.topright
+                          :title="getFieldDescription(field.field)"
+                          style="color: #6b614a"
+                          class="fa fa-info-circle"
+                        />
                         <span
                           v-if="(field.field.includes('timer_seconds') || field.field.includes('duration')) && task[field.field] > 0"
                           class="font-weight-bold"
@@ -385,6 +398,42 @@
                           @input="task[field.field] = $event"
                           v-if="field.fieldType === 'checkbox'"
                         />
+                      </div>
+
+                      <div v-if="field.fieldType === 'allowed-classes' && taskClassRestrictions.loaded">
+                        <input
+                          :id="field.field"
+                          type="hidden"
+                          :value="taskAllowedClasses"
+                        >
+
+                        <div
+                          class="row ml-0 mr-0 mt-1 class-restrictions-shell"
+                          :class="{ 'class-restrictions-shell-disabled': !taskClassRestrictions.supported }"
+                        >
+                          <div class="col-12 pl-0 pr-0 mt-1">
+                            <class-bitmask-calculator
+                              :key="`task-allowed-classes-${selectedTask || 'new'}`"
+                              :inputData="taskAllowedClasses"
+                              :mask="taskAllowedClasses"
+                              :centered-buttons="false"
+                              :display-all-none="true"
+                              :all-none-below="true"
+                              :icon-scale="1.7"
+                              :all-mask-values="[0, 65535]"
+                              :emit-all-mask-value="0"
+                              :none-mask-value="-1"
+                              @update:inputData="handleTaskAllowedClassesUpdate"
+                            />
+                          </div>
+                        </div>
+
+                        <div
+                          v-if="!taskClassRestrictions.supported"
+                          class="mt-2 class-restrictions-note"
+                        >
+                          This linked database does not expose <code>tasks.allowed_classes</code> yet, so task class restrictions are unavailable here.
+                        </div>
                       </div>
 
 
@@ -459,55 +508,6 @@
                           {{ index }}) {{ description }}
                         </option>
                       </select>
-                    </div>
-                  </div>
-
-                  <div class="row mt-1" v-if="taskClassRestrictions.loaded">
-                    <div class="col-12 mb-3 pl-1 pr-1">
-                      <div>
-                        Allowed Classes
-                        <i
-                          v-b-tooltip.hover.v-dark.topright
-                          :title="getFieldDescription('allowed_classes')"
-                          style="color: #6b614a"
-                          class="fa fa-info-circle"
-                        />
-                      </div>
-
-                      <div
-                        class="row ml-0 mr-0 mt-1 class-restrictions-shell"
-                        :class="{ 'class-restrictions-shell-disabled': !taskClassRestrictions.supported }"
-                      >
-                        <div class="col-3 pl-0 pr-3">
-                          <b-form-input
-                            id="allowed_classes"
-                            :value="taskAllowedClasses"
-                            readonly
-                            class="m-0 mt-1 text-center"
-                            v-b-tooltip.hover.v-dark.right
-                            :title="getFieldDescription('allowed_classes')"
-                          />
-                        </div>
-
-                        <div class="col-9 pl-0 pr-0 mt-1">
-                          <class-bitmask-calculator
-                            :inputData="taskAllowedClasses"
-                            :mask="taskAllowedClasses"
-                            :centered-buttons="false"
-                            :display-all-none="true"
-                            :all-none-below="true"
-                            :icon-small="true"
-                            @update:inputData="handleTaskAllowedClassesUpdate"
-                          />
-                        </div>
-                      </div>
-
-                      <div
-                        v-if="!taskClassRestrictions.supported"
-                        class="mt-2 class-restrictions-note"
-                      >
-                        This linked database does not expose <code>tasks.allowed_classes</code> yet, so task class restrictions are unavailable here.
-                      </div>
                     </div>
                   </div>
 
@@ -1346,8 +1346,14 @@ export default {
   methods: {
     debounce,
 
+    normalizeTaskAllowedClasses(value) {
+      const parsedValue = parseInt(value)
+
+      return Number.isNaN(parsedValue) ? 0 : parsedValue
+    },
+
     handleTaskAllowedClassesUpdate(value) {
-      const allowedClasses = parseInt(value) || 0
+      const allowedClasses = this.normalizeTaskAllowedClasses(value)
       this.taskAllowedClasses = allowedClasses
 
       if (this.task) {
@@ -1376,7 +1382,7 @@ export default {
 
       try {
         const restrictions = await Tasks.getTaskClassRestrictions(this.$route.params.id)
-        const allowedClasses = parseInt(restrictions.allowed_classes) || 0
+        const allowedClasses = this.normalizeTaskAllowedClasses(restrictions.allowed_classes)
 
         this.taskAllowedClasses = allowedClasses
         this.originalTaskAllowedClasses = allowedClasses
