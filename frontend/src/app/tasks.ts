@@ -299,7 +299,7 @@ export class Tasks {
       "reward_radiant_crystals": "Number of radiant crystals rewarded",
       "cash_reward": "Amount of coin rewarded in copper",
       "enabled": "Determines if the task is enabled or not",
-      "allowed_classes": "Class bitmask restriction for receiving the task. 0 and 65535 mean all classes are allowed.",
+      "allowed_classes": "Choose which player classes are allowed to receive this task.",
     }
   }
 
