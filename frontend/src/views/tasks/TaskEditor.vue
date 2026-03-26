@@ -419,7 +419,7 @@
                               :centered-buttons="false"
                               :display-all-none="true"
                               :all-none-below="true"
-                              :icon-scale="1.7"
+                              :icon-scale="1.25"
                               :all-mask-values="[0, 65535]"
                               :emit-all-mask-value="0"
                               :display-none-button="false"
