@@ -64,7 +64,6 @@
             <li class="nav-item" v-if="!isInAdmin()">
               <router-link class="nav-link" :to="ROUTE.ADMIN_ROOT" exact>
                 <i class="ra ra-eye-shield mr-1"></i> Server Admin
-                <b-badge class="ml-3" variant="primary">NEW!</b-badge>
               </router-link>
             </li>
 
@@ -102,7 +101,6 @@
             <li class="nav-item">
               <router-link class="nav-link" to="/client-files">
                 <i class="ra ra-cycle mr-1"></i> Client File
-                <b-badge class="ml-3" variant="primary">NEW!</b-badge>
               </router-link>
             </li>
 
@@ -119,28 +117,25 @@
             <li class="nav-item">
               <router-link class="nav-link " to="/sage">
                 <i class="ra ra-crystal-ball mr-1"></i> Sage
-                <b-badge class="ml-3" variant="primary">NEW!</b-badge>
               </router-link>
             </li>
 
             <li class="nav-item">
               <router-link class="nav-link " to="/strings-database">
                 <i class="ra  ra-scroll-unfurled mr-1"></i> Strings DB
-                <b-badge class="ml-3" variant="primary">NEW!</b-badge>
               </router-link>
             </li>
             <nav-section-component :config="spellsAbilitiesNav"/>
             <li class="nav-item">
               <router-link class="nav-link " to="/tasks">
                 <i class="ra ra-zebra-shield mr-1"></i> Tasks
-                <b-badge class="ml-3" variant="primary">BETA</b-badge>
-                <b-badge class="ml-3" variant="primary">NEW!</b-badge>
               </router-link>
             </li>
             <li class="nav-item">
               <router-link class="nav-link " to="/tradeskills">
                 <i class="ra ra-anvil mr-1"></i> Tradeskills
                 <b-badge class="ml-3" variant="primary">NEW!</b-badge>
+                <b-badge class="ml-3" variant="primary">ALPHA</b-badge>
               </router-link>
             </li>
             <nav-section-component :config="viewerNav"/>
@@ -148,8 +143,8 @@
             <li class="nav-item">
               <router-link class="nav-link " to="/zones">
                 <i class="ra ra-wooden-sign mr-2"></i> Zones
-                <b-badge class="ml-3" variant="primary">ALPHA</b-badge>
                 <b-badge class="ml-3" variant="primary">NEW!</b-badge>
+                <b-badge class="ml-3" variant="primary">ALPHA</b-badge>
               </router-link>
             </li>
 
@@ -322,7 +317,6 @@ export default {
             title: "Spells",
             to: ROUTE.BOT_SPELLS_EDIT,
             icon: "ra ra-regeneration mr-1",
-            isAlpha: true,
             routes: ['bot-spells']
           },
         ]
@@ -336,7 +330,6 @@ export default {
             title: "Items",
             to: ROUTE.ITEMS_LIST,
             icon: "ra ra-relic-blade mr-1",
-            isNew: true,
             routes: ['/items', '/item/']
           },
           {
@@ -344,6 +337,7 @@ export default {
             to: ROUTE.ITEMS_EVOLVING,
             icon: "fa fa-level-up mr-1",
             isNew: true,
+            isAlpha: true,
             routes: ['/items/evolving']
           },
         ]
@@ -373,21 +367,18 @@ export default {
             title: "Emotes",
             to: ROUTE.NPC_EMOTES_EDIT,
             icon: "ra ra-death-skull mr-1",
-            isAlpha: true,
             routes: ['npc-emotes']
           },
           {
             title: "Merchants",
             to: ROUTE.MERCHANTS,
             icon: "ra ra-emerald mr-1",
-            isAlpha: true,
             routes: ['merchant', 'merchants']
           },
           {
             title: "Spells",
             to: ROUTE.NPC_SPELLS_EDIT,
             icon: "ra ra-flame-symbol mr-1",
-            isAlpha: true,
             routes: ['npc-spells']
           },
           // {
@@ -395,6 +386,8 @@ export default {
             title: "Loot",
             to: ROUTE.LOOT,
             icon: "ra ra-gold-bar mr-1",
+            isNew: true,
+            isAlpha: true,
             routes: ['loot']
           },
         ]
@@ -480,7 +473,6 @@ export default {
             title: "Spell Editor",
             to: "/spells",
             icon: "ra ra-book mr-1",
-            isNew: true,
             routes: ['spells']
           },
           {
@@ -488,6 +480,7 @@ export default {
             to: ROUTE.AA_EDITOR,
             icon: "ra ra-book mr-1",
             isNew: true,
+            isAlpha: true,
             routes: ['aa']
           },
         ]
@@ -505,8 +498,8 @@ export default {
             to: ROUTE.PLAYER_ANIMATION_VIEWER,
             icon: "ra ra-player-dodge mr-1",
           },
-          { title: "Emitter Viewer", to: ROUTE.EMITTER_VIEWER, icon: "ra ra-droplet-splash mr-1", isNew: true },
-          { title: "Spell Animations", to: ROUTE.SPELL_ANIMATION_VIEWER, icon: "ra ra-dragon mr-1", isNew: true },
+          { title: "Emitter Viewer", to: ROUTE.EMITTER_VIEWER, icon: "ra ra-droplet-splash mr-1" },
+          { title: "Spell Animations", to: ROUTE.SPELL_ANIMATION_VIEWER, icon: "ra ra-dragon mr-1" },
         ]
       },
       spireApiNav: {

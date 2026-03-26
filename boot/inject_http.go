@@ -21,6 +21,7 @@ import (
 	"github.com/EQEmuTools/spire/internal/query"
 	"github.com/EQEmuTools/spire/internal/questapi"
 	"github.com/EQEmuTools/spire/internal/spire"
+	"github.com/EQEmuTools/spire/internal/spirechangelog"
 	"github.com/EQEmuTools/spire/internal/system"
 	"github.com/EQEmuTools/spire/internal/user"
 	"github.com/EQEmuTools/spire/internal/websocket"
@@ -41,6 +42,7 @@ var httpSet = wire.NewSet(
 	analytics.NewController,
 	controllers.NewHelloWorldController,
 	controllers.NewConnectionsController,
+	controllers.NewTaskClassRestrictionsController,
 	user.NewMeController,
 	auth.NewController,
 	questapi.NewController,
@@ -49,6 +51,7 @@ var httpSet = wire.NewSet(
 	eqemuanalytics.NewController,
 	eqemuanalytics.NewAuthedController,
 	eqemuchangelog.NewController,
+	spirechangelog.NewController,
 	clientfiles.NewController,
 	assets.NewController,
 	permissions.NewController,
@@ -178,6 +181,7 @@ func provideControllers(
 	me *user.MeController,
 	analytics *analytics.Controller,
 	connections *controllers.ConnectionsController,
+	taskClassRestrictions *controllers.TaskClassRestrictionsController,
 	quest *questapi.Controller,
 	app *app.Controller,
 	query *query.Controller,
@@ -186,6 +190,7 @@ func provideControllers(
 	analyticsController *eqemuanalytics.Controller,
 	authedAnalyticsController *eqemuanalytics.AuthedController,
 	changelogController *eqemuchangelog.Controller,
+	spireChangelogController *spirechangelog.Controller,
 	assetsController *assets.Controller,
 	permissionsController *permissions.Controller,
 	usersController *user.Controller,
@@ -214,6 +219,7 @@ func provideControllers(
 			clientFilesController,
 			permissionsController,
 			usersController,
+			taskClassRestrictions,
 			eqemuserverController,
 			serverconfigController,
 			backupController,
@@ -227,6 +233,7 @@ func provideControllers(
 			staticMaps,
 			assetsController,
 			changelogController,
+			spireChangelogController,
 			eqemuserverPublicController,
 			modelController,
 		},

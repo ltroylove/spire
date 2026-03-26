@@ -53,6 +53,7 @@ export const ROUTE = {
   RELEASES: "/dev/releases",
   RELEASE: "/dev/release/%s",
   CHANGELOG: "/dev/changelog",
+  SPIRE_CHANGELOG: "/dev/spirechangelog",
   RACE_VIEWER: "/race-viewer",
   SPELL_ANIMATION_VIEWER: "/spell-animation-viewer",
   SPELL_EDIT: "/spell/%s",

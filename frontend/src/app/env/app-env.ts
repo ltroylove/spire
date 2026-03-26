@@ -87,6 +87,14 @@ export class AppEnv {
     this._version = value;
   }
 
+  static getReleaseRepository() {
+    return this._release_repository;
+  }
+
+  static setReleaseRepository(value) {
+    this._release_repository = value;
+  }
+
   static isHostedReadOnlyModeEnabled() {
     return this._is_hosted_read_only_mode_enabled === true
   }
@@ -124,6 +132,7 @@ export class AppEnv {
   private static _os;
   private static _env;
   private static _version;
+  private static _release_repository;
   private static _features;
   private static _settings;
   private static _is_spire_initialized;
@@ -136,6 +145,7 @@ export class AppEnv {
       this.setOS(data.os)
       this.setEnv(data.env)
       this.setVersion(data.version)
+      this.setReleaseRepository(data.release_repository)
       this.setFeatures(data.features)
       this.setSettings(data.settings)
       this.setIsSpireInitialized(data.is_spire_initialized)

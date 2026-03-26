@@ -40,6 +40,7 @@ import (
 	"github.com/EQEmuTools/spire/internal/query"
 	"github.com/EQEmuTools/spire/internal/questapi"
 	"github.com/EQEmuTools/spire/internal/spire"
+	"github.com/EQEmuTools/spire/internal/spirechangelog"
 	"github.com/EQEmuTools/spire/internal/system"
 	"github.com/EQEmuTools/spire/internal/telnet"
 	"github.com/EQEmuTools/spire/internal/unzip"
@@ -83,12 +84,15 @@ func InitializeApplication() (App, error) {
 	settings := spire.NewSettings(connections)
 	init := spire.NewInit(connections, config, appLogger, settings, cache, encrypter, create, userUser)
 	connectionsController := controllers.NewConnectionsController(resolver, cache, create, check, service, init, userUser)
+	userEvent := auditlog.NewUserEvent(resolver, cache)
+	taskClassRestrictionsController := controllers.NewTaskClassRestrictionsController(resolver, userEvent)
 	unzipper := unzip.NewUnzipper(appLogger)
 	sourceDownloader := github.NewGithubSourceDownloader(cache, unzipper)
 	parseService := questapi.NewParseService(cache, sourceDownloader)
 	examplesGithubSourcer := questapi.NewExamplesGithubSourcer(cache, sourceDownloader)
 	questapiController := questapi.NewController(parseService, examplesGithubSourcer)
-	appController := app.NewController(cache, init, userUser, settings, resolver)
+	spirechangelogService := spirechangelog.NewService(cache)
+	appController := app.NewController(cache, init, userUser, settings, resolver, spirechangelogService)
 	queryController := query.NewController(resolver, appLogger)
 	exporter := clientfiles.NewExporter(appLogger)
 	importer := clientfiles.NewImporter(appLogger)
@@ -99,6 +103,7 @@ func InitializeApplication() (App, error) {
 	authedController := eqemuanalytics.NewAuthedController(resolver)
 	changelog := eqemuchangelog.NewChangelog()
 	eqemuchangelogController := eqemuchangelog.NewController(resolver, changelog)
+	spirechangelogController := spirechangelog.NewController(spirechangelogService)
 	assetsController := assets.NewController(resolver)
 	permissionsController := permissions.NewController(resolver, service)
 	userController := user.NewController(resolver, userUser, encrypter)
@@ -109,7 +114,6 @@ func InitializeApplication() (App, error) {
 	clientManager := websocket.NewClientManager(appLogger)
 	crashLogWatcher := eqemuserver.NewCrashLogWatcher(appLogger, config, pathManagement, clientManager)
 	launcher := eqemuserver.NewLauncher(appLogger, config, settings, pathManagement, eqemuserverClient, clientManager, crashLogWatcher)
-	userEvent := auditlog.NewUserEvent(resolver, cache)
 	eqemuserverController := eqemuserver.NewController(resolver, eqemuserverClient, appLogger, config, pathManagement, settings, updater, launcher, cache, userEvent)
 	publicController := eqemuserver.NewPublicController(resolver, eqemuserverClient, config, pathManagement, settings, updater)
 	eqemuserverconfigController := eqemuserverconfig.NewController(config)
@@ -118,7 +122,7 @@ func InitializeApplication() (App, error) {
 	websocketController := websocket.NewController(pathManagement, handler, clientManager, appLogger)
 	systemController := system.NewController()
 	modelsController := models.NewController()
-	bootAppControllerGroups := provideControllers(helloWorldController, controller, meController, analyticsController, connectionsController, questapiController, appController, queryController, clientfilesController, staticMapController, eqemuanalyticsController, authedController, eqemuchangelogController, assetsController, permissionsController, userController, settingsController, eqemuserverController, publicController, eqemuserverconfigController, backupController, websocketController, systemController, modelsController)
+	bootAppControllerGroups := provideControllers(helloWorldController, controller, meController, analyticsController, connectionsController, taskClassRestrictionsController, questapiController, appController, queryController, clientfilesController, staticMapController, eqemuanalyticsController, authedController, eqemuchangelogController, spirechangelogController, assetsController, permissionsController, userController, settingsController, eqemuserverController, publicController, eqemuserverconfigController, backupController, websocketController, systemController, modelsController)
 	aaAbilityController := crudcontrollers.NewAaAbilityController(resolver, userEvent)
 	aaRankController := crudcontrollers.NewAaRankController(resolver, userEvent)
 	aaRankEffectController := crudcontrollers.NewAaRankEffectController(resolver, userEvent)

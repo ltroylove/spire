@@ -85,6 +85,24 @@ export class Tasks {
     return await this.getTaskApi().updateTask({id: task.id, task: task})
   }
 
+  public static async getTaskClassRestrictions(taskId: number) {
+    const r = await SpireApi.v1().get(`task/${taskId}/class-restrictions`)
+    if (r.status === HttpStatus.OK) {
+      return r.data
+    }
+
+    return {
+      supported: false,
+      allowed_classes: 0,
+    }
+  }
+
+  public static async updateTaskAllowedClasses(taskId: number, allowedClasses: number) {
+    return await SpireApi.v1().patch(`task/${taskId}/class-restrictions`, {
+      allowed_classes: allowedClasses,
+    })
+  }
+
   // TODO: bubble up error handling
   public static async deleteTaskWithActivities(task: any) {
     try {
@@ -281,6 +299,7 @@ export class Tasks {
       "reward_radiant_crystals": "Number of radiant crystals rewarded",
       "cash_reward": "Amount of coin rewarded in copper",
       "enabled": "Determines if the task is enabled or not",
+      "allowed_classes": "Choose which player classes are allowed to receive this task.",
     }
   }
 
@@ -316,6 +335,7 @@ export class Tasks {
       "lock_activity_id": -1,
       "reward_point_type": 0,
       "reward_points": 0,
+      "allowed_classes": 0,
       "min_level": 0,
       "max_level": 0,
       "level_spread": 0,

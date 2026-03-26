@@ -255,6 +255,12 @@
                          col: 'col-2',
                        },
                        {
+                         description: 'Allowed Classes',
+                         field: 'allowed_classes',
+                         fieldType: 'allowed-classes',
+                         col: 'col-12',
+                       },
+                       {
                          description: 'Completion Emote',
                          field: 'completion_emote',
                          itemIcon: '653',
@@ -368,6 +374,13 @@
                           style="display: inline-block"
                         />
                         {{ field.description }}
+                        <i
+                          v-if="field.field === 'allowed_classes'"
+                          v-b-tooltip.hover.v-dark.topright
+                          :title="getFieldDescription(field.field)"
+                          style="color: #6b614a"
+                          class="fa fa-info-circle"
+                        />
                         <span
                           v-if="(field.field.includes('timer_seconds') || field.field.includes('duration')) && task[field.field] > 0"
                           class="font-weight-bold"
@@ -385,6 +398,43 @@
                           @input="task[field.field] = $event"
                           v-if="field.fieldType === 'checkbox'"
                         />
+                      </div>
+
+                      <div v-if="field.fieldType === 'allowed-classes' && taskClassRestrictions.loaded">
+                        <input
+                          :id="field.field"
+                          type="hidden"
+                          :value="taskAllowedClasses"
+                        >
+
+                        <div
+                          class="row ml-0 mr-0 mt-1 class-restrictions-shell"
+                          :class="{ 'class-restrictions-shell-disabled': !taskClassRestrictions.supported }"
+                        >
+                          <div class="col-12 pl-0 pr-0 mt-1">
+                            <class-bitmask-calculator
+                              :key="`task-allowed-classes-${selectedTask || 'new'}`"
+                              :inputData="taskAllowedClasses"
+                              :mask="taskAllowedClasses"
+                              :centered-buttons="false"
+                              :display-all-none="true"
+                              :all-none-below="true"
+                              :icon-scale="1.25"
+                              :all-mask-values="[0, 65535]"
+                              :emit-all-mask-value="0"
+                              :display-none-button="false"
+                              :allow-empty-selection="false"
+                              @update:inputData="handleTaskAllowedClassesUpdate"
+                            />
+                          </div>
+                        </div>
+
+                        <div
+                          v-if="!taskClassRestrictions.supported"
+                          class="mt-2 class-restrictions-note"
+                        >
+                          This linked database does not expose <code>tasks.allowed_classes</code> yet, so task class restrictions are unavailable here.
+                        </div>
                       </div>
 
 
@@ -1213,6 +1263,7 @@ import DynamicZoneTemplateSelector from "@/components/selectors/DynamicZoneTempl
 import TaskReplayRequestGroupSelector from "@/views/tasks/components/TaskReplayRequestGroupSelector.vue";
 import TaskItemMatchListPreviewer from "@/views/tasks/components/TaskItemMatchListPreviewer.vue";
 import {debounce} from "@/app/utility/debounce";
+import ClassBitmaskCalculator from "@/components/tools/ClassBitmaskCalculator.vue";
 
 const MILLISECONDS_BEFORE_WINDOW_RESET = 10000;
 
@@ -1222,6 +1273,7 @@ export default {
     TaskReplayRequestGroupSelector,
     DynamicZoneTemplateSelector,
     AlternateCurrencySelector,
+    ClassBitmaskCalculator,
     InfoErrorBanner,
     TaskQuestExamplePreview,
     TaskNpcMatchListPreviewer,
@@ -1248,6 +1300,12 @@ export default {
       selectedTask: null,
       selectedActivity: null,
       taskSearchFilter: "",
+      taskAllowedClasses: 0,
+      originalTaskAllowedClasses: 0,
+      taskClassRestrictions: {
+        loaded: false,
+        supported: false,
+      },
 
       // preview / selectors
       selectorActive: {},
@@ -1288,6 +1346,64 @@ export default {
 
   methods: {
     debounce,
+
+    normalizeTaskAllowedClasses(value) {
+      const parsedValue = parseInt(value)
+
+      if (Number.isNaN(parsedValue) || parsedValue < 0) {
+        return 0
+      }
+
+      return parsedValue
+    },
+
+    handleTaskAllowedClassesUpdate(value) {
+      const allowedClasses = this.normalizeTaskAllowedClasses(value)
+      this.taskAllowedClasses = allowedClasses
+
+      if (this.task) {
+        this.$set(this.task, "allowed_classes", allowedClasses)
+      }
+
+      EditFormFieldUtil.setFieldModifiedById("allowed_classes")
+    },
+
+    resetTaskClassRestrictionsState() {
+      this.taskAllowedClasses = 0
+      this.originalTaskAllowedClasses = 0
+      this.taskClassRestrictions = {
+        loaded: false,
+        supported: false,
+      }
+    },
+
+    async loadTaskClassRestrictions() {
+      this.resetTaskClassRestrictionsState()
+
+      if (!(this.$route.params.id > 0)) {
+        this.taskClassRestrictions.loaded = true
+        return
+      }
+
+      try {
+        const restrictions = await Tasks.getTaskClassRestrictions(this.$route.params.id)
+        const allowedClasses = this.normalizeTaskAllowedClasses(restrictions.allowed_classes)
+
+        this.taskAllowedClasses = allowedClasses
+        this.originalTaskAllowedClasses = allowedClasses
+        this.taskClassRestrictions.supported = !!restrictions.supported
+
+        if (this.task) {
+          this.$set(this.task, "allowed_classes", allowedClasses)
+        }
+      } catch (err) {
+        if (err.response && err.response.data && err.response.data.error) {
+          this.error = err.response.data.error
+        }
+      } finally {
+        this.taskClassRestrictions.loaded = true
+      }
+    },
 
     async saveIfModified() {
       if (EditFormFieldUtil.anyFieldsHaveBeenEdited()) {
@@ -1841,6 +1957,11 @@ export default {
           }
         }
 
+        if (this.taskClassRestrictions.supported && this.taskAllowedClasses !== this.originalTaskAllowedClasses) {
+          await Tasks.updateTaskAllowedClasses(t.id, this.taskAllowedClasses)
+          this.originalTaskAllowedClasses = this.taskAllowedClasses
+        }
+
         if (r.status === 200) {
           EditFormFieldUtil.resetFieldEditedStatus()
           this.notification = "Task updated!";
@@ -1941,6 +2062,10 @@ export default {
             try {
               const r = await Tasks.createTask(newTask)
               if (r.status === 200) {
+                if (this.taskClassRestrictions.supported) {
+                  await Tasks.updateTaskAllowedClasses(r.data.id, this.taskAllowedClasses)
+                }
+
                 this.resetState()
                 this.selectedTask     = r.data.id
                 this.selectedActivity = 0
@@ -1989,6 +2114,7 @@ export default {
       this.selectedTask     = null;
       this.selectedActivity = null;
       this.taskSearchFilter = "";
+      this.resetTaskClassRestrictionsState()
     },
 
     resetStateAll() {
@@ -2037,6 +2163,7 @@ export default {
         }
 
         this.task = (await Tasks.getTask(this.$route.params.id))
+        await this.loadTaskClassRestrictions()
 
         // only load these once
         if (Object.keys(this.zoneNames).length === 0) {
@@ -2047,6 +2174,7 @@ export default {
 
         // copy to original
         Object.assign(this.originalTask, this.task);
+        this.$set(this.originalTask, "allowed_classes", this.taskAllowedClasses)
 
         setTimeout(() => {
 
@@ -2218,6 +2346,15 @@ export default {
   overflow-x: hidden;
   white-space: nowrap;
   border-radius: 5px;
+}
+
+.class-restrictions-shell-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.class-restrictions-note {
+  color: #a9a299;
 }
 
 </style>

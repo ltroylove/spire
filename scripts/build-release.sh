@@ -1,9 +1,13 @@
 #!/bin/bash
 
 cwd=$(pwd)
+release_repo=$(./scripts/resolve-release-repo.sh)
 
 # shellcheck disable=SC2046
-if [ $(curl -s "https://api.github.com/repos/EQEmuTools/spire/tags" | jq -r '.[0].name' | sed 's/v//') = $(cat package.json | jq -r '.version') ]; then echo "Version tag is same as latest release exiting build"; exit; else echo "Local version different from remote, building..."; fi
+if [ $(curl -s "https://api.github.com/repos/$release_repo/tags" | jq -r '.[0].name' | sed 's/v//') = $(cat package.json | jq -r '.version') ]; then echo "Version tag is same as latest release for [$release_repo], exiting build"; exit; else echo "Local version different from remote [$release_repo], building..."; fi
+
+./scripts/validate-changelog.sh
+./scripts/export-release-notes.sh >/dev/null
 
 # packr for packing web assets into binary
 #go install github.com/gobuffalo/packr/packr
