@@ -1980,19 +1980,23 @@ export default {
       const disabledBySpawn2Id = new Map();
       if (!spawn2s || spawn2s.length === 0) return disabledBySpawn2Id;
 
-      const spawn2DisabledApi = new Spawn2DisabledApi(...SpireApi.cfg());
-      const builder = new SpireQueryBuilder();
-      for (const s2 of spawn2s) {
-        if (s2.id) {
-          builder.whereOr("spawn2_id", "=", s2.id);
+      try {
+        const spawn2DisabledApi = new Spawn2DisabledApi(...SpireApi.cfg());
+        const builder = new SpireQueryBuilder();
+        for (const s2 of spawn2s) {
+          if (s2.id) {
+            builder.whereOr("spawn2_id", "=", s2.id);
+          }
         }
-      }
-      builder.select(["id", "spawn_2_id", "instance_id", "disabled"]);
-      builder.limit(spawn2s.length);
+        builder.select(["id", "spawn_2_id", "instance_id", "disabled"]);
+        builder.limit(spawn2s.length);
 
-      const result = await spawn2DisabledApi.listSpawn2Disableds(builder.get());
-      for (const row of (result.data || [])) {
-        disabledBySpawn2Id.set(Number(row.spawn_2_id), row);
+        const result = await spawn2DisabledApi.listSpawn2Disableds(builder.get());
+        for (const row of (result.data || [])) {
+          disabledBySpawn2Id.set(Number(row.spawn_2_id), row);
+        }
+      } catch (e) {
+        console.warn("Failed to load spawn point disabled state; defaulting spawn points to enabled", e);
       }
 
       return disabledBySpawn2Id;
