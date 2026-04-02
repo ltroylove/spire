@@ -711,8 +711,13 @@
                       <span v-if="sp._pendingAdd" class="badge ml-2" style="background: rgba(76,175,80,0.25); color: #4caf50; font-size: 0.75em;">New</span>
                       <span v-if="sp._pendingDelete" class="badge ml-2" style="background: rgba(244,67,54,0.25); color: #f44336; font-size: 0.75em;">Pending Delete</span>
                     </span>
-                    <div class="d-flex align-items-center">
-                      <div v-if="!sp._pendingDelete" class="mr-2">
+                    <div class="spawn-point-header-actions">
+                      <div
+                        v-if="!sp._pendingDelete"
+                        class="spawn-point-enabled-toggle"
+                        :class="{ 'is-disabled': !sp.enabled }"
+                      >
+                        <span class="spawn-point-enabled-caption">Enabled</span>
                         <eq-checkbox
                           :value="sp.enabled"
                           :true-value="true"
@@ -2716,6 +2721,53 @@ export default {
   color: #fcc721;
   padding-bottom: 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.spawn-point-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.spawn-point-enabled-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 2px 8px 2px 10px;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 999px;
+  background: rgba(76, 175, 80, 0.08);
+  color: #9ad8a3;
+}
+
+.spawn-point-enabled-toggle.is-disabled {
+  border-color: rgba(244, 67, 54, 0.28);
+  background: rgba(244, 67, 54, 0.08);
+  color: #f0a3a3;
+}
+
+.spawn-point-enabled-caption {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.spawn-point-enabled-toggle ::v-deep > div {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.spawn-point-enabled-toggle ::v-deep .ml-3 {
+  margin-left: 6px !important;
+  font-size: 11px;
+  font-weight: 700;
+  color: inherit;
 }
 
 /* Spawn point toggle button */
