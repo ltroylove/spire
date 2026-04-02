@@ -711,7 +711,16 @@
                       <span v-if="sp._pendingAdd" class="badge ml-2" style="background: rgba(76,175,80,0.25); color: #4caf50; font-size: 0.75em;">New</span>
                       <span v-if="sp._pendingDelete" class="badge ml-2" style="background: rgba(244,67,54,0.25); color: #f44336; font-size: 0.75em;">Pending Delete</span>
                     </span>
-                    <div>
+                    <div class="d-flex align-items-center">
+                      <div v-if="!sp._pendingDelete" class="mr-2">
+                        <eq-checkbox
+                          :value="sp.enabled"
+                          :true-value="true"
+                          :false-value="false"
+                          :label-right="sp.enabled ? 'Active' : 'Disabled'"
+                          @input="sp.enabled = $event"
+                        />
+                      </div>
                       <button
                         v-if="!sp._pendingDelete"
                         class="btn btn-xs btn-outline-info mr-1"
@@ -838,18 +847,6 @@
                     <div class="col-2 mb-2">
                       <label class="field-label">Cond Value</label>
                       <input v-model.number="sp.cond_value" type="number" class="form-control form-control-sm" />
-                    </div>
-                    <div class="col-4 mb-2">
-                      <label class="field-label">Enabled</label>
-                      <div class="pt-1">
-                        <eq-checkbox
-                          :value="sp.enabled"
-                          :true-value="true"
-                          :false-value="false"
-                          :label-right="sp.enabled ? 'Active' : 'Disabled'"
-                          @input="sp.enabled = $event"
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -1988,15 +1985,13 @@ export default {
             builder.whereOr("spawn2_id", "=", s2.id);
           }
         }
-        builder.select(["id", "spawn_2_id", "instance_id", "disabled"]);
         builder.limit(spawn2s.length);
 
         const result = await spawn2DisabledApi.listSpawn2Disableds(builder.get());
         for (const row of (result.data || [])) {
           disabledBySpawn2Id.set(Number(row.spawn_2_id), row);
         }
-      } catch (e) {
-        console.warn("Failed to load spawn point disabled state; defaulting spawn points to enabled", e);
+      } catch (_e) {
       }
 
       return disabledBySpawn2Id;
