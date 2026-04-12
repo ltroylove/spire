@@ -43,6 +43,7 @@ type WebAdminLauncherConfig struct {
 	MinZoneProcesses            int    `json:"minZoneProcesses,omitempty"`
 	StaticZones                 string `json:"staticZones,omitempty"`
 	UpdateOpcodesOnStart        bool   `json:"updateOpcodesOnStart"`
+	OpcodeSource                string `json:"opcodeSource,omitempty"`
 	DeleteLogFilesOlderThanDays int    `json:"deleteLogFilesOlderThanDays"`
 
 	// leaf nodes do not run any process but zones
