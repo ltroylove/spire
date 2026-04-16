@@ -3,6 +3,7 @@ package questapi
 import (
 	"fmt"
 	"github.com/EQEmuTools/spire/internal/env"
+	"github.com/EQEmuTools/spire/internal/http/middleware"
 	"github.com/EQEmuTools/spire/internal/http/routes"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -24,10 +25,10 @@ func (d *Controller) Routes() []*routes.Route {
 	return []*routes.Route{
 		routes.RegisterRoute(http.MethodGet, "quest-api/definitions", d.getQuestDefinitions, nil),
 		routes.RegisterRoute(http.MethodGet, "quest-api/vscode-snippets", d.getSnippets, nil),
-		routes.RegisterRoute(http.MethodPost, "quest-api/webhook-update-vscode-snippets", d.webhookVscodeSnippetsUpdate, nil),
-		routes.RegisterRoute(http.MethodPost, "quest-api/refresh-definitions", d.webhookSourceDefinitionsUpdateApi, nil),
-		routes.RegisterRoute(http.MethodPost, "quest-api/webhook-update-api", d.webhookSourceDefinitionsUpdateApi, nil),
-		routes.RegisterRoute(http.MethodPost, "quest-api/webhook-update-source-examples/org/:org/repo/:repo/branch/:branch", d.webhookSourceExamplesUpdateApi, nil),
+		routes.RegisterRoute(http.MethodPost, "quest-api/webhook-update-vscode-snippets", d.webhookVscodeSnippetsUpdate, []echo.MiddlewareFunc{middleware.GitHubWebhookAuth()}),
+		routes.RegisterRoute(http.MethodPost, "quest-api/refresh-definitions", d.webhookSourceDefinitionsUpdateApi, []echo.MiddlewareFunc{middleware.GitHubWebhookAuth()}),
+		routes.RegisterRoute(http.MethodPost, "quest-api/webhook-update-api", d.webhookSourceDefinitionsUpdateApi, []echo.MiddlewareFunc{middleware.GitHubWebhookAuth()}),
+		routes.RegisterRoute(http.MethodPost, "quest-api/webhook-update-source-examples/org/:org/repo/:repo/branch/:branch", d.webhookSourceExamplesUpdateApi, []echo.MiddlewareFunc{middleware.GitHubWebhookAuth()}),
 		routes.RegisterRoute(
 			http.MethodPost,
 			"quest-api/source-examples/org/:org/repo/:repo/branch/:branch",
@@ -74,8 +75,6 @@ func (d *Controller) searchGithubExamples(c echo.Context) error {
 
 // ingests a webhook from Github and updates the repo data locally
 func (d *Controller) webhookSourceDefinitionsUpdateApi(c echo.Context) error {
-	// todo: verify signature later
-
 	fmt.Println("Received definitions update request...")
 
 	isGithubRequest := c.Request().Header.Get("X-Github-Event") != "" &&
@@ -94,8 +93,6 @@ func (d *Controller) webhookSourceDefinitionsUpdateApi(c echo.Context) error {
 
 // ingests a webhook from Github and updates the repo data locally
 func (d *Controller) webhookVscodeSnippetsUpdate(c echo.Context) error {
-	// todo: verify signature later
-
 	fmt.Println("Received vscode quest snippets update request...")
 
 	isGithubRequest := c.Request().Header.Get("X-Github-Event") != "" &&
@@ -114,7 +111,6 @@ func (d *Controller) webhookVscodeSnippetsUpdate(c echo.Context) error {
 
 // ingests a webhook from Github and updates the repo data locally
 func (d *Controller) webhookSourceExamplesUpdateApi(c echo.Context) error {
-	// todo: verify signature later
 	if c.Request().Header.Get("X-Github-Event") != "" &&
 		c.Request().Header.Get("X-Github-Delivery") != "" {
 		// params

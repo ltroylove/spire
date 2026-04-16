@@ -56,3 +56,7 @@ frontend/.env.production
 test-results/
 frontend/test-results/
 node_modules/
+
+# Claude Code local config
+.claude/
+kaiding-docs/
