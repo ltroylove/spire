@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/EQEmuTools/spire/internal/database"
 	"github.com/EQEmuTools/spire/internal/models"
-	"github.com/golang-jwt/jwt"
+	echojwt "github.com/labstack/echo-jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	gocache "github.com/patrickmn/go-cache"
 	"os"
 	"strconv"
@@ -32,25 +32,29 @@ func NewContextMiddleware(
 type jwtCustomClaims struct {
 	Authorized bool   `json:"authorized"`
 	UserId     string `json:"userId"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 func (m ContextMiddleware) HandleHeader() echo.MiddlewareFunc {
-	return middleware.JWTWithConfig(middleware.JWTConfig{
+	return echojwt.WithConfig(echojwt.Config{
 		SuccessHandler: m.successHandler,
 		Skipper:        m.skipperHeader,
 		SigningKey:     []byte(os.Getenv("JWT_SECRET_KEY")),
-		Claims:         &jwtCustomClaims{},
+		NewClaimsFunc: func(c echo.Context) jwt.Claims {
+			return new(jwtCustomClaims)
+		},
 	})
 }
 
 func (m ContextMiddleware) HandleQuerystring() echo.MiddlewareFunc {
-	return middleware.JWTWithConfig(middleware.JWTConfig{
+	return echojwt.WithConfig(echojwt.Config{
 		SuccessHandler: m.successHandler,
 		TokenLookup:    "query:jwt",
 		Skipper:        m.skipperQuery,
-		SigningKey:     []byte(os.Getenv("JWT_SECRET_KEY")),
-		Claims:         &jwtCustomClaims{},
+		SigningKey:      []byte(os.Getenv("JWT_SECRET_KEY")),
+		NewClaimsFunc: func(c echo.Context) jwt.Claims {
+			return new(jwtCustomClaims)
+		},
 	})
 }
 
